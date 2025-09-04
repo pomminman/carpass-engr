@@ -1,0 +1,85 @@
+# เปิดใช้งานโมดูลการเขียน URL ใหม่ (mod_rewrite)
+# บรรทัดนี้จำเป็นเพื่อให้กฎ (Rule) ทั้งหมดด้านล่างทำงานได้
+RewriteEngine On
+
+# --- [สำคัญมาก] ส่วนที่ต้องแก้ไขเมื่ออัปโหลดขึ้นโฮสต์จริง ---
+#
+# หากนำเว็บไซต์ขึ้นโฮสต์จริง และวางไฟล์ไว้ที่ไดเรกทอรีหลัก (เช่น public_html)
+# ให้แก้ไขค่า 3 บรรทัดด้านล่างนี้เป็น:
+#
+RewriteBase /
+ErrorDocument 404 /404.php
+ErrorDocument 500 /500.php
+
+
+# --- [ใหม่] โหมดปรับปรุงเว็บไซต์ (Maintenance Mode) ---
+#
+# วิธีเปิดใช้งาน:
+# 1. สร้างไฟล์ maintenance.php ไว้ที่ root directory ของโปรเจกต์
+# 2. ลบเครื่องหมาย # ออกจาก 2 บรรทัดด้านล่างนี้
+# 3. เมื่อปรับปรุงเสร็จ ให้ใส่เครื่องหมาย # กลับคืนเหมือนเดิม
+#
+# บรรทัดแรก: ป้องกันการวนลูป rewrite โดยยกเว้นไฟล์ maintenance.php เอง
+# RewriteCond %{REQUEST_URI} !/maintenance\.php$
+# บรรทัดที่สอง: ส่งผู้ใช้ทุกคนไปแสดงเนื้อหาของหน้า maintenance.php (โดยไม่เปลี่ยน URL)
+# RewriteRule .* /maintenance.php [L]
+
+
+# --- [เพิ่ม] การตั้งค่าการ Caching เพื่อเพิ่มความเร็วในการโหลด ---
+<IfModule mod_expires.c>
+  ExpiresActive On
+  # กำหนดให้ไฟล์รูปภาพ, CSS, และ JS ถูกเก็บไว้ใน cache ของเบราว์เซอร์ 1 เดือน
+  ExpiresByType image/jpeg "access plus 1 month"
+  ExpiresByType image/gif "access plus 1 month"
+  ExpiresByType image/png "access plus 1 month"
+  ExpiresByType image/webp "access plus 1 month"
+  ExpiresByType image/svg+xml "access plus 1 month"
+  ExpiresByType text/css "access plus 1 month"
+  ExpiresByType application/javascript "access plus 1 month"
+</IfModule>
+
+# --- [เพิ่ม] การเปิดใช้งานการบีบอัดไฟล์ (GZIP) ---
+<IfModule mod_deflate.c>
+  # บีบอัดไฟล์ HTML, CSS, JavaScript, Text, XML และ Fonts
+  AddOutputFilterByType DEFLATE application/javascript
+  AddOutputFilterByType DEFLATE application/rss+xml
+  AddOutputFilterByType DEFLATE application/vnd.ms-fontobject
+  AddOutputFilterByType DEFLATE application/x-font
+  AddOutputFilterByType DEFLATE application/x-font-opentype
+  AddOutputFilterByType DEFLATE application/x-font-truetype
+  AddOutputFilterByType DEFLATE application/x-font-ttf
+  AddOutputFilterByType DEFLATE application/x-javascript
+  AddOutputFilterByType DEFLATE application/xhtml+xml
+  AddOutputFilterByType DEFLATE application/xml
+  AddOutputFilterByType DEFLATE font/opentype
+  AddOutputFilterByType DEFLATE font/otf
+  AddOutputFilterByType DEFLATE font/ttf
+  AddOutputFilterByType DEFLATE image/svg+xml
+  AddOutputFilterByType DEFLATE image/x-icon
+  AddOutputFilterByType DEFLATE text/css
+  AddOutputFilterByType DEFLATE text/html
+  AddOutputFilterByType DEFLATE text/javascript
+  AddOutputFilterByType DEFLATE text/plain
+  AddOutputFilterByType DEFLATE text/xml
+</IfModule>
+
+# --- การปรับปรุงความปลอดภัย ---
+
+# ป้องกันไม่ให้ผู้ใช้เห็นรายชื่อไฟล์ทั้งหมดในไดเรกทอรี
+Options -Indexes
+
+# ป้องกันการเข้าถึงไฟล์ .htaccess โดยตรงจากเบราว์เซอร์
+<Files .htaccess>
+    Require all denied
+</Files>
+
+# --- [เพิ่ม] การตั้งค่า Security Headers ---
+<IfModule mod_headers.c>
+    # ป้องกันการนำเว็บไปแสดงใน iframe ของเว็บอื่น (Clickjacking)
+    Header set X-Frame-Options "SAMEORIGIN"
+    # เปิดใช้งานการป้องกัน XSS ในเบราว์เซอร์
+    Header set X-XSS-Protection "1; mode=block"
+    # ป้องกันไม่ให้เบราว์เซอร์เดาประเภทไฟล์เอง (MIME sniffing)
+    Header set X-Content-Type-Options "nosniff"
+</IfModule>
+
