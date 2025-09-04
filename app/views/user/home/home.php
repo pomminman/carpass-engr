@@ -106,7 +106,7 @@ $sql_dept = "SELECT name FROM departments ORDER BY display_order ASC, name ASC";
 $result_dept = $conn->query($sql_dept);
 if ($result_dept->num_rows > 0) {
     while($row = $result_dept->fetch_assoc()) {
-        $departments[] = $row['name'];
+        $departments[] = $row;
     }
 }
 
@@ -479,18 +479,29 @@ $conn->close();
                                 <div id="profile-work-info" class="mt-6">
                                     <div class="divider divider-start font-semibold">ข้อมูลการทำงาน</div>
                                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                                        <?php $is_other_dept = !in_array($user['work_department'], $departments); ?>
                                         <div class="form-control w-full">
                                             <div class="label"><span class="label-text">สังกัด</span></div>
-                                            <select name="work_department" class="select select-sm select-bordered w-full input-disabled" disabled required>
-                                                <option disabled selected value="">เลือกสังกัด</option>
-                                                <?php foreach ($departments as $dept): ?>
-                                                    <option value="<?php echo htmlspecialchars($dept); ?>" <?php echo ($user['work_department'] == $dept) ? 'selected' : ''; ?>><?php echo htmlspecialchars($dept); ?></option>
-                                                <?php endforeach; ?>
-                                                <option value="other" <?php echo $is_other_dept ? 'selected' : ''; ?>>อื่นๆ</option>
-                                            </select>
-                                            <input type="text" name="work_department_other" placeholder="ระบุสังกัด" class="input input-sm input-bordered w-full mt-2 <?php echo !$is_other_dept ? 'hidden' : ''; ?>" value="<?php echo $is_other_dept ? htmlspecialchars($user['work_department']) : ''; ?>" disabled/>
-                                            <p class="error-message hidden"></p>
+                                            <!-- This input is for display only -->
+                                            <input type="text" 
+                                                   value="<?php echo htmlspecialchars($user['work_department'] ?? ''); ?>" 
+                                                   class="input input-sm input-bordered w-full input-disabled" 
+                                                   disabled />
+                                    
+                                            <!-- Hidden inputs to handle form submission without breaking the backend. -->
+                                            <!-- This field is now view-only as per the request. -->
+                                            <?php 
+                                                // Create a flat array of department names from the query result
+                                                $department_names = array_column($departments, 'name');
+                                                $is_other_dept = !in_array($user['work_department'], $department_names); 
+                                                
+                                                if ($is_other_dept && !empty($user['work_department'])) {
+                                            ?>
+                                                <input type="hidden" name="work_department" value="other" />
+                                                <input type="hidden" name="work_department_other" value="<?php echo htmlspecialchars($user['work_department']); ?>" />
+                                            <?php } else { ?>
+                                                <input type="hidden" name="work_department" value="<?php echo htmlspecialchars($user['work_department'] ?? ''); ?>" />
+                                                <input type="hidden" name="work_department_other" value="" />
+                                            <?php } ?>
                                         </div>
                                         <div class="form-control w-full"><div class="label"><span class="label-text">ตำแหน่ง</span></div><input type="text" name="position" value="<?php echo htmlspecialchars($user['position']); ?>" class="input input-sm input-bordered w-full input-disabled" disabled required /><p class="error-message hidden"></p></div>
                                         <div class="form-control w-full"><div class="label"><span class="label-text">เลขบัตรข้าราชการ</span></div><input type="tel" name="official_id" value="<?php echo htmlspecialchars($user['official_id']); ?>" class="input input-sm input-bordered w-full input-disabled" disabled maxlength="10" /><p class="error-message hidden"></p></div>
@@ -1175,7 +1186,7 @@ $conn->close();
                 const saveBtn = document.getElementById('save-profile-btn');
                 const cancelBtn = document.getElementById('cancel-edit-btn');
                 const profileForm = document.getElementById('profileForm');
-                const formInputs = profileForm.querySelectorAll('input:not([type=file]), select, textarea');
+                const formInputs = profileForm.querySelectorAll('input:not([type=file]):not([type=hidden]), select, textarea');
                 const fileInput = document.getElementById('profile-photo-upload');
                 const photoGuidance = document.getElementById('photo-guidance');
                 const daySelectP = document.getElementById('profile-dob-day'); 
@@ -1220,7 +1231,7 @@ $conn->close();
 
                 const toggleEditMode = (isEditing) => {
                     formInputs.forEach(input => {
-                        if (input.name === 'national_id_display') return;
+                        if (input.name === 'national_id_display' || input.closest('.form-control')?.querySelector('.label-text')?.textContent === 'สังกัด') return;
                         if (isEditing) { 
                             input.removeAttribute('disabled'); 
                             input.classList.remove('input-disabled');
@@ -1359,16 +1370,6 @@ $conn->close();
                      if(this.value === 'other') otherInput.setAttribute('required', '');
                      else { otherInput.removeAttribute('required'); clearError(otherInput); }
                 });
-
-                const workDeptSelect = profileForm.querySelector('[name="work_department"]');
-                if(workDeptSelect) {
-                    workDeptSelect.addEventListener('change', function() {
-                        const otherInput = profileForm.querySelector('[name="work_department_other"]');
-                        otherInput.classList.toggle('hidden', this.value !== 'other');
-                         if(this.value === 'other') otherInput.setAttribute('required', '');
-                         else { otherInput.removeAttribute('required'); clearError(otherInput); }
-                    });
-                }
                 
                 profileForm.querySelector('[name="firstname"]').addEventListener('input', function() { this.value = this.value.replace(/[^ก-๙\s]/g, ''); });
                 profileForm.querySelector('[name="lastname"]').addEventListener('input', function() { this.value = this.value.replace(/[^ก-๙\s]/g, ''); });
@@ -1376,8 +1377,6 @@ $conn->close();
                 profileForm.querySelector('[name="address"]').addEventListener('input', function() { this.value = this.value.replace(/[^ก-๙0-9\s.\-\/]/g, ''); });
                 const positionInput = profileForm.querySelector('[name="position"]');
                 if (positionInput) positionInput.addEventListener('input', function() {  });
-                const workDeptOtherInput = profileForm.querySelector('[name="work_department_other"]');
-                if (workDeptOtherInput) workDeptOtherInput.addEventListener('input', function() { this.value = this.value.replace(/[^ก-๙0-9\s.\-()]/g, ''); });
                 
                 phoneInput.addEventListener('input', function() {
                     formatInput(this, 'xxx-xxx-xxxx');
@@ -1394,4 +1393,3 @@ $conn->close();
     </script>
 </body>
 </html>
-
