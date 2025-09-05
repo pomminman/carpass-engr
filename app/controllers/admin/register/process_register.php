@@ -1,130 +1,136 @@
 <?php
-// --- app/controllers/admin/register/process_register.php ---
+// --- app/controllers/admin/requests/process_request.php ---
+
+// ini_set('display_errors', 1);
+// error_reporting(E_ALL);
 
 session_start();
-require_once '../../../models/db_config.php';
-require_once '../../../models/log_helper.php';
+header('Content-Type: application/json');
 
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $conn = new mysqli($servername, $username, $password, $dbname);
-    if ($conn->connect_error) {
-        $_SESSION['register_error'] = "Database connection failed: " . $conn->connect_error;
-        header("location: ../../../views/admin/register/register.php");
-        exit;
-    }
-    $conn->set_charset("utf8");
-
-    // รับค่าจากฟอร์ม
-    $username = trim($_POST['username']);
-    $password = $_POST['password'];
-    $confirm_password = $_POST['confirm_password'];
-    $title_choice = trim($_POST['title']);
-    $title_other = trim($_POST['title_other'] ?? '');
-    $firstname = trim($_POST['firstname']);
-    $lastname = trim($_POST['lastname']);
-    $phone_number = trim($_POST['phone_number']);
-    $position = trim($_POST['position']);
-    $department_choice = trim($_POST['department']);
-    $department_other = trim($_POST['department_other'] ?? '');
-    $role = $_POST['role'];
-    $view_permission = filter_var($_POST['view_permission'], FILTER_VALIDATE_INT);
-    
-    $final_department = '';
-    $final_title = '';
-
-    // --- Validation ---
-    if (empty($username) || empty($password) || empty($confirm_password) || empty($title_choice) || empty($firstname) || empty($lastname) || empty($role)) {
-        $_SESSION['register_error'] = "กรุณากรอกข้อมูลที่จำเป็นให้ครบถ้วน";
-        header("location: ../../../views/admin/register/register.php");
-        exit;
-    }
-    if ($password !== $confirm_password) {
-        $_SESSION['register_error'] = "รหัสผ่านไม่ตรงกัน";
-        header("location: ../../../views/admin/register/register.php");
-        exit;
-    }
-    
-    // --- [แก้ไข] ตรรกะจัดการ "คำนำหน้า" (ไม่ต้องยุ่งกับ DB) ---
-    if ($title_choice === 'other') {
-        if (empty($title_other)) {
-            $_SESSION['register_error'] = "กรุณาระบุคำนำหน้าใหม่";
-            header("location: ../../../views/admin/register/register.php");
-            exit;
-        }
-        $final_title = $title_other;
-    } else {
-        $final_title = $title_choice;
-    }
-
-    // --- ตรรกะจัดการ "สังกัด" ---
-    if ($department_choice === 'other') {
-        if (empty($department_other)) {
-            $_SESSION['register_error'] = "กรุณาระบุชื่อสังกัดใหม่";
-            header("location: ../../../views/admin/register/register.php");
-            exit;
-        }
-        $final_department = $department_other;
-        
-        $sql_check_dept = "SELECT id FROM departments WHERE name = ?";
-        $stmt_check_dept = $conn->prepare($sql_check_dept);
-        $stmt_check_dept->bind_param("s", $final_department);
-        $stmt_check_dept->execute();
-        $stmt_check_dept->store_result();
-
-        if ($stmt_check_dept->num_rows == 0) {
-            $sql_max_order = "SELECT MAX(display_order) as max_order FROM departments WHERE display_order < 999";
-            $result_max_order = $conn->query($sql_max_order);
-            $next_display_order = ($result_max_order->fetch_assoc()['max_order'] ?? 0) + 1;
-            
-            $sql_insert_dept = "INSERT INTO departments (name, display_order) VALUES (?, ?)";
-            $stmt_insert_dept = $conn->prepare($sql_insert_dept);
-            $stmt_insert_dept->bind_param("si", $final_department, $next_display_order);
-            $stmt_insert_dept->execute();
-            $stmt_insert_dept->close();
-        }
-        $stmt_check_dept->close();
-    } else {
-        $final_department = $department_choice;
-    }
-
-
-    // ตรวจสอบ Username ซ้ำ
-    $sql_check = "SELECT id FROM admins WHERE username = ?";
-    $stmt_check = $conn->prepare($sql_check);
-    $stmt_check->bind_param("s", $username);
-    $stmt_check->execute();
-    $stmt_check->store_result();
-    if ($stmt_check->num_rows > 0) {
-        $_SESSION['register_error'] = "Username นี้มีผู้ใช้งานแล้ว";
-        header("location: ../../../views/admin/register/register.php");
-        exit;
-    }
-    $stmt_check->close();
-
-    // --- Process Data ---
-    $hashed_password = password_hash($password, PASSWORD_DEFAULT);
-    $created_by = $_SESSION['admin_id'] ?? null; 
-
-    $sql = "INSERT INTO admins (username, password, title, firstname, lastname, phone_number, position, department, role, view_permission, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-    $stmt = $conn->prepare($sql);
-    $stmt->bind_param("sssssssssii", $username, $hashed_password, $final_title, $firstname, $lastname, $phone_number, $position, $final_department, $role, $view_permission, $created_by);
-
-    if ($stmt->execute()) {
-        $new_admin_id = $stmt->insert_id;
-        log_activity($conn, 'admin_register_success', ['new_admin_id' => $new_admin_id, 'username' => $username, 'created_by_id' => $created_by]);
-        $_SESSION['register_success'] = "สร้างบัญชีผู้ดูแลระบบ '$username' สำเร็จแล้ว";
-    } else {
-        log_activity($conn, 'admin_register_fail', ['username' => $username, 'error' => $stmt->error]);
-        $_SESSION['register_error'] = "เกิดข้อผิดพลาดในการสร้างบัญชี: " . $stmt->error;
-    }
-
-    $stmt->close();
-    $conn->close();
-    header("location: ../../../views/admin/register/register.php");
-    exit;
-} else {
-    header("location: ../../../views/admin/register/register.php");
+// --- 1. ตรวจสอบสิทธิ์และข้อมูลนำเข้า ---
+if (!isset($_SESSION['admin_loggedin']) || $_SESSION['admin_loggedin'] !== true) {
+    echo json_encode(['success' => false, 'message' => 'Authentication required']);
     exit;
 }
+
+$data = json_decode(file_get_contents('php://input'), true);
+$request_id = filter_var($data['request_id'] ?? null, FILTER_VALIDATE_INT);
+$action = filter_var($data['action'] ?? null, FILTER_SANITIZE_STRING);
+$admin_id = $_SESSION['admin_id'];
+
+if (!$request_id || !$action || !in_array($action, ['approve', 'reject'])) {
+    echo json_encode(['success' => false, 'message' => 'Invalid input data']);
+    exit;
+}
+
+// --- 2. เรียกใช้ไฟล์ที่จำเป็น ---
+require_once '../../../models/db_config.php';
+require_once '../../../models/log_helper.php';
+require_once '../../../../lib/phpqrcode/qrlib.php'; 
+
+// --- 3. เชื่อมต่อฐานข้อมูล ---
+$conn = new mysqli($servername, $username, $password, $dbname);
+if ($conn->connect_error) {
+    echo json_encode(['success' => false, 'message' => 'Database connection failed']);
+    exit;
+}
+$conn->set_charset("utf8");
+
+// --- 4. ประมวลผลตาม Action ---
+$conn->begin_transaction();
+
+try {
+    if ($action === 'approve') {
+        
+        // --- ดึงข้อมูล User Type และ Created At ---
+        $sql_info = "SELECT u.user_type, vr.created_at FROM users u JOIN vehicle_requests vr ON u.id = vr.user_id WHERE vr.id = ?";
+        $stmt_info = $conn->prepare($sql_info);
+        $stmt_info->bind_param("i", $request_id);
+        $stmt_info->execute();
+        $result_info = $stmt_info->get_result();
+        $request_info = $result_info->fetch_assoc();
+        $stmt_info->close();
+        
+        if(!$request_info) throw new Exception("User or request info not found.");
+
+        // --- กำหนด Card Type และ Card Expiry Year ---
+        $card_type = ($request_info['user_type'] === 'army') ? 'internal' : 'external';
+        $creation_year = date('Y', strtotime($request_info['created_at']));
+        $card_expiry_year = (string)((int)$creation_year + 543); 
+
+        // --- สร้าง Card Number ---
+        $sql_max_card = "SELECT MAX(CAST(card_number AS UNSIGNED)) as max_num FROM vehicle_requests";
+        $result_max_card = $conn->query($sql_max_card);
+        $max_card_row = $result_max_card->fetch_assoc();
+        $next_card_num = ($max_card_row['max_num'] ?? 0) + 1;
+        $card_number = str_pad($next_card_num, 4, '0', STR_PAD_LEFT);
+
+
+        // --- สร้าง QR Code ---
+        $sql_key = "SELECT request_key FROM vehicle_requests WHERE id = ?";
+        $stmt_key = $conn->prepare($sql_key);
+        $stmt_key->bind_param("i", $request_id);
+        $stmt_key->execute();
+        $result_key = $stmt_key->get_result();
+        $req_data = $result_key->fetch_assoc();
+        $stmt_key->close();
+        
+        if(!$req_data) throw new Exception("Request key not found.");
+
+        $qr_content = "http://" . $_SERVER['HTTP_HOST'] . "/public/app/verify.php?key=" . $req_data['request_key'];
+        $qr_dir = "../../../../public/uploads/vehicle/QR/";
+        if (!file_exists($qr_dir)) {
+            mkdir($qr_dir, 0777, true);
+        }
+        $qr_file_path_relative = $qr_dir . $req_data['request_key'] . '.png';
+        // [แก้ไข] Parameter ตัวที่ 5 คือ margin, ตั้งเป็น 1 เพื่อลดขอบขาว
+        QRcode::png($qr_content, $qr_file_path_relative, QR_ECLEVEL_L, 4, 1);
+
+        // --- อัปเดตฐานข้อมูล ---
+        $sql = "UPDATE vehicle_requests SET 
+                    status = 'approved', 
+                    approved_by_id = ?, 
+                    approved_at = NOW(), 
+                    card_type = ?, 
+                    card_number = ?, 
+                    card_expiry_year = ? 
+                WHERE id = ?";
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param("isssi", $admin_id, $card_type, $card_number, $card_expiry_year, $request_id);
+        if(!$stmt->execute()) throw new Exception("Database update failed: " . $stmt->error);
+        
+        log_activity($conn, 'admin_approve_request', ['request_id' => $request_id]);
+        $response = ['success' => true, 'message' => 'อนุมัติคำร้องสำเร็จแล้ว', 'qr_code_url' => '/public/uploads/vehicle/QR/' . $req_data['request_key'] . '.png'];
+
+    } elseif ($action === 'reject') {
+        $rejection_reason = filter_var($data['reason'] ?? 'ไม่ระบุเหตุผล', FILTER_SANITIZE_STRING);
+        if (empty($rejection_reason)) {
+            throw new Exception("กรุณาระบุเหตุผลที่ไม่ผ่านการอนุมัติ");
+        }
+        
+        $sql = "UPDATE vehicle_requests SET 
+                    status = 'rejected', 
+                    approved_by_id = ?, 
+                    approved_at = NOW(),
+                    rejection_reason = ? 
+                WHERE id = ?";
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param("isi", $admin_id, $rejection_reason, $request_id);
+        if(!$stmt->execute()) throw new Exception("Database update failed: " . $stmt->error);
+        
+        log_activity($conn, 'admin_reject_request', ['request_id' => $request_id, 'reason' => $rejection_reason]);
+        $response = ['success' => true, 'message' => 'ปฏิเสธคำร้องสำเร็จแล้ว'];
+    }
+    
+    $stmt->close();
+    $conn->commit();
+
+} catch (Exception $e) {
+    $conn->rollback();
+    $response = ['success' => false, 'message' => 'เกิดข้อผิดพลาดในระบบ: ' . $e->getMessage()];
+}
+
+$conn->close();
+echo json_encode($response);
 ?>
 

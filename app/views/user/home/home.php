@@ -57,9 +57,16 @@ $user_photo_path = !empty($user['photo_profile']) ? "../../../../public/uploads/
 
 // แปลง user_type เป็นภาษาไทย
 $user_type_thai = '';
+$user_type_icon = '';
 switch ($user_type_eng) {
-    case 'army': $user_type_thai = 'ข้าราชการ/ลูกจ้าง/พนักงานราชการ ทบ.'; break;
-    case 'external': $user_type_thai = 'บุคคลภายนอก'; break;
+    case 'army': 
+        $user_type_thai = 'ข้าราชการ/ลูกจ้าง/พนักงานราชการ ทบ.'; 
+        $user_type_icon = '<i class="fa-solid fa-shield-halved text-slate-500"></i>';
+        break;
+    case 'external': 
+        $user_type_thai = 'บุคคลภายนอก'; 
+        $user_type_icon = '<i class="fa-solid fa-user text-slate-500"></i>';
+        break;
 }
 
 // --- ดึงข้อมูลสถิติ ---
@@ -106,7 +113,7 @@ $sql_dept = "SELECT name FROM departments ORDER BY display_order ASC, name ASC";
 $result_dept = $conn->query($sql_dept);
 if ($result_dept->num_rows > 0) {
     while($row = $result_dept->fetch_assoc()) {
-        $departments[] = $row;
+        $departments[] = $row['name'];
     }
 }
 
@@ -150,12 +157,13 @@ $conn->close();
         .alert-success.alert-soft { background-color: #dcfce7; border-color: #86efac; color: #166534; }
         .alert-info.alert-soft { background-color: #e0f2fe; border-color: #7dd3fc; color: #0369a1; }
         .alert-warning.alert-soft { background-color: #fef9c3; border-color: #fde047; color: #a16207; }
-        .input-disabled, .select-disabled, .textarea-disabled, input[type=text][disabled] {
+        .input-disabled, .select-disabled, .textarea-disabled, input[disabled], select[disabled] {
             background-color: #f3f4f6 !important;
             border-color: #e5e7eb !important;
             cursor: not-allowed;
-            color: #374151;
-            opacity: 1;
+            color: #111827 !important;
+            -webkit-text-fill-color: #111827 !important;
+            opacity: 1 !important;
         }
     </style>
 </head>
@@ -197,13 +205,23 @@ $conn->close();
 
             <!-- Main Content -->
             <main class="flex-grow container mx-auto max-w-4xl p-4">
-                <h1 class="text-xl sm:text-2xl font-bold mb-1">ยินดีต้อนรับ, <?php echo htmlspecialchars($title . ' ' . $firstname . ' ' . $lastname); ?></h1>
-                <p class="text-xs sm:text-sm text-gray-500">(ประเภทผู้สมัคร: <?php echo htmlspecialchars($user_type_thai); ?>)</p>
-                <?php if ($user['user_type'] === 'army' && !empty($user['work_department'])): ?>
-                <p class="text-xs sm:text-sm text-gray-500 mb-6">(สังกัด: <?php echo htmlspecialchars($user['work_department']); ?>)</p>
-                <?php else: ?>
-                <p class="mb-6"></p> <!-- Add margin bottom even if there's no department -->
-                <?php endif; ?>
+                <div class="block sm:flex sm:items-baseline sm:gap-2">
+                    <h1 class="text-xl sm:text-2xl font-bold mb-1">ยินดีต้อนรับ,</h1>
+                    <h1 class="text-xl sm:text-2xl font-bold"><?php echo htmlspecialchars($title . ' ' . $firstname . ' ' . $lastname); ?></h1>
+                </div>
+
+                <div class="flex flex-wrap gap-2 mt-2 mb-6">
+                    <div class="badge badge-lg badge-outline gap-2">
+                        <?php echo $user_type_icon; ?>
+                        <?php echo htmlspecialchars($user_type_thai); ?>
+                    </div>
+                    <?php if ($user['user_type'] === 'army' && !empty($user['work_department'])): ?>
+                    <div class="badge badge-lg badge-outline gap-2">
+                        <i class="fa-solid fa-sitemap text-slate-500"></i>
+                        สังกัด: <?php echo htmlspecialchars($user['work_department']); ?>
+                    </div>
+                    <?php endif; ?>
+                </div>
 
                 <!-- ส่วนที่ 1: ภาพรวม -->
                 <div id="overview-section" class="main-section">
@@ -410,7 +428,7 @@ $conn->close();
                                                 <div class="grid grid-cols-3 gap-2">
                                                     <div class="form-control w-full">
                                                         <div class="label"><span class="label-text">คำนำหน้า</span></div>
-                                                        <select id="profile-title" name="title" class="select select-sm select-bordered w-full input-disabled" disabled required>
+                                                        <select id="profile-title" name="title" class="select select-sm select-bordered w-full" disabled required>
                                                             <option disabled value="">เลือกคำนำหน้า</option>
                                                             <?php $titles = ["นาย", "นาง", "นางสาว", "พล.อ.", "พล.อ.หญิง", "พล.ท.", "พล.ท.หญิง", "พล.ต.", "พล.ต.หญิง", "พ.อ.", "พ.อ.หญิง", "พ.ท.", "พ.ท.หญิง", "พ.ต.", "พ.ต.หญิง", "ร.อ.", "ร.อ.หญิง", "ร.ท.", "ร.ท.หญิง", "ร.ต.", "ร.ต.หญิง", "จ.ส.อ.", "จ.ส.อ.หญิง", "จ.ส.ท.", "จ.ส.ท.หญิง", "จ.ส.ต.", "จ.ส.ต.หญิง", "ส.อ.", "ส.อ.หญิง", "ส.ท.", "ส.ท.หญิง", "ส.ต.", "ส.ต.หญิง", "พลทหาร"];
                                                             $is_other_title = !in_array($user['title'], $titles);
@@ -423,12 +441,12 @@ $conn->close();
                                                     </div>
                                                     <div class="form-control w-full">
                                                         <div class="label"><span class="label-text">ชื่อจริง</span></div>
-                                                        <input type="text" name="firstname" value="<?php echo htmlspecialchars($user['firstname']); ?>" class="input input-sm input-bordered w-full input-disabled" disabled required />
+                                                        <input type="text" name="firstname" value="<?php echo htmlspecialchars($user['firstname']); ?>" class="input input-sm input-bordered w-full" disabled required />
                                                         <p class="error-message hidden"></p>
                                                     </div>
                                                     <div class="form-control w-full">
                                                         <div class="label"><span class="label-text">นามสกุล</span></div>
-                                                        <input type="text" name="lastname" value="<?php echo htmlspecialchars($user['lastname']); ?>" class="input input-sm input-bordered w-full input-disabled" disabled required />
+                                                        <input type="text" name="lastname" value="<?php echo htmlspecialchars($user['lastname']); ?>" class="input input-sm input-bordered w-full" disabled required />
                                                         <p class="error-message hidden"></p>
                                                     </div>
                                                 </div>
@@ -438,15 +456,15 @@ $conn->close();
                                                     <div class="form-control w-full sm:col-span-9">
                                                         <div class="label"><span class="label-text">วันเดือนปีเกิด</span></div>
                                                         <div class="grid grid-cols-3 gap-2">
-                                                            <select id="profile-dob-day" name="dob_day" class="select select-sm select-bordered input-disabled" disabled required></select>
-                                                            <select id="profile-dob-month" name="dob_month" class="select select-sm select-bordered input-disabled" disabled required></select>
-                                                            <select id="profile-dob-year" name="dob_year" class="select select-sm select-bordered input-disabled" disabled required></select>
+                                                            <select id="profile-dob-day" name="dob_day" class="select select-sm select-bordered" disabled required></select>
+                                                            <select id="profile-dob-month" name="dob_month" class="select select-sm select-bordered" disabled required></select>
+                                                            <select id="profile-dob-year" name="dob_year" class="select select-sm select-bordered" disabled required></select>
                                                         </div>
                                                         <p class="error-message hidden"></p>
                                                     </div>
                                                      <div class="form-control w-full sm:col-span-3">
                                                         <div class="label"><span class="label-text">เพศ</span></div>
-                                                        <select name="gender" class="select select-sm select-bordered w-full input-disabled" disabled required>
+                                                        <select name="gender" class="select select-sm select-bordered w-full" disabled required>
                                                             <option disabled value="">เลือกเพศ</option>
                                                             <option value="ชาย" <?php echo $user['gender'] == 'ชาย' ? 'selected' : ''; ?>>ชาย</option>
                                                             <option value="หญิง" <?php echo $user['gender'] == 'หญิง' ? 'selected' : ''; ?>>หญิง</option>
@@ -457,23 +475,23 @@ $conn->close();
                                             </div>
                                             <div class="form-control w-full">
                                                 <div class="label"><span class="label-text">เบอร์โทร</span></div>
-                                                <input type="tel" name="phone" value="<?php echo htmlspecialchars($user['phone_number']); ?>" class="input input-sm input-bordered w-full input-disabled" disabled required maxlength="12" />
+                                                <input type="tel" name="phone" value="<?php echo htmlspecialchars($user['phone_number']); ?>" class="input input-sm input-bordered w-full" disabled required maxlength="12" />
                                                 <p class="error-message hidden"></p>
                                             </div>
                                             <div class="form-control w-full">
                                                 <div class="label"><span class="label-text">เลขบัตรประชาชน</span></div>
-                                                <input type="text" id="profile-national-id" name="national_id_display" value="<?php echo htmlspecialchars($user['national_id']); ?>" class="input input-sm input-bordered w-full input-disabled" disabled maxlength="17"/>
+                                                <input type="text" id="profile-national-id" name="national_id_display" value="<?php echo htmlspecialchars($user['national_id']); ?>" class="input input-sm input-bordered w-full" disabled maxlength="17"/>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                                 <div class="divider divider-start font-semibold mt-6">ที่อยู่ปัจจุบัน</div>
                                  <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-                                    <div class="form-control w-full sm:col-span-2 md:col-span-4"><div class="label"><span class="label-text">บ้านเลขที่/ที่อยู่</span></div><input type="text" name="address" value="<?php echo htmlspecialchars($user['address']); ?>" class="input input-sm input-bordered w-full input-disabled" disabled required /><p class="error-message hidden"></p></div>
-                                    <div class="form-control w-full"><div class="label"><span class="label-text">ตำบล/แขวง</span></div><input type="text" id="profile-subdistrict" name="subdistrict" value="<?php echo htmlspecialchars($user['subdistrict']); ?>" class="input input-sm input-bordered w-full input-disabled" disabled required /><p class="error-message hidden"></p></div>
-                                    <div class="form-control w-full"><div class="label"><span class="label-text">อำเภอ/เขต</span></div><input type="text" id="profile-district" name="district" value="<?php echo htmlspecialchars($user['district']); ?>" class="input input-sm input-bordered w-full input-disabled" disabled required /><p class="error-message hidden"></p></div>
-                                    <div class="form-control w-full"><div class="label"><span class="label-text">จังหวัด</span></div><input type="text" id="profile-province" name="province" value="<?php echo htmlspecialchars($user['province']); ?>" class="input input-sm input-bordered w-full input-disabled" disabled required /><p class="error-message hidden"></p></div>
-                                    <div class="form-control w-full"><div class="label"><span class="label-text">รหัสไปรษณีย์</span></div><input type="text" id="profile-zipcode" name="zipcode" value="<?php echo htmlspecialchars($user['zipcode']); ?>" class="input input-sm input-bordered w-full input-disabled" disabled required /><p class="error-message hidden"></p></div>
+                                    <div class="form-control w-full sm:col-span-2 md:col-span-4"><div class="label"><span class="label-text">บ้านเลขที่/ที่อยู่</span></div><input type="text" name="address" value="<?php echo htmlspecialchars($user['address']); ?>" class="input input-sm input-bordered w-full" disabled required /><p class="error-message hidden"></p></div>
+                                    <div class="form-control w-full"><div class="label"><span class="label-text">ตำบล/แขวง</span></div><input type="text" id="profile-subdistrict" name="subdistrict" value="<?php echo htmlspecialchars($user['subdistrict']); ?>" class="input input-sm input-bordered w-full" disabled required /><p class="error-message hidden"></p></div>
+                                    <div class="form-control w-full"><div class="label"><span class="label-text">อำเภอ/เขต</span></div><input type="text" id="profile-district" name="district" value="<?php echo htmlspecialchars($user['district']); ?>" class="input input-sm input-bordered w-full" disabled required /><p class="error-message hidden"></p></div>
+                                    <div class="form-control w-full"><div class="label"><span class="label-text">จังหวัด</span></div><input type="text" id="profile-province" name="province" value="<?php echo htmlspecialchars($user['province']); ?>" class="input input-sm input-bordered w-full" disabled required /><p class="error-message hidden"></p></div>
+                                    <div class="form-control w-full"><div class="label"><span class="label-text">รหัสไปรษณีย์</span></div><input type="text" id="profile-zipcode" name="zipcode" value="<?php echo htmlspecialchars($user['zipcode']); ?>" class="input input-sm input-bordered w-full" disabled required /><p class="error-message hidden"></p></div>
                                 </div>
                                 <?php if ($user['user_type'] === 'army'): ?>
                                 <div id="profile-work-info" class="mt-6">
@@ -481,30 +499,11 @@ $conn->close();
                                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                                         <div class="form-control w-full">
                                             <div class="label"><span class="label-text">สังกัด</span></div>
-                                            <!-- This input is for display only -->
-                                            <input type="text" 
-                                                   value="<?php echo htmlspecialchars($user['work_department'] ?? ''); ?>" 
-                                                   class="input input-sm input-bordered w-full input-disabled" 
-                                                   disabled />
-                                    
-                                            <!-- Hidden inputs to handle form submission without breaking the backend. -->
-                                            <!-- This field is now view-only as per the request. -->
-                                            <?php 
-                                                // Create a flat array of department names from the query result
-                                                $department_names = array_column($departments, 'name');
-                                                $is_other_dept = !in_array($user['work_department'], $department_names); 
-                                                
-                                                if ($is_other_dept && !empty($user['work_department'])) {
-                                            ?>
-                                                <input type="hidden" name="work_department" value="other" />
-                                                <input type="hidden" name="work_department_other" value="<?php echo htmlspecialchars($user['work_department']); ?>" />
-                                            <?php } else { ?>
-                                                <input type="hidden" name="work_department" value="<?php echo htmlspecialchars($user['work_department'] ?? ''); ?>" />
-                                                <input type="hidden" name="work_department_other" value="" />
-                                            <?php } ?>
+                                            <input type="text" name="work_department_display" value="<?php echo htmlspecialchars($user['work_department']); ?>" class="input input-sm input-bordered w-full" disabled />
+                                            <input type="hidden" name="work_department" value="<?php echo htmlspecialchars($user['work_department']); ?>" />
                                         </div>
-                                        <div class="form-control w-full"><div class="label"><span class="label-text">ตำแหน่ง</span></div><input type="text" name="position" value="<?php echo htmlspecialchars($user['position']); ?>" class="input input-sm input-bordered w-full input-disabled" disabled required /><p class="error-message hidden"></p></div>
-                                        <div class="form-control w-full"><div class="label"><span class="label-text">เลขบัตรข้าราชการ</span></div><input type="tel" name="official_id" value="<?php echo htmlspecialchars($user['official_id']); ?>" class="input input-sm input-bordered w-full input-disabled" disabled maxlength="10" /><p class="error-message hidden"></p></div>
+                                        <div class="form-control w-full"><div class="label"><span class="label-text">ตำแหน่ง</span></div><input type="text" name="position" value="<?php echo htmlspecialchars($user['position']); ?>" class="input input-sm input-bordered w-full" disabled required /><p class="error-message hidden"></p></div>
+                                        <div class="form-control w-full"><div class="label"><span class="label-text">เลขบัตรข้าราชการ</span></div><input type="tel" name="official_id" value="<?php echo htmlspecialchars($user['official_id']); ?>" class="input input-sm input-bordered w-full" disabled maxlength="10" /><p class="error-message hidden"></p></div>
                                     </div>
                                 </div>
                                 <?php endif; ?>
@@ -531,7 +530,33 @@ $conn->close();
 
     <!-- Modals -->
     <dialog id="exampleImageModal" class="modal"><div class="modal-box"><img id="example-image" src="" alt="ตัวอย่าง" class="w-full h-auto rounded-lg"><div class="modal-action"><form method="dialog"><button class="btn btn-sm">ปิด</button></form></div></div><form method="dialog" class="modal-backdrop"><button>close</button></form></dialog>
-    <dialog id="vehicleDetailModal" class="modal"><div class="modal-box max-w-3xl"><div class="flex justify-between items-center"><h3 class="font-bold text-lg" id="modal-title">รายละเอียดคำร้อง</h3><form method="dialog"><button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button></form></div><div id="modal-content" class="py-4"></div><div class="modal-action" id="modal-action-buttons"></div></div><form method="dialog" class="modal-backdrop"><button>close</button></form></dialog>
+    <dialog id="vehicleDetailModal" class="modal">
+        <div class="modal-box max-w-3xl">
+            <div id="modal-status-header" class="p-4 rounded-t-lg text-center">
+                <h3 class="font-bold text-lg" id="modal-status-text"></h3>
+                <p class="text-xs" id="modal-status-reason"></p>
+            </div>
+            <div class="card bg-base-100 rounded-t-none">
+                 <div class="card-body p-4">
+                     <div class="card bg-base-200 shadow-inner mb-4">
+                        <div class="card-body p-3 text-center">
+                            <p class="text-xs text-slate-500">รหัสคำร้อง</p>
+                            <p class="text-lg font-semibold" id="modal-search-id"></p>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <div id="modal-vehicle-info"></div>
+                            <div id="modal-owner-info" class="mt-4"></div>
+                            <div id="modal-qr-code" class="mt-4"></div>
+                        </div>
+                        <div id="modal-evidence-photos"></div>
+                    </div>
+                 </div>
+            </div>
+            <div class="modal-action bg-base-200 p-2 rounded-b-lg -m-4 mt-4" id="modal-action-buttons"></div>
+        </div>
+    </dialog>
     <dialog id="editVehicleModal" class="modal"><div class="modal-box max-w-4xl"><form method="dialog"><button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button></form><h3 class="font-bold text-lg">แก้ไขข้อมูลคำร้อง</h3><div class="py-4"><form action="../../../controllers/user/vehicle/edit_vehicle_process.php" method="POST" enctype="multipart/form-data" id="editVehicleForm" novalidate><input type="hidden" name="request_id" id="edit-request-id"><div class="divider divider-start font-semibold">ข้อมูลยานพาหนะ</div><div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"><div class="form-control w-full"><div class="label"><span class="label-text">ประเภทรถ</span></div><select name="vehicle_type" id="edit-vehicle-type" class="select select-bordered select-sm" required><option value="รถยนต์">รถยนต์</option><option value="รถจักรยานยนต์">รถจักรยานยนต์</option></select><p class="error-message hidden"></p></div><div class="form-control w-full"><div class="label"><span class="label-text">ยี่ห้อรถ</span></div><select name="vehicle_brand" id="edit-vehicle-brand" class="select select-bordered select-sm" required><?php foreach ($car_brands as $brand): ?><option value="<?php echo htmlspecialchars($brand); ?>"><?php echo htmlspecialchars($brand); ?></option><?php endforeach; ?></select><p class="error-message hidden"></p></div><div class="form-control w-full"><div class="label"><span class="label-text">รุ่นรถ</span></div><input type="text" name="vehicle_model" id="edit-vehicle-model" class="input input-bordered input-sm w-full" required /><p class="error-message hidden"></p></div><div class="form-control w-full"><div class="label"><span class="label-text">สีรถ</span></div><input type="text" name="vehicle_color" id="edit-vehicle-color" class="input input-bordered input-sm w-full" required /><p class="error-message hidden"></p></div><div class="form-control w-full"><div class="label"><span class="label-text">เลขทะเบียนรถ</span></div><input type="text" name="license_plate" id="edit-license-plate" class="input input-bordered input-sm w-full" required /><p class="error-message hidden"></p></div><div class="form-control w-full"><div class="label"><span class="label-text">จังหวัด</span></div><select name="license_province" id="edit-license-province" class="select select-bordered select-sm" required><?php foreach ($provinces as $province): ?><option value="<?php echo htmlspecialchars($province); ?>"><?php echo htmlspecialchars($province); ?></option><?php endforeach; ?></select><p class="error-message hidden"></p></div><div class="form-control w-full lg:col-span-2"><div class="label"><span class="label-text">วันสิ้นอายุภาษี</span></div><div class="grid grid-cols-3 gap-2"><select name="tax_day" id="edit-tax-day" class="select select-bordered select-sm" required></select><select name="tax_month" id="edit-tax-month" class="select select-bordered select-sm" required></select><select name="tax_year" id="edit-tax-year" class="select select-bordered select-sm" required></select></div><p class="error-message hidden"></p></div><div class="form-control w-full"><div class="label"><span class="label-text">เป็นรถของใคร?</span></div><select name="owner_type" id="edit-owner-type" class="select select-bordered select-sm" required><option value="self">รถชื่อตนเอง</option><option value="other">รถคนอื่น</option></select><p class="error-message hidden"></p></div></div><div id="edit-other-owner-details" class="hidden mt-4"><div class="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 border rounded-lg bg-base-200"><div class="form-control w-full"><div class="label"><span class="label-text">ชื่อ-สกุล เจ้าของ</span></div><input type="text" name="other_owner_name" id="edit-other-owner-name" class="input input-bordered input-sm w-full" /><p class="error-message hidden"></p></div><div class="form-control w-full"><div class="label"><span class="label-text">เกี่ยวข้องเป็น</span></div><input type="text" name="other_owner_relation" id="edit-other-owner-relation" class="input input-bordered input-sm w-full" /><p class="error-message hidden"></p></div></div></div><div class="divider divider-start font-semibold mt-8">หลักฐานรูปถ่าย (อัปโหลดใหม่เฉพาะที่ต้องการเปลี่ยน)</div><div class="grid grid-cols-1 lg:grid-cols-2 gap-6"><div class="form-control"><label class="block font-medium mb-2">สำเนาทะเบียนรถ</label><img id="edit-reg-copy-preview" src="" class="w-full h-40 object-contain rounded-lg border p-2 mb-2"><input type="file" name="reg_copy_upload" id="edit-reg-copy-upload" class="file-input file-input-bordered file-input-sm" accept=".jpg, .jpeg, .png"><p class="error-message hidden"></p></div><div class="form-control"><label class="block font-medium mb-2">ป้ายภาษี</label><img id="edit-tax-sticker-preview" src="" class="w-full h-40 object-contain rounded-lg border p-2 mb-2"><input type="file" name="tax_sticker_upload" id="edit-tax-sticker-upload" class="file-input file-input-bordered file-input-sm" accept=".jpg, .jpeg, .png"><p class="error-message hidden"></p></div><div class="form-control"><label class="block font-medium mb-2">รูปถ่ายรถด้านหน้า</label><img id="edit-front-view-preview" src="" class="w-full h-40 object-contain rounded-lg border p-2 mb-2"><input type="file" name="front_view_upload" id="edit-front-view-upload" class="file-input file-input-bordered file-input-sm" accept=".jpg, .jpeg, .png"><p class="error-message hidden"></p></div><div class="form-control"><label class="block font-medium mb-2">รูปถ่ายรถด้านหลัง</label><img id="edit-rear-view-preview" src="" class="w-full h-40 object-contain rounded-lg border p-2 mb-2"><input type="file" name="rear_view_upload" id="edit-rear-view-upload" class="file-input file-input-bordered file-input-sm" accept=".jpg, .jpeg, .png"><p class="error-message hidden"></p></div></div><div class="modal-action mt-6"><button type="button" class="btn btn-sm btn-ghost" onclick="document.getElementById('editVehicleModal').close()">ยกเลิก</button><button type="submit" class="btn btn-success btn-sm">ยืนยันการแก้ไข</button></div></form></div></div></dialog>
     <dialog id="resetConfirmModal" class="modal"><div class="modal-box"><h3 class="font-bold text-lg">ยืนยันการล้างข้อมูล</h3><p class="py-4">คุณแน่ใจหรือไม่ว่าต้องการล้างข้อมูลในฟอร์มทั้งหมด?</p><div class="modal-action"><button class="btn btn-sm" onclick="document.getElementById('resetConfirmModal').close()">ยกเลิก</button><button id="confirm-reset-btn" class="btn btn-error btn-sm">ยืนยัน</button></div></div><form method="dialog" class="modal-backdrop"><button>close</button></form></dialog>
     <dialog id="loadingModal" class="modal modal-middle"><div class="modal-box text-center"><span class="loading loading-spinner loading-lg text-primary"></span><h3 class="font-bold text-lg mt-4">กรุณารอสักครู่</h3><p class="py-4">ระบบกำลังบันทึกข้อมูล...<br>กรุณาอย่าปิดหรือรีเฟรชหน้านี้</p></div></dialog>
@@ -618,155 +643,101 @@ $conn->close();
 
             // --- Main Dashboard Logic ---
             function formatDateToThai(dateString) { if (!dateString || dateString.split('-').length < 3) return '-'; const months = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."]; const date = new Date(dateString); return `${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear() + 543}`; }
+            
             window.openDetailModal = function(cardElement) {
                 const modal = document.getElementById('vehicleDetailModal');
-                const modalTitle = modal.querySelector('#modal-title');
-                const modalContent = modal.querySelector('#modal-content');
-                const modalActionButtons = modal.querySelector('#modal-action-buttons');
-
-                const requestId = cardElement.dataset.requestId;
-                if (requestId) {
-                    fetch('../../../controllers/user/activity/log_view_action.php', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ request_id: requestId }) }).catch(error => console.error('Error logging view action:', error));
-                }
                 const data = cardElement.dataset;
-                modalTitle.innerHTML = `<div class="flex flex-col items-start sm:flex-row sm:justify-between sm:items-center w-full gap-2"><span>รายละเอียดคำร้อง: ${data.plate}</span><span class="badge ${data.statusClass} text-white font-semibold">${data.statusText}</span></div>`;
 
-                const isApproved = data.status === 'approved';
-
-                const translateCardType = (type) => {
-                    if (!isApproved || !type) return '-';
-                    if (type === 'internal') return 'ภายใน';
-                    if (type === 'external') return 'ภายนอก';
-                    return '-';
-                };
-
-                let rejectionReasonHTML = '';
-                if (data.status === 'rejected' && data.rejectionReason) {
-                    rejectionReasonHTML = `
-                        <div role="alert" class="alert alert-error alert-soft">
-                            <div class="flex items-start">
-                                <i class="fa-solid fa-circle-xmark text-lg mr-2 mt-1"></i>
-                                <div>
-                                    <h3 class="font-bold">เหตุผลที่ไม่ผ่านการอนุมัติ</h3>
-                                    <div class="text-xs">${data.rejectionReason}</div>
-                                </div>
-                            </div>
-                        </div>`;
+                // --- Log view action ---
+                if (data.requestId) {
+                    fetch('../../../controllers/user/activity/log_view_action.php', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ request_id: data.requestId }) }).catch(error => console.error('Error logging view action:', error));
                 }
                 
-                let qrCodeHTML = '';
-                if (isApproved && data.requestKey) {
+                // --- Set Status Header ---
+                const statusHeader = modal.querySelector('#modal-status-header');
+                const statusTextEl = modal.querySelector('#modal-status-text');
+                const statusReasonEl = modal.querySelector('#modal-status-reason');
+                statusHeader.className = `p-4 rounded-t-lg text-center`; // Reset classes
+                statusHeader.classList.add(data.statusClass.replace('badge-', 'bg-'), 'text-white');
+                statusTextEl.textContent = data.statusText;
+                statusReasonEl.textContent = '';
+                if(data.status === 'rejected' && data.rejectionReason) {
+                    statusReasonEl.textContent = `เหตุผล: ${data.rejectionReason}`;
+                }
+
+                // --- Set Search ID ---
+                modal.querySelector('#modal-search-id').textContent = data.searchId || '-';
+
+                // --- Vehicle & Owner Info ---
+                const vehicleInfoEl = modal.querySelector('#modal-vehicle-info');
+                const ownerInfoEl = modal.querySelector('#modal-owner-info');
+                const ownerDetailsHTML = data.ownerType === 'other' ? `<div class="grid grid-cols-2 gap-1"><div class="text-slate-500">ชื่อเจ้าของ</div><div>${data.otherOwnerName}</div><div class="text-slate-500">เกี่ยวข้องเป็น</div><div>${data.otherOwnerRelation}</div></div>` : '';
+                vehicleInfoEl.innerHTML = `
+                    <h3 class="font-semibold text-base mb-2"><i class="fa-solid fa-car-side opacity-70 mr-2"></i>ข้อมูลยานพาหนะ</h3>
+                    <div class="text-xs space-y-1 p-2 bg-base-200 rounded-md">
+                        <div class="grid grid-cols-2 gap-1"><div class="text-slate-500">ประเภท</div><div>${data.type}</div></div>
+                        <div class="grid grid-cols-2 gap-1"><div class="text-slate-500">ยี่ห้อ/รุ่น</div><div>${data.brand} / ${data.model}</div></div>
+                        <div class="grid grid-cols-2 gap-1"><div class="text-slate-500">สี</div><div>${data.color}</div></div>
+                        <div class="grid grid-cols-2 gap-1"><div class="text-slate-500">ทะเบียน</div><div>${data.plate} ${data.province}</div></div>
+                        <div class="grid grid-cols-2 gap-1"><div class="text-slate-500">สิ้นอายุภาษี</div><div>${formatDateToThai(data.taxExpiry)}</div></div>
+                    </div>`;
+                ownerInfoEl.innerHTML = `
+                    <h3 class="font-semibold text-base mb-2"><i class="fa-solid fa-user-check opacity-70 mr-2"></i>ความเป็นเจ้าของ</h3>
+                    <div class="text-xs space-y-1 p-2 bg-base-200 rounded-md">
+                        <div class="grid grid-cols-2 gap-1"><div class="text-slate-500">สถานะ</div><div>${data.ownerType === 'self' ? 'รถชื่อตนเอง' : 'รถคนอื่น'}</div></div>
+                        ${ownerDetailsHTML}
+                    </div>`;
+
+                // --- Evidence Photos ---
+                const evidencePhotosEl = modal.querySelector('#modal-evidence-photos');
+                evidencePhotosEl.innerHTML = `
+                    <h3 class="font-semibold text-base mb-2"><i class="fa-solid fa-images opacity-70 mr-2"></i>หลักฐาน</h3>
+                    <div class="grid grid-cols-2 gap-2 text-xs">
+                        <div class="text-center"><p class="font-semibold mb-1">ทะเบียนรถ</p><img src="${data.imgReg}" class="w-full h-24 object-cover rounded-md border cursor-pointer" onclick="openExampleModal('${data.imgReg}')"></div>
+                        <div class="text-center"><p class="font-semibold mb-1">ป้ายภาษี</p><img src="${data.imgTax}" class="w-full h-24 object-cover rounded-md border cursor-pointer" onclick="openExampleModal('${data.imgTax}')"></div>
+                        <div class="text-center"><p class="font-semibold mb-1">ด้านหน้า</p><img src="${data.imgFront}" class="w-full h-24 object-cover rounded-md border cursor-pointer" onclick="openExampleModal('${data.imgFront}')"></div>
+                        <div class="text-center"><p class="font-semibold mb-1">ด้านหลัง</p><img src="${data.imgRear}" class="w-full h-24 object-cover rounded-md border cursor-pointer" onclick="openExampleModal('${data.imgRear}')"></div>
+                    </div>`;
+                
+                // --- QR Code & Card Info ---
+                const qrCodeEl = modal.querySelector('#modal-qr-code');
+                qrCodeEl.innerHTML = '';
+                if (data.status === 'approved' && data.requestKey) {
                     const verifyUrl = `${window.location.origin}/public/app/verify.php?key=${data.requestKey}`;
                     const qr = qrcode(0, 'L');
                     qr.addData(verifyUrl);
                     qr.make();
                     const qrCodeImage = qr.createDataURL(4);
+                    const translateCardType = (type) => (type === 'internal' ? 'ภายใน' : (type === 'external' ? 'ภายนอก' : '-'));
 
-                    qrCodeHTML = `
-                        <div>
-                            <h3 class="card-title text-base mb-2"><i class="fa-solid fa-qrcode mr-2"></i> QR Code ข้อมูลบัตรผ่าน</h3>
-                            <div class="card bg-base-100 shadow-inner">
-                                <div class="card-body p-4 items-center text-center">
-                                    <img src="${qrCodeImage}" alt="QR Code" class="w-32 h-32 rounded-lg border">
-                                </div>
-                            </div>
+                    qrCodeEl.innerHTML = `
+                        <h3 class="font-semibold text-base mb-2"><i class="fa-solid fa-qrcode opacity-70 mr-2"></i>ข้อมูลบัตรผ่าน</h3>
+                        <div class="text-xs space-y-1 p-2 bg-base-200 rounded-md">
+                           <div class="flex flex-col items-center">
+                             <img src="${qrCodeImage}" alt="QR Code" class="w-28 h-28 rounded-lg border bg-white p-1">
+                           </div>
+                           <div class="grid grid-cols-2 gap-1 mt-2">
+                             <div class="text-slate-500">เลขที่บัตร</div><div>${data.cardNumber || '-'}</div>
+                             <div class="text-slate-500">ประเภทบัตร</div><div>${translateCardType(data.cardType)}</div>
+                             <div class="text-slate-500">ผู้อนุมัติ</div><div>${data.adminName}</div>
+                             <div class="text-slate-500">รับบัตรได้วันที่</div><div>${formatDateToThai(data.cardPickupDate)}</div>
+                             <div class="text-slate-500">บัตรหมดอายุ</div><div>สิ้นปี ${data.cardExpiryYear || '-'}</div>
+                           </div>
                         </div>`;
                 }
 
-
-                const ownerDetailsHTML = data.ownerType === 'other' ? `<div><div class="text-xs text-base-content/70">ชื่อ-สกุล เจ้าของ</div><div class="font-semibold">${data.otherOwnerName}</div></div><div><div class="text-xs text-base-content/70">เกี่ยวข้องเป็น</div><div class="font-semibold">${data.otherOwnerRelation}</div></div>` : '';
-                
-                modalContent.innerHTML = `
-                    <div class="space-y-4">
-                        ${rejectionReasonHTML}
-                        
-                        <div class="card bg-base-200 shadow-inner">
-                            <div class="card-body p-4">
-                                <h3 class="card-title text-base flex items-center gap-2"><i class="fa-solid fa-id-card"></i> ข้อมูลบัตรผ่าน</h3>
-                                <div class="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-2 text-sm mt-2">
-                                    <div>
-                                        <div class="text-xs text-base-content/70">รหัสคำร้อง</div>
-                                        <div class="flex items-center gap-2">
-                                            <span class="font-semibold font-mono">${data.searchId || '-'}</span>
-                                            ${data.searchId ? `<button id="copy-search-id-btn" class="btn btn-xs btn-ghost p-1" title="คัดลอกรหัสคำร้อง"><i class="fa-solid fa-copy"></i></button>` : ''}
-                                        </div>
-                                    </div>
-                                    <div><div class="text-xs text-base-content/70">ประเภทบัตร</div><div class="font-semibold">${translateCardType(data.cardType)}</div></div>
-                                    <div><div class="text-xs text-base-content/70">เลขที่บัตร</div><div class="font-semibold">${data.cardNumber}</div></div>
-                                    <div><div class="text-xs text-base-content/70">ผู้อนุมัติ</div><div class="font-semibold">${data.adminName}</div></div>
-                                    <div><div class="text-xs text-base-content/70">วันที่คาดว่าจะได้รับบัตร</div><div class="font-semibold">${formatDateToThai(data.cardPickupDate)}</div></div>
-                                    <div><div class="text-xs text-base-content/70">หมดอายุสิ้นปี (พ.ศ.)</div><div class="font-semibold">${isApproved ? (data.cardExpiryYear || '-') : '-'}</div></div>
-                                </div>
-                            </div>
-                        </div>
-
-                        ${qrCodeHTML}
-
-                        <div class="card bg-base-200 shadow-inner">
-                            <div class="card-body p-4">
-                                <h3 class="card-title text-base flex items-center gap-2"><i class="fa-solid fa-car-side"></i> ข้อมูลยานพาหนะ</h3>
-                                <div class="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-2 text-sm mt-2">
-                                    <div><div class="text-xs text-base-content/70">เลขทะเบียน</div><div class="font-semibold">${data.plate} ${data.province}</div></div>
-                                    <div><div class="text-xs text-base-content/70">ประเภท</div><div class="font-semibold">${data.type}</div></div>
-                                    <div><div class="text-xs text-base-content/70">ยี่ห้อ</div><div class="font-semibold">${data.brand}</div></div>
-                                    <div><div class="text-xs text-base-content/70">รุ่น</div><div class="font-semibold">${data.model}</div></div>
-                                    <div><div class="text-xs text-base-content/70">สี</div><div class="font-semibold">${data.color}</div></div>
-                                    <div><div class="text-xs text-base-content/70">วันสิ้นอายุภาษี</div><div class="font-semibold">${formatDateToThai(data.taxExpiry)}</div></div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="card bg-base-200 shadow-inner">
-                            <div class="card-body p-4">
-                                <h3 class="card-title text-base flex items-center gap-2"><i class="fa-solid fa-address-card"></i> ข้อมูลเจ้าของ</h3>
-                                <div class="grid grid-cols-2 gap-x-4 gap-y-2 text-sm mt-2">
-                                    <div><div class="text-xs text-base-content/70">ความเป็นเจ้าของ</div><div class="font-semibold">${data.ownerType === 'self' ? 'รถชื่อตนเอง' : 'รถคนอื่น'}</div></div>
-                                    ${ownerDetailsHTML}
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="card bg-base-200 shadow-inner">
-                            <div class="card-body p-4">
-                                <h3 class="card-title text-base flex items-center gap-2"><i class="fa-solid fa-images"></i> รูปภาพหลักฐาน</h3>
-                                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs mt-2">
-                                    <div class="text-center"><p class="font-semibold mb-1">ทะเบียนรถ</p><img src="${data.imgReg}" class="w-full h-24 object-cover rounded-md border cursor-pointer hover:scale-105 transition-transform" onclick="openExampleModal('${data.imgReg}')"></div>
-                                    <div class="text-center"><p class="font-semibold mb-1">ป้ายภาษี</p><img src="${data.imgTax}" class="w-full h-24 object-cover rounded-md border cursor-pointer hover:scale-105 transition-transform" onclick="openExampleModal('${data.imgTax}')"></div>
-                                    <div class="text-center"><p class="font-semibold mb-1">ด้านหน้า</p><img src="${data.imgFront}" class="w-full h-24 object-cover rounded-md border cursor-pointer hover:scale-105 transition-transform" onclick="openExampleModal('${data.imgFront}')"></div>
-                                    <div class="text-center"><p class="font-semibold mb-1">ด้านหลัง</p><img src="${data.imgRear}" class="w-full h-24 object-cover rounded-md border cursor-pointer hover:scale-105 transition-transform" onclick="openExampleModal('${data.imgRear}')"></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>`;
-
-                const copyBtn = modalContent.querySelector('#copy-search-id-btn');
-                if (copyBtn) {
-                    copyBtn.addEventListener('click', (e) => {
-                        e.preventDefault();
-                        const textToCopy = data.searchId;
-                        const tempTextarea = document.createElement('textarea');
-                        tempTextarea.value = textToCopy;
-                        document.body.appendChild(tempTextarea);
-                        tempTextarea.select();
-                        try {
-                            document.execCommand('copy');
-                            showAlert('คัดลอกรหัสคำร้องแล้ว!', 'success');
-                        } catch (err) {
-                            console.error('Failed to copy text: ', err);
-                            showAlert('ไม่สามารถคัดลอกได้', 'error');
-                        }
-                        document.body.removeChild(tempTextarea);
-                    });
-                }
-
+                // --- Action Buttons ---
+                const modalActionButtons = modal.querySelector('#modal-action-buttons');
                 let actionButtonsHTML = '<form method="dialog"><button class="btn btn-ghost btn-sm">ปิด</button></form>';
                 if (data.status === 'pending' || data.status === 'rejected') {
                     const dataString = JSON.stringify(data).replace(/"/g, '&quot;');
                     actionButtonsHTML = `<button class="btn btn-warning btn-sm" onclick='openEditModal(${dataString})'>แก้ไขคำร้อง</button>` + actionButtonsHTML;
                 }
                 modalActionButtons.innerHTML = actionButtonsHTML;
+
                 modal.showModal();
             }
+
             window.openExampleModal = function(imageUrl) { const modal = document.getElementById('exampleImageModal'); document.getElementById('example-image').src = imageUrl; modal.showModal(); }
             window.openEditModal = function(data) {
                 document.getElementById('vehicleDetailModal').close(); 
@@ -850,83 +821,13 @@ $conn->close();
             function calculatePickupDate(startDate = new Date()) {
                 const holidays = [
                     // --- ปี 2568 ---
-                    '2025-01-01', // วันขึ้นปีใหม่
-                    '2025-02-12', // วันมาฆบูชา
-                    '2025-04-07', // วันหยุดชดเชยวันจักรี
-                    '2025-04-14', // วันสงกรานต์
-                    '2025-04-15', // วันสงกรานต์
-                    '2025-04-16', // วันหยุดชดเชยวันสงกรานต์
-                    '2025-05-01', // วันแรงงานแห่งชาติ
-                    '2025-05-05', // วันหยุดชดเชยวันฉัตรมงคล
-                    '2025-05-12', // วันหยุดชดเชยวันวิสาขบูชา
-                    '2025-06-03', // วันเฉลิมพระชนมพรรษาสมเด็จพระนางเจ้าฯ พระบรมราชินี
-                    '2025-07-11', // วันอาสาฬหบูชา
-                    '2025-07-28', // วันเฉลิมพระชนมพรรษาพระบาทสมเด็จพระวชิรเกล้าเจ้าอยู่หัว
-                    '2025-08-12', // วันเฉลิมพระชนมพรรษาสมเด็จพระนางเจ้าสิริกิติ์ พระบรมราชินีนาถ พระบรมราชชนนีพันปีหลวง
-                    '2025-10-13', // วันคล้ายวันสวรรคต พระบาทสมเด็จพระบรมชนกาธิเบศร มหาภูมิพลอดุลยเดชมหาราช บรมนาถบพิตร
-                    '2025-10-23', // วันปิยมหาราช
-                    '2025-12-05', // วันคล้ายวันพระบรมราชสมภพ พระบาทสมเด็จพระบรมชนกาธิเบศร มหาภูมิพลอดุลยเดชมหาราช บรมนาถบพิตร
-                    '2025-12-10', // วันรัฐธรรมนูญ
-                    '2025-12-31', // วันสิ้นปี
-
+                    '2025-01-01', '2025-02-12', '2025-04-07', '2025-04-14', '2025-04-15', '2025-04-16', '2025-05-01', '2025-05-05', '2025-05-12', '2025-06-03', '2025-07-11', '2025-07-28', '2025-08-12', '2025-10-13', '2025-10-23', '2025-12-05', '2025-12-10', '2025-12-31',
                     // --- ปี 2569 ---
-                    '2026-01-01', // วันขึ้นปีใหม่
-                    '2026-03-02', // วันมาฆบูชา
-                    '2026-04-06', // วันจักรี
-                    '2026-04-13', // วันสงกรานต์
-                    '2026-04-14', // วันสงกรานต์
-                    '2026-04-15', // วันสงกรานต์
-                    '2026-05-01', // วันแรงงานแห่งชาติ
-                    '2026-05-04', // วันฉัตรมงคล
-                    '2026-06-01', // วันหยุดชดเชยวันวิสาขบูชา
-                    '2026-06-03', // วันเฉลิมพระชนมพรรษาสมเด็จพระนางเจ้าฯ พระบรมราชินี
-                    '2026-07-28', // วันเฉลิมพระชนมพรรษาพระบาทสมเด็จพระวชิรเกล้าเจ้าอยู่หัว
-                    '2026-07-29', // วันอาสาฬหบูชา
-                    '2026-08-12', // วันเฉลิมพระชนมพรรษาสมเด็จพระนางเจ้าสิริกิติ์ พระบรมราชินีนาถ พระบรมราชชนนีพันปีหลวง
-                    '2026-10-13', // วันคล้ายวันสวรรคต พระบาทสมเด็จพระบรมชนกาธิเบศร มหาภูมิพลอดุลยเดชมหาราช บรมนาถบพิตร
-                    '2026-10-23', // วันปิยมหาราช
-                    '2026-12-07', // วันหยุดชดเชยวันคล้ายวันพระบรมราชสมภพของรัชกาลที่ 9
-                    '2026-12-10', // วันรัฐธรรมนูญ
-                    '2026-12-31', // วันสิ้นปี
-
+                    '2026-01-01', '2026-03-02', '2026-04-06', '2026-04-13', '2026-04-14', '2026-04-15', '2026-05-01', '2026-05-04', '2026-06-01', '2026-06-03', '2026-07-28', '2026-07-29', '2026-08-12', '2026-10-13', '2026-10-23', '2026-12-07', '2026-12-10', '2026-12-31',
                     // --- ปี 2570 ---
-                    '2027-01-01', // วันขึ้นปีใหม่
-                    '2027-02-19', // วันมาฆบูชา
-                    '2027-04-06', // วันจักรี
-                    '2027-04-13', // วันสงกรานต์
-                    '2027-04-14', // วันสงกรานต์
-                    '2027-04-15', // วันสงกรานต์
-                    '2027-05-03', // วันหยุดชดเชยวันแรงงานแห่งชาติ
-                    '2027-05-04', // วันฉัตรมงคล
-                    '2027-05-19', // วันวิสาขบูชา
-                    '2027-06-03', // วันเฉลิมพระชนมพรรษาสมเด็จพระนางเจ้าฯ พระบรมราชินี
-                    '2027-07-19', // วันหยุดชดเชยวันอาสาฬหบูชา
-                    '2027-07-28', // วันเฉลิมพระชนมพรรษาพระบาทสมเด็จพระวชิรเกล้าเจ้าอยู่หัว
-                    '2027-08-12', // วันเฉลิมพระชนมพรรษาสมเด็จพระนางเจ้าสิริกิติ์ พระบรมราชินีนาถ พระบรมราชชนนีพันปีหลวง
-                    '2027-10-13', // วันคล้ายวันสวรรคต พระบาทสมเด็จพระบรมชนกาธิเบศร มหาภูมิพลอดุลยเดชมหาราช บรมนาถบพิตร
-                    '2027-10-25', // วันหยุดชดเชยวันปิยมหาราช
-                    '2027-12-06', // วันหยุดชดเชยวันคล้ายวันพระบรมราชสมภพของรัชกาลที่ 9
-                    '2027-12-10', // วันรัฐธรรมนูญ
-                    '2027-12-31', // วันสิ้นปี
-
+                    '2027-01-01', '2027-02-19', '2027-04-06', '2027-04-13', '2027-04-14', '2027-04-15', '2027-05-03', '2027-05-04', '2027-05-19', '2027-06-03', '2027-07-19', '2027-07-28', '2027-08-12', '2027-10-13', '2027-10-25', '2027-12-06', '2027-12-10', '2027-12-31',
                     // --- ปี 2571 ---
-                    '2028-01-03', // วันหยุดชดเชยวันขึ้นปีใหม่
-                    '2028-02-08', // วันมาฆบูชา
-                    '2028-04-06', // วันจักรี
-                    '2028-04-13', // วันสงกรานต์
-                    '2028-04-14', // วันสงกรานต์
-                    '2028-04-17', // วันหยุดชดเชยวันสงกรานต์
-                    '2028-05-01', // วันแรงงานแห่งชาติ
-                    '2028-05-04', // วันฉัตรมงคล
-                    '2028-05-08', // วันหยุดชดเชยวันวิสาขบูชา
-                    '2028-06-05', // วันหยุดชดเชยวันเฉลิมพระชนมพรรษาสมเด็จพระนางเจ้าฯ พระบรมราชินี
-                    '2028-07-06', // วันอาสาฬหบูชา
-                    '2028-07-28', // วันเฉลิมพระชนมพรรษาพระบาทสมเด็จพระวชิรเกล้าเจ้าอยู่หัว
-                    '2028-08-14', // วันหยุดชดเชยวันเฉลิมพระชนมพรรษาสมเด็จพระนางเจ้าสิริกิติ์ พระบรมราชินีนาถ พระบรมราชชนนีพันปีหลวง
-                    '2028-10-13', // วันคล้ายวันสวรรคต พระบาทสมเด็จพระบรมชนกาธิเบศร มหาภูมิพลอดุลยเดชมหาราช บรมนาถบพิตร
-                    '2028-10-23', // วันปิยมหาราช
-                    '2028-12-05', // วันคล้ายวันพระบรมราชสมภพ พระบาทสมเด็จพระบรมชนกาธิเบศร มหาภูมิพลอดุลยเดชมหาราช บรมนาถบพิตร
-                    '2028-12-11', // วันหยุดชดเชยวันรัฐธรรมนูญ
+                    '2028-01-03', '2028-02-08', '2028-04-06', '2028-04-13', '2028-04-14', '2028-04-17', '2028-05-01', '2028-05-04', '2028-05-08', '2028-06-05', '2028-07-06', '2028-07-28', '2028-08-14', '2028-10-13', '2028-10-23', '2028-12-05', '2028-12-11',
                 ];
                 let workingDays = 0;
                 let currentDate = new Date(startDate);
@@ -935,7 +836,6 @@ $conn->close();
                     currentDate.setDate(currentDate.getDate() + 1);
                     const dayOfWeek = currentDate.getDay();
                     const dateString = currentDate.toISOString().slice(0, 10);
-
                     if (dayOfWeek !== 0 && dayOfWeek !== 6 && !holidays.includes(dateString)) {
                         workingDays++;
                     }
@@ -949,7 +849,6 @@ $conn->close();
                 const pickupDate = calculatePickupDate();
 
                 let html = '<div class="grid grid-cols-1 md:grid-cols-2 gap-4">';
-
                 html += `<div class="md:col-span-1">
                             <div class="font-bold text-base-content/70 text-xs uppercase tracking-wider mb-1">หลักฐานรูปถ่าย</div>
                             <div class="grid grid-cols-2 gap-2 p-2 bg-base-200 rounded-md">
@@ -959,7 +858,6 @@ $conn->close();
                                 <div><img src="${document.getElementById('rear-view-preview').src}" class="w-full h-24 object-cover rounded-lg border"><p class="text-[10px] font-semibold text-center mt-1">รูปถ่ายด้านหลัง</p></div>
                             </div>
                          </div>`;
-
                 html += '<div class="md:col-span-1 space-y-3">';
                 const taxDate = `${formData.get('tax_day')} ${document.getElementById('tax-month').options[document.getElementById('tax-month').selectedIndex].text} ${formData.get('tax_year')}`;
                 html += `<div>
@@ -973,7 +871,6 @@ $conn->close();
                                 <div class="col-span-2"><strong>วันสิ้นอายุภาษี:</strong> ${taxDate}</div>
                             </div>
                         </div>`;
-
                 const ownerType = formData.get('owner_type');
                 html += '<div>';
                 html += '<div class="font-bold text-base-content/70 text-xs uppercase tracking-wider mb-1">ข้อมูลเจ้าของ</div>';
@@ -986,7 +883,6 @@ $conn->close();
                     html += `<div><strong>เกี่ยวข้องเป็น:</strong> ${formData.get('other_owner_relation') || '-'}</div>`;
                 }
                 html += '</div></div>';
-
                 html += `<div>
                             <div class="font-bold text-base-content/70 text-xs uppercase tracking-wider mb-1">กำหนดการ</div>
                             <div class="p-2 bg-blue-100 border border-blue-200 rounded-md text-center">
@@ -994,7 +890,6 @@ $conn->close();
                                 <p class="font-bold text-blue-900">${formatDateToThai(pickupDate.toISOString().slice(0, 10))}</p>
                             </div>
                         </div>`;
-                
                 html += '</div>';
                 html += '</div>';
                 summaryContent.innerHTML = html;
@@ -1052,20 +947,18 @@ $conn->close();
             function validateField(form, field) {
                 let isValid = true;
                 const value = field.value.trim();
-                clearError(field); // Clear previous errors first
+                clearError(field);
 
                 if (field.type === 'file') {
-                    // Check for file size if a file is selected
                     if (field.files.length > 0) {
                         const file = field.files[0];
-                        const maxSize = 5 * 1024 * 1024; // 5 MB
+                        const maxSize = 5 * 1024 * 1024;
                         if (file.size > maxSize) {
                             showError(field, 'ไฟล์ต้องมีขนาดไม่เกิน 5 MB');
-                            field.value = ''; // Clear the invalid file selection
+                            field.value = '';
                             isValid = false;
                         }
                     } 
-                    // Check for required file if no file is selected
                     else if (field.hasAttribute('required')) {
                         showError(field, 'กรุณาอัปโหลดไฟล์');
                         isValid = false;
@@ -1093,14 +986,13 @@ $conn->close();
             const editDaySelect = document.getElementById('edit-tax-day'); const editMonthSelect = document.getElementById('edit-tax-month'); const editYearSelect = document.getElementById('edit-tax-year'); for (let i = 1; i <= 31; i++) { editDaySelect.innerHTML += `<option value="${i}">${i}</option>`; } months.forEach((month, i) => { editMonthSelect.innerHTML += `<option value="${i + 1}">${month}</option>`; }); for (let i = currentYearBE; i <= currentYearBE + 10; i++) { editYearSelect.innerHTML += `<option value="${i}">${i}</option>`; }
             document.getElementById('edit-vehicle-model').addEventListener('input', function() { this.value = this.value.toUpperCase().replace(/[^A-Z0-9\s-]/g, ''); }); document.getElementById('edit-vehicle-color').addEventListener('input', function() { this.value = this.value.replace(/[^ก-๙]/g, ''); }); document.getElementById('edit-license-plate').addEventListener('input', function() { this.value = this.value.replace(/[^ก-๙0-9\s]/g, ''); });
             
-            // --- [แก้ไข] Validation สำหรับไฟล์ในฟอร์มแก้ไข ---
             const editFileInputs = editVehicleForm.querySelectorAll('input[type="file"]');
             editFileInputs.forEach(input => {
                 input.addEventListener('change', () => {
                     clearError(input);
                     if (input.files.length > 0) {
                         const file = input.files[0];
-                        const maxSize = 5 * 1024 * 1024; // 5 MB
+                        const maxSize = 5 * 1024 * 1024;
                         if (file.size > maxSize) {
                             showError(input, 'ไฟล์ต้องมีขนาดไม่เกิน 5 MB');
                         }
@@ -1115,11 +1007,10 @@ $conn->close();
                 let isFormValid = true;
                 let hasOversizedFiles = false;
 
-                // ตรวจสอบขนาดไฟล์ทั้งหมดก่อน
                 editFileInputs.forEach(input => {
                     if (input.files.length > 0) {
                         const file = input.files[0];
-                        const maxSize = 5 * 1024 * 1024; // 5 MB
+                        const maxSize = 5 * 1024 * 1024;
                         if (file.size > maxSize) {
                             showError(input, 'ไฟล์ต้องมีขนาดไม่เกิน 5 MB');
                             hasOversizedFiles = true;
@@ -1128,24 +1019,17 @@ $conn->close();
                     }
                 });
 
-                // ตรวจสอบฟิลด์ที่จำเป็นอื่นๆ
                 editVehicleForm.querySelectorAll('[required]').forEach(field => {
                     if (!validateField(editVehicleForm, field)) {
                         isFormValid = false;
                     }
                 });
 
-                // --- จัดการผลการตรวจสอบ ---
                 if (!isFormValid) {
-                    if (hasOversizedFiles) {
-                         // showAlert('ไม่สามารถบันทึกได้: มีไฟล์รูปภาพขนาดใหญ่เกิน 5 MB', 'error');
-                    } else {
-                        showAlert('กรุณากรอกข้อมูลให้ครบถ้วนและถูกต้อง', 'error');
-                    }
-                    return; // หยุดการทำงานทันที
+                    showAlert('กรุณากรอกข้อมูลให้ถูกต้อง', 'error');
+                    return;
                 }
 
-                // --- ถ้าข้อมูลทั้งหมดถูกต้อง, ดำเนินการต่อไป ---
                 const submitButton = editVehicleForm.querySelector('button[type="submit"]');
                 const originalButtonContent = submitButton.innerHTML;
                 submitButton.innerHTML = '<span class="loading loading-spinner loading-sm"></span> กำลังตรวจสอบ...';
@@ -1186,7 +1070,7 @@ $conn->close();
                 const saveBtn = document.getElementById('save-profile-btn');
                 const cancelBtn = document.getElementById('cancel-edit-btn');
                 const profileForm = document.getElementById('profileForm');
-                const formInputs = profileForm.querySelectorAll('input:not([type=file]):not([type=hidden]), select, textarea');
+                const formInputs = profileForm.querySelectorAll('input:not([type=file]), select, textarea');
                 const fileInput = document.getElementById('profile-photo-upload');
                 const photoGuidance = document.getElementById('photo-guidance');
                 const daySelectP = document.getElementById('profile-dob-day'); 
@@ -1207,7 +1091,7 @@ $conn->close();
                     
                     if (field.type === 'file' && field.files.length > 0) {
                         const file = field.files[0];
-                        const maxSize = 5 * 1024 * 1024; // 5 MB
+                        const maxSize = 5 * 1024 * 1024;
                         if (file.size > maxSize) {
                             showError(field, 'ไฟล์ต้องมีขนาดไม่เกิน 5 MB');
                             isFileSizeValid = false;
@@ -1222,7 +1106,6 @@ $conn->close();
 
                     if (isValid) {
                         if (field.name === 'title' && value === 'other' && profileForm.querySelector('[name="title_other"]').value.trim() === '') { showError(profileForm.querySelector('[name="title_other"]'), 'กรุณาระบุคำนำหน้า'); isValid = false; }
-                        else if (field.name === 'work_department' && value === 'other' && profileForm.querySelector('[name="work_department_other"]').value.trim() === '') { showError(profileForm.querySelector('[name="work_department_other"]'), 'กรุณาระบุสังกัด'); isValid = false; }
                         else if (field.name === 'phone' && value.replace(/\D/g, '').length !== 10) { showError(field, 'กรุณากรอกเบอร์โทรศัพท์ 10 หลัก'); isValid = false;}
                         else if (field.name === 'official_id' && value.length > 0 && value.length !== 10) { showError(field, 'กรุณากรอกเลขบัตรให้ครบ 10 หลัก'); isValid = false;}
                     }
@@ -1231,7 +1114,9 @@ $conn->close();
 
                 const toggleEditMode = (isEditing) => {
                     formInputs.forEach(input => {
-                        if (input.name === 'national_id_display' || input.closest('.form-control')?.querySelector('.label-text')?.textContent === 'สังกัด') return;
+                        // Skip inputs that should never be editable
+                        if (input.name === 'national_id_display' || input.name === 'work_department_display' || input.name === 'work_department') return;
+
                         if (isEditing) { 
                             input.removeAttribute('disabled'); 
                             input.classList.remove('input-disabled');
@@ -1314,7 +1199,7 @@ $conn->close();
                     if (!isPhoneValid) return;
 
                     let isFormValid = true;
-                    profileForm.querySelectorAll('input, select').forEach(field => {
+                    profileForm.querySelectorAll('input:not([disabled]), select:not([disabled])').forEach(field => {
                         if (!validateProfileField(field)) {
                             isFormValid = false;
                         }
@@ -1328,25 +1213,31 @@ $conn->close();
                     }
                 });
                 
-                fileInput.addEventListener('change', function() {
-                    const file = this.files[0];
+                fileInput.addEventListener('change', function(event) {
+                    const file = event.target.files[0];
+                    const previewElement = document.getElementById('profile-photo-preview');
                     if (file) {
                         const maxSize = 5 * 1024 * 1024;
                         clearError(this);
-                        
+
                         if (file.size > maxSize) {
                             showError(this, 'ไฟล์ต้องมีขนาดไม่เกิน 5 MB');
                             showAlert('ไฟล์รูปภาพมีขนาดใหญ่เกิน 5 MB', 'error');
-                            this.value = ''; 
-                            document.getElementById('profile-photo-preview').src = originalPhotoSrc;
+                            this.value = '';
+                            previewElement.src = originalPhotoSrc;
                             isFileSizeValid = false;
                         } else {
                             isFileSizeValid = true;
-                            setupImagePreview('profile-photo-upload', 'profile-photo-preview');
+                            const reader = new FileReader();
+                            reader.onload = (e) => {
+                                previewElement.src = e.target.result;
+                            };
+                            reader.readAsDataURL(file);
                         }
                     } else {
                         isFileSizeValid = true;
                         clearError(this);
+                        previewElement.src = originalPhotoSrc;
                     }
                 });
 
@@ -1370,13 +1261,21 @@ $conn->close();
                      if(this.value === 'other') otherInput.setAttribute('required', '');
                      else { otherInput.removeAttribute('required'); clearError(otherInput); }
                 });
+
+                // --- [ใหม่] บังคับภาษาไทยและตัวเลขสำหรับช่องที่อยู่ ---
+                ['profile-subdistrict', 'profile-district', 'profile-province', 'profile-zipcode'].forEach(id => {
+                    const input = document.getElementById(id);
+                    if(input) {
+                        input.addEventListener('input', function() {
+                            this.value = this.value.replace(/[^ก-๙0-9\s]/g, '');
+                        });
+                    }
+                });
                 
                 profileForm.querySelector('[name="firstname"]').addEventListener('input', function() { this.value = this.value.replace(/[^ก-๙\s]/g, ''); });
                 profileForm.querySelector('[name="lastname"]').addEventListener('input', function() { this.value = this.value.replace(/[^ก-๙\s]/g, ''); });
                 profileForm.querySelector('[name="title_other"]').addEventListener('input', function() { this.value = this.value.replace(/[^ก-๙\s.()]/g, ''); });
                 profileForm.querySelector('[name="address"]').addEventListener('input', function() { this.value = this.value.replace(/[^ก-๙0-9\s.\-\/]/g, ''); });
-                const positionInput = profileForm.querySelector('[name="position"]');
-                if (positionInput) positionInput.addEventListener('input', function() {  });
                 
                 phoneInput.addEventListener('input', function() {
                     formatInput(this, 'xxx-xxx-xxxx');
@@ -1385,7 +1284,6 @@ $conn->close();
                 const officialIdInput = profileForm.querySelector('[name="official_id"]');
                 if (officialIdInput) officialIdInput.addEventListener('input', function() { this.value = this.value.replace(/\D/g, ''); });
                 
-                // Format initial values
                 formatInput(phoneInput, 'xxx-xxx-xxxx');
                 formatInput(nationalIdInput, 'x-xxxx-xxxxx-xx-x');
             }
@@ -1393,3 +1291,4 @@ $conn->close();
     </script>
 </body>
 </html>
+
