@@ -92,20 +92,24 @@ $conn->close();
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <?php foreach ($all_users as $user): ?>
-                                    <tr>
-                                        <td class="font-semibold whitespace-nowrap"><?php echo htmlspecialchars($user['title'] . $user['firstname'] . ' ' . $user['lastname']); ?></td>
-                                        <td class="whitespace-nowrap"><?php echo htmlspecialchars($user['phone_number']); ?></td>
-                                        <td class="whitespace-nowrap"><?php echo $user['user_type'] === 'army' ? 'ข้าราชการ' : 'บุคคลภายนอก'; ?></td>
-                                        <td class="whitespace-nowrap"><?php echo htmlspecialchars($user['work_department'] ?? '-'); ?></td>
-                                        <td class="whitespace-nowrap"><?php echo date('d/m/Y', strtotime($user['created_at'])); ?></td>
-                                        <td>
-                                            <div class="tooltip" data-tip="ดูรายละเอียด">
-                                                <button class="btn btn-xs btn-ghost btn-square"><i class="fa-solid fa-eye text-info"></i></button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                    <?php endforeach; ?>
+                                    <?php if (empty($all_users)): ?>
+                                        <tr><td colspan="6" class="text-center text-slate-500 py-4">ไม่พบข้อมูลผู้ใช้ในระบบ</td></tr>
+                                    <?php else: ?>
+                                        <?php foreach ($all_users as $user): ?>
+                                        <tr>
+                                            <td class="font-semibold whitespace-nowrap"><?php echo htmlspecialchars($user['title'] . $user['firstname'] . ' ' . $user['lastname']); ?></td>
+                                            <td class="whitespace-nowrap"><?php echo htmlspecialchars($user['phone_number']); ?></td>
+                                            <td class="whitespace-nowrap"><?php echo $user['user_type'] === 'army' ? 'ข้าราชการ' : 'บุคคลภายนอก'; ?></td>
+                                            <td class="whitespace-nowrap"><?php echo htmlspecialchars($user['work_department'] ?? '-'); ?></td>
+                                            <td class="whitespace-nowrap"><?php echo date('d/m/Y', strtotime($user['created_at'])); ?></td>
+                                            <td>
+                                                <div class="tooltip" data-tip="ดูรายละเอียด">
+                                                    <button class="btn btn-xs btn-ghost btn-square"><i class="fa-solid fa-eye text-info"></i></button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        <?php endforeach; ?>
+                                    <?php endif; ?>
                                      <tr id="no-results-row" class="hidden"><td colspan="6" class="text-center text-slate-500 py-4">ไม่พบข้อมูลผู้ใช้ที่ค้นหา</td></tr>
                                 </tbody>
                             </table>
@@ -117,7 +121,7 @@ $conn->close();
 
         <div class="drawer-side">
             <label for="my-drawer-2" class="drawer-overlay"></label> 
-            <ul class="menu p-4 w-64 min-h-full bg-base-200 text-base-content space-y-1" id="sidebar-menu">
+            <ul class="menu p-4 w-56 min-h-full bg-base-200 text-base-content space-y-1" id="sidebar-menu">
                  <li class="mb-4">
                     <a href="../home/home.php" class="text-xl font-bold flex items-center gap-2">
                         <img src="https://img2.pic.in.th/pic/CARPASS-logo11af8574a9cc9906.png" alt="Logo" class="h-10 w-10">
@@ -143,7 +147,7 @@ $conn->close();
         <script>
     document.addEventListener('DOMContentLoaded', function() {
         const currentPage = window.location.pathname;
-        const menuLinks = document.querySelectorAll('#sidebar-menu a');
+        const menuLinks = document.querySelectorAll('#sidebar-menu > li:not(.mb-4) > a');
         
         menuLinks.forEach(link => link.classList.remove('active'));
 

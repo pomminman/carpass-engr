@@ -113,7 +113,7 @@ $sql_dept = "SELECT name FROM departments ORDER BY display_order ASC, name ASC";
 $result_dept = $conn->query($sql_dept);
 if ($result_dept->num_rows > 0) {
     while($row = $result_dept->fetch_assoc()) {
-        $departments[] = $row['name'];
+        $departments[] = $row;
     }
 }
 
@@ -165,6 +165,8 @@ $conn->close();
             -webkit-text-fill-color: #111827 !important;
             opacity: 1 !important;
         }
+        #zoomed-image-container { display: inline-block; position: relative; }
+        #zoomed-image { max-height: 85vh; width: auto; margin: auto; object-fit: contain; }
     </style>
 </head>
 <body class="bg-gray-100">
@@ -188,6 +190,8 @@ $conn->close();
                         <!-- เมนูสำหรับหน้าจอคอมพิวเตอร์ -->
                         <li><a href="#overview-section" class="active"><i class="fa-solid fa-chart-pie w-4"></i> ภาพรวม</a></li>
                         <li><a href="#add-vehicle-section"><i class="fa-solid fa-file-circle-plus w-4"></i> เพิ่มยานพาหนะ/ยื่นคำร้อง</a></li>
+                        <li><a href="#costs-section"><i class="fa-solid fa-hand-holding-dollar w-4"></i> ขั้นตอนและค่าใช้จ่าย</a></li>
+                        <li><a href="#contact-section"><i class="fa-solid fa-address-book w-4"></i> ติดต่อ</a></li>
                         <li><a href="#profile-section"><i class="fa-solid fa-user-pen w-4"></i> ข้อมูลส่วนตัว</a></li>
                     </ul>
                     <div class="divider lg:divider-horizontal mx-2"></div>
@@ -361,11 +365,47 @@ $conn->close();
                                         </ul>
                                     </div>
                                 </div>
-                                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
-                                    <div class="border border-base-300 rounded-lg p-4"><label class="block font-medium mb-2 text-center">สำเนาทะเบียนรถ</label><div class="form-control w-full mx-auto"><div class="flex justify-center bg-base-200 p-2 rounded-lg border"><img id="reg-copy-preview" src="https://img5.pic.in.th/file/secure-sv1/registration.jpg" alt="ตัวอย่างสำเนาทะเบียนรถ" class="w-full max-h-48 rounded-lg object-contain" onerror="this.onerror=null;this.src='https://placehold.co/400x248/CCCCCC/FFFFFF?text=Example';"></div><input type="file" name="reg_copy_upload" id="reg-copy-upload" class="file-input file-input-bordered file-input-sm w-full mt-2" accept=".jpg, .jpeg, .png" required><p class="error-message hidden"></p></div></div>
-                                    <div class="border border-base-300 rounded-lg p-4"><label class="block font-medium mb-2 text-center">ป้ายภาษีรถยนต์ (ป้ายวงกลม)</label><div class="form-control w-full mx-auto"><div class="flex justify-center bg-base-200 p-2 rounded-lg border"><img id="tax-sticker-preview" src="https://img2.pic.in.th/pic/tax_sticker.jpg" alt="ตัวอย่างป้ายภาษี" class="w-full max-h-48 rounded-lg object-contain" onerror="this.onerror=null;this.src='https://placehold.co/400x248/CCCCCC/FFFFFF?text=Example';"></div><input type="file" name="tax_sticker_upload" id="tax-sticker-upload" class="file-input file-input-bordered file-input-sm w-full mt-2" accept=".jpg, .jpeg, .png" required><p class="error-message hidden"></p></div></div>
-                                    <div class="border border-base-300 rounded-lg p-4"><label class="block font-medium mb-2 text-center">รูปถ่ายรถด้านหน้า</label><div class="form-control w-full mx-auto"><div class="flex justify-center bg-base-200 p-2 rounded-lg border"><img id="front-view-preview" src="https://img2.pic.in.th/pic/front_view.png" alt="ตัวอย่างรูปถ่ายรถด้านหน้า" class="w-full max-h-48 rounded-lg object-contain" onerror="this.onerror=null;this.src='https://placehold.co/400x248/CCCCCC/FFFFFF?text=Example';"></div><input type="file" name="front_view_upload" id="front-view-upload" class="file-input file-input-bordered file-input-sm w-full mt-2" accept=".jpg, .jpeg, .png" required><p class="error-message hidden"></p></div></div>
-                                    <div class="border border-base-300 rounded-lg p-4"><label class="block font-medium mb-2 text-center">รูปถ่ายรถด้านหลัง</label><div class="form-control w-full mx-auto"><div class="flex justify-center bg-base-200 p-2 rounded-lg border"><img id="rear-view-preview" src="https://img5.pic.in.th/file/secure-sv1/rear_view.png" alt="ตัวอย่างรูปถ่ายรถด้านหลัง" class="w-full max-h-48 rounded-lg object-contain" onerror="this.onerror=null;this.src='https://placehold.co/400x248/CCCCCC/FFFFFF?text=Example';"></div><input type="file" name="rear_view_upload" id="rear-view-upload" class="file-input file-input-bordered file-input-sm w-full mt-2" accept=".jpg, .jpeg, .png" required><p class="error-message hidden"></p></div></div>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div class="border border-base-300 rounded-lg p-4">
+                                        <label class="block font-medium mb-2 text-center">สำเนาทะเบียนรถ</label>
+                                        <div class="form-control w-full mx-auto">
+                                            <div id="reg-copy-container" class="flex justify-center bg-base-200 p-2 rounded-lg border">
+                                                <img id="reg-copy-preview" src="https://img5.pic.in.th/file/secure-sv1/registration.jpg" alt="ตัวอย่างสำเนาทะเบียนรถ" class="w-full max-h-48 rounded-lg object-contain">
+                                            </div>
+                                            <input type="file" name="reg_copy_upload" id="reg-copy-upload" class="file-input file-input-bordered file-input-sm w-full mt-2" accept=".jpg, .jpeg, .png" required>
+                                            <p class="error-message hidden"></p>
+                                        </div>
+                                    </div>
+                                    <div class="border border-base-300 rounded-lg p-4">
+                                        <label class="block font-medium mb-2 text-center">ป้ายภาษีรถยนต์ (ป้ายวงกลม)</label>
+                                        <div class="form-control w-full mx-auto">
+                                            <div id="tax-sticker-container" class="flex justify-center bg-base-200 p-2 rounded-lg border">
+                                                <img id="tax-sticker-preview" src="https://img2.pic.in.th/pic/tax_sticker.jpg" alt="ตัวอย่างป้ายภาษี" class="w-full max-h-48 rounded-lg object-contain">
+                                            </div>
+                                            <input type="file" name="tax_sticker_upload" id="tax-sticker-upload" class="file-input file-input-bordered file-input-sm w-full mt-2" accept=".jpg, .jpeg, .png" required>
+                                            <p class="error-message hidden"></p>
+                                        </div>
+                                    </div>
+                                    <div class="border border-base-300 rounded-lg p-4">
+                                        <label class="block font-medium mb-2 text-center">รูปถ่ายรถด้านหน้า</label>
+                                        <div class="form-control w-full mx-auto">
+                                            <div id="front-view-container" class="flex justify-center bg-base-200 p-2 rounded-lg border">
+                                                <img id="front-view-preview" src="https://img2.pic.in.th/pic/front_view.png" alt="ตัวอย่างรูปถ่ายรถด้านหน้า" class="w-full max-h-48 rounded-lg object-contain">
+                                            </div>
+                                            <input type="file" name="front_view_upload" id="front-view-upload" class="file-input file-input-bordered file-input-sm w-full mt-2" accept=".jpg, .jpeg, .png" required>
+                                            <p class="error-message hidden"></p>
+                                        </div>
+                                    </div>
+                                    <div class="border border-base-300 rounded-lg p-4">
+                                        <label class="block font-medium mb-2 text-center">รูปถ่ายรถด้านหลัง</label>
+                                        <div class="form-control w-full mx-auto">
+                                            <div id="rear-view-container" class="flex justify-center bg-base-200 p-2 rounded-lg border">
+                                                <img id="rear-view-preview" src="https://img5.pic.in.th/file/secure-sv1/rear_view.png" alt="ตัวอย่างรูปถ่ายรถด้านหลัง" class="w-full max-h-48 rounded-lg object-contain">
+                                            </div>
+                                            <input type="file" name="rear_view_upload" id="rear-view-upload" class="file-input file-input-bordered file-input-sm w-full mt-2" accept=".jpg, .jpeg, .png" required>
+                                            <p class="error-message hidden"></p>
+                                        </div>
+                                    </div>
                                 </div>
                                 <div class="flex justify-center mt-6">
                                     <div class="form-control w-full max-w-md"><label class="label cursor-pointer justify-start gap-4"><input type="checkbox" name="terms_confirm" id="terms-confirm" class="checkbox checkbox-primary checkbox-sm" required /><span class="label-text font-semibold">ยอมรับข้อตกลงและเงื่อนไข</span></label>
@@ -401,7 +441,7 @@ $conn->close();
                                     <div class="md:col-span-1">
                                         <div class="border border-base-300 rounded-lg p-4 w-full h-full flex flex-col form-control">
                                             <label class="block font-medium mb-2 text-center">รูปถ่ายหน้าตรง</label>
-                                            <div class="flex justify-center bg-base-200 p-2 rounded-lg border">
+                                            <div id="profile-photo-container" class="flex justify-center bg-base-200 p-2 rounded-lg border cursor-pointer" onclick="zoomImage('<?php echo $user_photo_path; ?>')">
                                                 <img id="profile-photo-preview" src="<?php echo $user_photo_path; ?>" alt="รูปโปรไฟล์" class="w-full max-h-48 rounded-lg object-contain" onerror="this.onerror=null;this.src='https://placehold.co/192x192/CCCCCC/FFFFFF?text=Profile';">
                                             </div>
                                             <div id="photo-guidance" class="mt-2 text-xs p-2 rounded-lg bg-blue-50 border border-blue-200 text-blue-800 hidden">
@@ -512,6 +552,87 @@ $conn->close();
                     </div>
                 </div>
 
+                 <!-- [เพิ่ม] Section 4: ค่าใช้จ่าย -->
+                <div id="costs-section" class="main-section hidden">
+                    <div class="card bg-base-100 shadow-lg">
+                        <div class="card-body">
+                            <h2 class="card-title text-xl flex items-center gap-2"><i class="fa-solid fa-hand-holding-dollar"></i> ขั้นตอนและค่าใช้จ่าย</h2>
+                            <div class="divider"></div>
+                            <div class="alert alert-info alert-soft">
+                                <div class="flex items-center">
+                                    <i class="fa-solid fa-circle-info mr-2"></i>
+                                    <span>บัตรผ่านยานพาหนะทุกประเภทมีค่าธรรมเนียม <strong class="font-bold">ราคาใบละ 30 บาท</strong></span>
+                                </div>
+                            </div>
+                           
+                            <div class="divider mt-6 mb-4">ขั้นตอนการรับบัตรและชำระเงิน</div>
+                            <div class="space-y-4">
+                                <div class="card bg-base-200 border shadow-inner">
+                                    <div class="card-body p-4">
+                                        <h3 class="font-semibold flex items-center gap-2">
+                                            <i class="fa-solid fa-users-cog text-primary"></i>
+                                            สำหรับกำลังพลสังกัด กรมการทหารช่าง (กช.)
+                                        </h3>
+                                        <p class="text-sm mt-2">
+                                            กรุณาชำระเงินและรับบัตรผ่าน <strong>เจ้าหน้าที่ของหน่วยท่าน</strong> ซึ่งจะดำเนินการรวบรวมและติดต่อรับบัตรให้เป็นส่วนรวม
+                                        </p>
+                                    </div>
+                                </div>
+                                <div class="card bg-base-200 border shadow-inner">
+                                    <div class="card-body p-4">
+                                        <h3 class="font-semibold flex items-center gap-2">
+                                            <i class="fa-solid fa-user-group text-secondary"></i>
+                                            สำหรับบุคคลภายนอก และกำลังพล ทบ. (นอกสังกัด กช.)
+                                        </h3>
+                                        <p class="text-sm mt-2">
+                                            เมื่อคำร้องของท่านได้รับการ <strong>"อนุมัติ"</strong> แล้ว ท่านสามารถติดต่อรับบัตรและชำระเงินได้ด้วยตนเอง ณ <strong>แผนกการข่าวและรักษาความปลอดภัย กองยุทธการและการข่าว กรมการทหารช่าง</strong> (ในวันและเวลาราชการ ตามวันที่ระบุในคำร้อง)
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="alert alert-warning alert-soft mt-6">
+                                <div class="flex items-center">
+                                    <i class="fa-solid fa-coins mr-2"></i>
+                                    <span>เพื่อความสะดวกรวดเร็ว กรุณาเตรียมเงินสดให้พอดีกับจำนวนค่าธรรมเนียม</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
+                <!-- [เพิ่ม] Section 5: ติดต่อ -->
+                <div id="contact-section" class="main-section hidden">
+                    <div class="card bg-base-100 shadow-lg">
+                        <div class="card-body">
+                            <h2 class="card-title text-xl flex items-center gap-2"><i class="fa-solid fa-address-book"></i> ติดต่อสอบถาม</h2>
+                            <div class="divider"></div>
+                            <div class="space-y-4 text-sm">
+                                <div>
+                                    <p class="font-semibold">แผนกการข่าวและรักษาความปลอดภัย</p>
+                                    <p>กองยุทธการและการข่าว กรมการทหารช่าง</p>
+                                    <p>ค่ายภาณุรังษี ต.โค้กหม้อ อ.เมือง จ.ราชบุรี 70000</p>
+                                </div>
+                                <div class="divider my-2"></div>
+                                <div>
+                                    <p class="font-semibold">พบปัญหาการใช้งานระบบ ติดต่อ:</p>
+                                    <p>ร.ท. พรหมินทร์  อินทมาตย์ (ผู้พัฒนาระบบ)</p>
+                                    <p><i class="fa-solid fa-envelope w-4 text-slate-500"></i> E-mail : oid.engrdept@gmail.com</p>
+                                </div>
+                                <div class="divider my-2"></div>
+                                <div>
+                                    <p><i class="fa-solid fa-clock w-4 text-slate-500"></i> <span class="font-semibold">วันเวลาทำการ :</span> จันทร์-ศุกร์ 08.30-16.30 น. (เว้นวันหยุดราชการ)</p>
+                                </div>
+                                <div>
+                                    <a href="#" class="btn btn-sm btn-success btn-outline no-underline">
+                                    <i class="fab fa-line text-lg"></i> Line Official: บัตรผ่านยานพาหนะ กช.
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
             </main>
             <footer class="text-center text-base-content/70 p-4"><p class="text-xs">Developed by กยข.กช.</p><p class="text-xs">ร.ท.พรหมินทร์ อินทมาตย์ (ผู้พัฒนาระบบ)</p></footer>
         </div>
@@ -521,6 +642,8 @@ $conn->close();
                 <li class="mb-4"><a class="text-lg font-bold flex items-center gap-2"><img src="https://img2.pic.in.th/pic/CARPASS-logo11af8574a9cc9906.png" alt="Logo" class="h-8 w-8" onerror="this.onerror=null;this.src='https://placehold.co/32x32/CCCCCC/FFFFFF?text=L';"> ระบบยื่นคำร้อง</a></li>
                 <li><a href="#overview-section" class="active"><i class="fa-solid fa-chart-pie w-4"></i> ภาพรวม</a></li>
                 <li><a href="#add-vehicle-section"><i class="fa-solid fa-file-circle-plus w-4"></i> เพิ่มยานพาหนะ/ยื่นคำร้อง</a></li>
+                <li><a href="#costs-section"><i class="fa-solid fa-hand-holding-dollar w-4"></i> ขั้นตอนและค่าใช้จ่าย</a></li>
+                <li><a href="#contact-section"><i class="fa-solid fa-address-book w-4"></i> ติดต่อ</a></li>
                 <li><a href="#profile-section"><i class="fa-solid fa-user-pen w-4"></i> ข้อมูลส่วนตัว</a></li>
                 <div class="divider"></div>
                 <li><a href="../../../controllers/user/logout/logout.php"><i class="fa-solid fa-right-from-bracket w-4"></i> ออกจากระบบ</a></li>
@@ -529,9 +652,22 @@ $conn->close();
     </div>
 
     <!-- Modals -->
-    <dialog id="exampleImageModal" class="modal"><div class="modal-box"><img id="example-image" src="" alt="ตัวอย่าง" class="w-full h-auto rounded-lg"><div class="modal-action"><form method="dialog"><button class="btn btn-sm">ปิด</button></form></div></div><form method="dialog" class="modal-backdrop"><button>close</button></form></dialog>
+    <dialog id="imageZoomModal" class="modal">
+        <div class="modal-box w-11/12 max-w-5xl p-0 bg-transparent shadow-none flex justify-center items-center">
+            <div id="zoomed-image-container">
+                <img id="zoomed-image" src="" alt="ขยายรูปภาพ" class="rounded-lg">
+                <form method="dialog">
+                    <button class="btn btn-circle absolute right-2 top-2 bg-black/25 hover:bg-black/50 text-white border-none text-xl z-10">✕</button>
+                </form>
+            </div>
+        </div>
+        <form method="dialog" class="modal-backdrop"><button>close</button></form>
+    </dialog>
     <dialog id="vehicleDetailModal" class="modal">
         <div class="modal-box max-w-3xl">
+            <form method="dialog">
+                <button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2 text-xl bg-base-200/50 hover:bg-base-200/80 z-10">✕</button>
+            </form>
             <div id="modal-status-header" class="p-4 rounded-t-lg text-center">
                 <h3 class="font-bold text-lg" id="modal-status-text"></h3>
                 <p class="text-xs" id="modal-status-reason"></p>
@@ -556,6 +692,7 @@ $conn->close();
             </div>
             <div class="modal-action bg-base-200 p-2 rounded-b-lg -m-4 mt-4" id="modal-action-buttons"></div>
         </div>
+        <form method="dialog" class="modal-backdrop"><button>close</button></form>
     </dialog>
     <dialog id="editVehicleModal" class="modal"><div class="modal-box max-w-4xl"><form method="dialog"><button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button></form><h3 class="font-bold text-lg">แก้ไขข้อมูลคำร้อง</h3><div class="py-4"><form action="../../../controllers/user/vehicle/edit_vehicle_process.php" method="POST" enctype="multipart/form-data" id="editVehicleForm" novalidate><input type="hidden" name="request_id" id="edit-request-id"><div class="divider divider-start font-semibold">ข้อมูลยานพาหนะ</div><div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"><div class="form-control w-full"><div class="label"><span class="label-text">ประเภทรถ</span></div><select name="vehicle_type" id="edit-vehicle-type" class="select select-bordered select-sm" required><option value="รถยนต์">รถยนต์</option><option value="รถจักรยานยนต์">รถจักรยานยนต์</option></select><p class="error-message hidden"></p></div><div class="form-control w-full"><div class="label"><span class="label-text">ยี่ห้อรถ</span></div><select name="vehicle_brand" id="edit-vehicle-brand" class="select select-bordered select-sm" required><?php foreach ($car_brands as $brand): ?><option value="<?php echo htmlspecialchars($brand); ?>"><?php echo htmlspecialchars($brand); ?></option><?php endforeach; ?></select><p class="error-message hidden"></p></div><div class="form-control w-full"><div class="label"><span class="label-text">รุ่นรถ</span></div><input type="text" name="vehicle_model" id="edit-vehicle-model" class="input input-bordered input-sm w-full" required /><p class="error-message hidden"></p></div><div class="form-control w-full"><div class="label"><span class="label-text">สีรถ</span></div><input type="text" name="vehicle_color" id="edit-vehicle-color" class="input input-bordered input-sm w-full" required /><p class="error-message hidden"></p></div><div class="form-control w-full"><div class="label"><span class="label-text">เลขทะเบียนรถ</span></div><input type="text" name="license_plate" id="edit-license-plate" class="input input-bordered input-sm w-full" required /><p class="error-message hidden"></p></div><div class="form-control w-full"><div class="label"><span class="label-text">จังหวัด</span></div><select name="license_province" id="edit-license-province" class="select select-bordered select-sm" required><?php foreach ($provinces as $province): ?><option value="<?php echo htmlspecialchars($province); ?>"><?php echo htmlspecialchars($province); ?></option><?php endforeach; ?></select><p class="error-message hidden"></p></div><div class="form-control w-full lg:col-span-2"><div class="label"><span class="label-text">วันสิ้นอายุภาษี</span></div><div class="grid grid-cols-3 gap-2"><select name="tax_day" id="edit-tax-day" class="select select-bordered select-sm" required></select><select name="tax_month" id="edit-tax-month" class="select select-bordered select-sm" required></select><select name="tax_year" id="edit-tax-year" class="select select-bordered select-sm" required></select></div><p class="error-message hidden"></p></div><div class="form-control w-full"><div class="label"><span class="label-text">เป็นรถของใคร?</span></div><select name="owner_type" id="edit-owner-type" class="select select-bordered select-sm" required><option value="self">รถชื่อตนเอง</option><option value="other">รถคนอื่น</option></select><p class="error-message hidden"></p></div></div><div id="edit-other-owner-details" class="hidden mt-4"><div class="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 border rounded-lg bg-base-200"><div class="form-control w-full"><div class="label"><span class="label-text">ชื่อ-สกุล เจ้าของ</span></div><input type="text" name="other_owner_name" id="edit-other-owner-name" class="input input-bordered input-sm w-full" /><p class="error-message hidden"></p></div><div class="form-control w-full"><div class="label"><span class="label-text">เกี่ยวข้องเป็น</span></div><input type="text" name="other_owner_relation" id="edit-other-owner-relation" class="input input-bordered input-sm w-full" /><p class="error-message hidden"></p></div></div></div><div class="divider divider-start font-semibold mt-8">หลักฐานรูปถ่าย (อัปโหลดใหม่เฉพาะที่ต้องการเปลี่ยน)</div><div class="grid grid-cols-1 lg:grid-cols-2 gap-6"><div class="form-control"><label class="block font-medium mb-2">สำเนาทะเบียนรถ</label><img id="edit-reg-copy-preview" src="" class="w-full h-40 object-contain rounded-lg border p-2 mb-2"><input type="file" name="reg_copy_upload" id="edit-reg-copy-upload" class="file-input file-input-bordered file-input-sm" accept=".jpg, .jpeg, .png"><p class="error-message hidden"></p></div><div class="form-control"><label class="block font-medium mb-2">ป้ายภาษี</label><img id="edit-tax-sticker-preview" src="" class="w-full h-40 object-contain rounded-lg border p-2 mb-2"><input type="file" name="tax_sticker_upload" id="edit-tax-sticker-upload" class="file-input file-input-bordered file-input-sm" accept=".jpg, .jpeg, .png"><p class="error-message hidden"></p></div><div class="form-control"><label class="block font-medium mb-2">รูปถ่ายรถด้านหน้า</label><img id="edit-front-view-preview" src="" class="w-full h-40 object-contain rounded-lg border p-2 mb-2"><input type="file" name="front_view_upload" id="edit-front-view-upload" class="file-input file-input-bordered file-input-sm" accept=".jpg, .jpeg, .png"><p class="error-message hidden"></p></div><div class="form-control"><label class="block font-medium mb-2">รูปถ่ายรถด้านหลัง</label><img id="edit-rear-view-preview" src="" class="w-full h-40 object-contain rounded-lg border p-2 mb-2"><input type="file" name="rear_view_upload" id="edit-rear-view-upload" class="file-input file-input-bordered file-input-sm" accept=".jpg, .jpeg, .png"><p class="error-message hidden"></p></div></div><div class="modal-action mt-6"><button type="button" class="btn btn-sm btn-ghost" onclick="document.getElementById('editVehicleModal').close()">ยกเลิก</button><button type="submit" class="btn btn-success btn-sm">ยืนยันการแก้ไข</button></div></form></div></div></dialog>
     <dialog id="resetConfirmModal" class="modal"><div class="modal-box"><h3 class="font-bold text-lg">ยืนยันการล้างข้อมูล</h3><p class="py-4">คุณแน่ใจหรือไม่ว่าต้องการล้างข้อมูลในฟอร์มทั้งหมด?</p><div class="modal-action"><button class="btn btn-sm" onclick="document.getElementById('resetConfirmModal').close()">ยกเลิก</button><button id="confirm-reset-btn" class="btn btn-error btn-sm">ยืนยัน</button></div></div><form method="dialog" class="modal-backdrop"><button>close</button></form></dialog>
@@ -693,10 +830,10 @@ $conn->close();
                 evidencePhotosEl.innerHTML = `
                     <h3 class="font-semibold text-base mb-2"><i class="fa-solid fa-images opacity-70 mr-2"></i>หลักฐาน</h3>
                     <div class="grid grid-cols-2 gap-2 text-xs">
-                        <div class="text-center"><p class="font-semibold mb-1">ทะเบียนรถ</p><img src="${data.imgReg}" class="w-full h-24 object-cover rounded-md border cursor-pointer" onclick="openExampleModal('${data.imgReg}')"></div>
-                        <div class="text-center"><p class="font-semibold mb-1">ป้ายภาษี</p><img src="${data.imgTax}" class="w-full h-24 object-cover rounded-md border cursor-pointer" onclick="openExampleModal('${data.imgTax}')"></div>
-                        <div class="text-center"><p class="font-semibold mb-1">ด้านหน้า</p><img src="${data.imgFront}" class="w-full h-24 object-cover rounded-md border cursor-pointer" onclick="openExampleModal('${data.imgFront}')"></div>
-                        <div class="text-center"><p class="font-semibold mb-1">ด้านหลัง</p><img src="${data.imgRear}" class="w-full h-24 object-cover rounded-md border cursor-pointer" onclick="openExampleModal('${data.imgRear}')"></div>
+                        <div class="text-center"><p class="font-semibold mb-1">ทะเบียนรถ</p><img src="${data.imgReg}" class="w-full h-24 object-cover rounded-md border cursor-pointer" onclick="zoomImage(this.src)"></div>
+                        <div class="text-center"><p class="font-semibold mb-1">ป้ายภาษี</p><img src="${data.imgTax}" class="w-full h-24 object-cover rounded-md border cursor-pointer" onclick="zoomImage(this.src)"></div>
+                        <div class="text-center"><p class="font-semibold mb-1">ด้านหน้า</p><img src="${data.imgFront}" class="w-full h-24 object-cover rounded-md border cursor-pointer" onclick="zoomImage(this.src)"></div>
+                        <div class="text-center"><p class="font-semibold mb-1">ด้านหลัง</p><img src="${data.imgRear}" class="w-full h-24 object-cover rounded-md border cursor-pointer" onclick="zoomImage(this.src)"></div>
                     </div>`;
                 
                 // --- QR Code & Card Info ---
@@ -737,8 +874,12 @@ $conn->close();
 
                 modal.showModal();
             }
+            
+            window.zoomImage = function(src) {
+                document.getElementById('zoomed-image').src = src;
+                document.getElementById('imageZoomModal').showModal();
+            }
 
-            window.openExampleModal = function(imageUrl) { const modal = document.getElementById('exampleImageModal'); document.getElementById('example-image').src = imageUrl; modal.showModal(); }
             window.openEditModal = function(data) {
                 document.getElementById('vehicleDetailModal').close(); 
                 const modal = document.getElementById('editVehicleModal');
@@ -802,8 +943,7 @@ $conn->close();
             // --- Shared Validation & Form Functions ---
             function showError(element, message) { const parent = element.closest('.form-control'); const errorElement = parent.querySelector('.error-message'); if (errorElement) { errorElement.textContent = message; errorElement.classList.remove('hidden'); } const target = element.closest('label.input') || element; target.classList.add('input-error', 'select-error'); element.focus(); }
             function clearError(element) { const parent = element.closest('.form-control'); const errorElement = parent.querySelector('.error-message'); if (errorElement) { errorElement.textContent = ''; errorElement.classList.add('hidden'); } const target = element.closest('label.input') || element; target.classList.remove('input-error', 'select-error'); }
-            function setupImagePreview(inputId, previewId) { const inputElement = document.getElementById(inputId); if(inputElement) { inputElement.addEventListener('change', function(event) { const file = event.target.files[0]; if (file) { const reader = new FileReader(); reader.onload = (e) => { document.getElementById(previewId).src = e.target.result; }; reader.readAsDataURL(file); } }); } }
-
+            
             // --- Add Vehicle Form Logic ---
             const addVehicleForm = document.getElementById('addVehicleForm');
             const addVehicleConfirmModal = document.getElementById('addVehicleConfirmModal');
@@ -812,7 +952,42 @@ $conn->close();
             const otherOwnerDetails = document.getElementById('other-owner-details'); 
             
             ownerTypeSelect.addEventListener('change', function() { if (this.value === 'other') { otherOwnerDetails.classList.remove('hidden'); otherOwnerDetails.querySelectorAll('input').forEach(input => input.setAttribute('required', '')); } else { otherOwnerDetails.classList.add('hidden'); otherOwnerDetails.querySelectorAll('input').forEach(input => { input.removeAttribute('required'); clearError(input); }); } });
-            setupImagePreview('reg-copy-upload', 'reg-copy-preview'); setupImagePreview('tax-sticker-upload', 'tax-sticker-preview'); setupImagePreview('front-view-upload', 'front-view-preview'); setupImagePreview('rear-view-upload', 'rear-view-preview');
+            
+            function setupImagePreview(inputId, previewId, containerId) {
+                const inputElement = document.getElementById(inputId);
+                const previewElement = document.getElementById(previewId);
+                const containerElement = document.getElementById(containerId);
+
+                if (inputElement && previewElement && containerElement) {
+                    const originalSrc = previewElement.src;
+                    
+                    containerElement.classList.add('cursor-pointer');
+                    containerElement.onclick = () => zoomImage(originalSrc);
+
+                    inputElement.addEventListener('change', function(event) {
+                        const file = event.target.files[0];
+                        if (file) {
+                            containerElement.classList.remove('cursor-pointer');
+                            containerElement.onclick = null;
+                            const reader = new FileReader();
+                            reader.onload = (e) => {
+                                previewElement.src = e.target.result;
+                            };
+                            reader.readAsDataURL(file);
+                        } else {
+                            previewElement.src = originalSrc;
+                            containerElement.classList.add('cursor-pointer');
+                            containerElement.onclick = () => zoomImage(originalSrc);
+                        }
+                    });
+                }
+            }
+
+            setupImagePreview('reg-copy-upload', 'reg-copy-preview', 'reg-copy-container');
+            setupImagePreview('tax-sticker-upload', 'tax-sticker-preview', 'tax-sticker-container');
+            setupImagePreview('front-view-upload', 'front-view-preview', 'front-view-container');
+            setupImagePreview('rear-view-upload', 'rear-view-preview', 'rear-view-container');
+
             const daySelect = document.getElementById('tax-day'); const monthSelect = document.getElementById('tax-month'); const yearSelect = document.getElementById('tax-year'); const months = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"]; for (let i = 1; i <= 31; i++) { daySelect.innerHTML += `<option value="${i}">${i}</option>`; } months.forEach((month, i) => { monthSelect.innerHTML += `<option value="${i + 1}">${month}</option>`; }); const currentYearBE = new Date().getFullYear() + 543; for (let i = currentYearBE; i <= currentYearBE + 10; i++) { yearSelect.innerHTML += `<option value="${i}">${i}</option>`; }
             document.getElementById('vehicle-model').addEventListener('input', function() { this.value = this.value.toUpperCase().replace(/[^A-Z0-9\s-]/g, ''); }); document.getElementById('vehicle-color').addEventListener('input', function() { this.value = this.value.replace(/[^ก-๙]/g, ''); }); document.getElementById('license-plate').addEventListener('input', function() { this.value = this.value.replace(/[^ก-๙0-9\s]/g, ''); });
             const resetButton = document.getElementById('reset-form-btn'); const resetConfirmModal = document.getElementById('resetConfirmModal'); const confirmResetBtn = document.getElementById('confirm-reset-btn'); if (resetButton) { resetButton.addEventListener('click', function() { resetConfirmModal.showModal(); }); } if (confirmResetBtn) { confirmResetBtn.addEventListener('click', function() { addVehicleForm.reset(); document.getElementById('reg-copy-preview').src = 'https://img5.pic.in.th/file/secure-sv1/registration.jpg'; document.getElementById('tax-sticker-preview').src = 'https://img2.pic.in.th/pic/tax_sticker.jpg'; document.getElementById('front-view-preview').src = 'https://img2.pic.in.th/pic/front_view.png'; document.getElementById('rear-view-preview').src = 'https://img5.pic.in.th/file/secure-sv1/rear_view.png'; otherOwnerDetails.classList.add('hidden'); addVehicleForm.querySelectorAll('.error-message').forEach(el => el.classList.add('hidden')); addVehicleForm.querySelectorAll('.input-error, .select-error').forEach(el => el.classList.remove('input-error', 'select-error')); resetConfirmModal.close(); }); }
@@ -1079,6 +1254,7 @@ $conn->close();
                 const nationalIdInput = document.getElementById('profile-national-id');
                 const phoneInput = profileForm.querySelector('[name="phone"]');
                 const originalPhotoSrc = document.getElementById('profile-photo-preview').src;
+                const profilePhotoContainer = document.getElementById('profile-photo-container');
 
                 let initialFormValues = {};
                 formInputs.forEach(input => { initialFormValues[input.name] = input.value; });
@@ -1127,6 +1303,8 @@ $conn->close();
                     });
 
                     if(isEditing) {
+                        profilePhotoContainer.classList.remove('cursor-pointer');
+                        profilePhotoContainer.removeAttribute('onclick');
                         if (!isAddressPluginActive) {
                             $.Thailand({ 
                                 $district: $('#profile-subdistrict'), 
@@ -1136,6 +1314,9 @@ $conn->close();
                             });
                             isAddressPluginActive = true;
                         }
+                    } else {
+                        profilePhotoContainer.classList.add('cursor-pointer');
+                        profilePhotoContainer.setAttribute('onclick', `zoomImage('${originalPhotoSrc}')`);
                     }
                     fileInput.classList.toggle('hidden', !isEditing);
                     photoGuidance.classList.toggle('hidden', !isEditing);
@@ -1287,6 +1468,18 @@ $conn->close();
                 formatInput(phoneInput, 'xxx-xxx-xxxx');
                 formatInput(nationalIdInput, 'x-xxxx-xxxxx-xx-x');
             }
+
+            // --- [แก้ไข] ทำให้ Modal ขยายรูปปิดได้เมื่อคลิกที่พื้นที่นอกรูป ---
+            const imageZoomModal = document.getElementById('imageZoomModal');
+            if (imageZoomModal) {
+                imageZoomModal.addEventListener('click', function(e) {
+                    const imageContainer = document.getElementById('zoomed-image-container');
+                    if (imageContainer && !imageContainer.contains(e.target)) {
+                        imageZoomModal.close();
+                    }
+                });
+            }
+
         });
     </script>
 </body>

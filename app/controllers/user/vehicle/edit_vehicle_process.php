@@ -238,7 +238,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $params = [];
     $types = "";
 
-    // --- [เพิ่ม] ตรรกะสร้าง search_id ใหม่หากมีการเปลี่ยนประเภทรถ ---
+    // --- [แก้ไข] ตรรกะสร้าง search_id ใหม่หากมีการเปลี่ยนประเภทรถ ---
     $sql_get_current = "SELECT vehicle_type, search_id FROM vehicle_requests WHERE id = ?";
     $stmt_get_current = $conn->prepare($sql_get_current);
     $stmt_get_current->bind_param("i", $request_id);
@@ -251,20 +251,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     if ($new_vehicle_type !== $current_vehicle_type) {
         $new_prefix = ($new_vehicle_type === 'รถยนต์') ? 'C' : 'M';
-        $date_part = substr($current_search_id, 1, 6); // ดึง yymmdd จากรหัสเดิม
-
-        // นับจำนวนคำร้องของประเภทใหม่ในวันเดิม
-        $sql_count = "SELECT COUNT(*) as count FROM vehicle_requests WHERE search_id LIKE ?";
-        $stmt_count = $conn->prepare($sql_count);
-        $search_pattern = "{$new_prefix}{$date_part}-%";
-        $stmt_count->bind_param("s", $search_pattern);
-        $stmt_count->execute();
-        $result_count = $stmt_count->get_result();
-        $count_on_date = $result_count->fetch_assoc()['count'];
-        $stmt_count->close();
-        
-        $next_seq = str_pad($count_on_date + 1, 3, '0', STR_PAD_LEFT);
-        $new_search_id = "{$new_prefix}{$date_part}-{$next_seq}";
+        // ดึงส่วนท้ายของ search_id เดิม (เช่น 250906-001)
+        $id_suffix = substr($current_search_id, 1); 
+        $new_search_id = "{$new_prefix}{$id_suffix}";
         
         $update_fields[] = "search_id = ?";
         $params[] = $new_search_id;
@@ -344,4 +333,3 @@ $conn->close();
 header("Location: ../../../views/user/home/home.php#overview-section");
 exit();
 ?>
-

@@ -40,7 +40,7 @@ try {
     if ($action === 'approve') {
         
         // --- ดึงข้อมูล User ID และ Created At จากคำร้อง ---
-        $sql_info = "SELECT user_id, user_type, created_at, request_key FROM users u JOIN vehicle_requests vr ON u.id = vr.user_id WHERE vr.id = ?";
+        $sql_info = "SELECT u.id as user_id, u.user_type, vr.created_at, vr.request_key FROM users u JOIN vehicle_requests vr ON u.id = vr.user_id WHERE vr.id = ?";
         $stmt_info = $conn->prepare($sql_info);
         $stmt_info->bind_param("i", $request_id);
         $stmt_info->execute();
@@ -52,7 +52,7 @@ try {
         
         $user_id = $request_info['user_id'];
         
-        // --- [แก้ไข] ส่วนสำคัญ: บันทึก Snapshot ข้อมูลผู้ใช้ลงในตาราง approved_user_data ---
+        // --- [สำคัญ] บันทึก Snapshot ข้อมูลผู้ใช้ลงในตาราง approved_user_data ---
         $sql_user_data = "SELECT * FROM users WHERE id = ?";
         $stmt_user_data = $conn->prepare($sql_user_data);
         if (!$stmt_user_data) throw new Exception("Failed to prepare user data statement: " . $conn->error);
@@ -71,13 +71,13 @@ try {
         $stmt_check_snapshot->execute();
         $stmt_check_snapshot->store_result();
         if ($stmt_check_snapshot->num_rows == 0) {
-            $sql_snapshot = "INSERT INTO approved_user_data (request_id, user_id, user_key, user_type, phone_number, national_id, title, firstname, lastname, dob, gender, address, subdistrict, district, province, zipcode, photo_profile, work_department, position, official_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            $sql_snapshot = "INSERT INTO approved_user_data (request_id, original_user_id, user_type, phone_number, national_id, title, firstname, lastname, dob, gender, address, subdistrict, district, province, zipcode, photo_profile, work_department, position, official_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
             $stmt_snapshot = $conn->prepare($sql_snapshot);
             if (!$stmt_snapshot) throw new Exception("Failed to prepare snapshot statement: " . $conn->error);
 
             $stmt_snapshot->bind_param(
-                "iissssssssssssssssss",
-                $request_id, $user_data['id'], $user_data['user_key'], $user_data['user_type'],
+                "iisssssssssssssssss",
+                $request_id, $user_data['id'], $user_data['user_type'],
                 $user_data['phone_number'], $user_data['national_id'], $user_data['title'],
                 $user_data['firstname'], $user_data['lastname'], $user_data['dob'],
                 $user_data['gender'], $user_data['address'], $user_data['subdistrict'],
@@ -90,8 +90,6 @@ try {
             $stmt_snapshot->close();
         }
         $stmt_check_snapshot->close();
-        // --- [สิ้นสุดส่วนที่แก้ไข] ---
-
 
         // --- กำหนด Card Type และ Card Expiry Year ---
         $card_type = ($request_info['user_type'] === 'army') ? 'internal' : 'external';
@@ -163,4 +161,3 @@ try {
 $conn->close();
 echo json_encode($response);
 ?>
-

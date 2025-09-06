@@ -106,6 +106,15 @@ function format_thai_datetime($datetime) {
         .alert-error.alert-soft { background-color: #fee2e2; border-color: #fca5a5; color: #b91c1c; }
         .alert-success.alert-soft { background-color: #dcfce7; border-color: #86efac; color: #166534; }
         th[data-sort-by] { cursor: pointer; user-select: none; }
+        th[data-sort-by] .fa-sort, th[data-sort-by] .fa-sort-up, th[data-sort-by] .fa-sort-down {
+            color: #9ca3af;
+            margin-left: 0.5rem;
+            transition: color 0.2s ease-in-out;
+        }
+        th[data-sort-by]:hover .fa-sort { color: #1f2937; }
+        th[data-sort-by].sort-asc .fa-sort-up, th[data-sort-by].sort-desc .fa-sort-down { color: #2563eb; }
+        #zoomed-image-container { display: inline-block; position: relative; }
+        #zoomed-image { max-height: 85vh; width: auto; margin: auto; object-fit: contain; }
     </style>
 </head>
 <body>
@@ -130,12 +139,41 @@ function format_thai_datetime($datetime) {
                 <p class="text-slate-500 mb-6">สรุปข้อมูลและคำร้องที่รอการตรวจสอบ</p>
 
                 <!-- Stats Cards -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                    <div class="stat bg-base-100 rounded-lg shadow"><div class="stat-figure text-warning"><i class="fas fa-clock fa-2x"></i></div><div class="stat-title">รออนุมัติ</div><div class="stat-value text-warning"><?php echo number_format($stats['pending_requests']); ?></div><div class="stat-desc">รายการ</div></div>
-                    <div class="stat bg-base-100 rounded-lg shadow"><div class="stat-figure text-success"><i class="fas fa-check-circle fa-2x"></i></div><div class="stat-title">อนุมัติวันนี้</div><div class="stat-value text-success"><?php echo number_format($stats['approved_today']); ?></div><div class="stat-desc">รายการ</div></div>
-                    <div class="stat bg-base-100 rounded-lg shadow"><div class="stat-figure text-info"><i class="fas fa-users fa-2x"></i></div><div class="stat-title">ผู้ใช้งานทั้งหมด</div><div class="stat-value text-info"><?php echo number_format($stats['total_users']); ?></div><div class="stat-desc">บัญชี</div></div>
-                    <div class="stat bg-base-100 rounded-lg shadow"><div class="stat-figure text-secondary"><i class="fas fa-file-alt fa-2x"></i></div><div class="stat-title">คำร้องทั้งหมด</div><div class="stat-value text-secondary"><?php echo number_format($stats['total_requests']); ?></div><div class="stat-desc">รายการ</div></div>
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="stat bg-base-100 rounded-lg shadow">
+                        <div class="stat-figure text-warning hidden sm:flex"><i class="fas fa-clock text-3xl"></i></div>
+                        <div class="flex items-center justify-between sm:block">
+                            <div class="stat-title">รออนุมัติ <i class="fas fa-clock text-warning sm:hidden"></i></div>
+                        </div>
+                        <div class="stat-value text-warning text-2xl sm:text-3xl"><?php echo number_format($stats['pending_requests']); ?></div>
+                        <div class="stat-desc">รายการ</div>
+                    </div>
+                    <div class="stat bg-base-100 rounded-lg shadow">
+                        <div class="stat-figure text-success hidden sm:flex"><i class="fas fa-check-circle text-3xl"></i></div>
+                        <div class="flex items-center justify-between sm:block">
+                            <div class="stat-title">อนุมัติวันนี้ <i class="fas fa-check-circle text-success sm:hidden"></i></div>
+                        </div>
+                        <div class="stat-value text-success text-2xl sm:text-3xl"><?php echo number_format($stats['approved_today']); ?></div>
+                        <div class="stat-desc">รายการ</div>
+                    </div>
+                    <div class="stat bg-base-100 rounded-lg shadow">
+                        <div class="stat-figure text-info hidden sm:flex"><i class="fas fa-users text-3xl"></i></div>
+                        <div class="flex items-center justify-between sm:block">
+                            <div class="stat-title">ผู้ใช้งานทั้งหมด <i class="fas fa-users text-info sm:hidden"></i></div>
+                        </div>
+                        <div class="stat-value text-info text-2xl sm:text-3xl"><?php echo number_format($stats['total_users']); ?></div>
+                        <div class="stat-desc">บัญชี</div>
+                    </div>
+                    <div class="stat bg-base-100 rounded-lg shadow">
+                        <div class="stat-figure text-secondary hidden sm:flex"><i class="fas fa-file-alt text-3xl"></i></div>
+                        <div class="flex items-center justify-between sm:block">
+                            <div class="stat-title">คำร้องทั้งหมด <i class="fas fa-file-alt text-secondary sm:hidden"></i></div>
+                        </div>
+                        <div class="stat-value text-secondary text-2xl sm:text-3xl"><?php echo number_format($stats['total_requests']); ?></div>
+                        <div class="stat-desc">รายการ</div>
+                    </div>
                 </div>
+
 
                 <!-- Requests Table -->
                 <div class="card bg-base-100 shadow-lg mt-8">
@@ -144,6 +182,10 @@ function format_thai_datetime($datetime) {
                              <h2 class="card-title flex items-center gap-2"><i class="fa-solid fa-clock text-warning"></i> รายการคำร้องรออนุมัติ</h2>
                              <div class="flex items-center gap-2 w-full sm:w-auto">
                                 <input type="text" id="searchInput" placeholder="ค้นหา..." class="input input-sm input-bordered w-full sm:w-auto">
+                                <button id="openExportModalBtn" class="btn btn-sm btn-outline btn-success">
+                                    <i class="fa-solid fa-file-excel mr-1"></i>
+                                    Export
+                                </button>
                             </div>
                         </div>
 
@@ -151,11 +193,11 @@ function format_thai_datetime($datetime) {
                             <table class="table table-sm" id="requestsTable">
                                 <thead>
                                     <tr>
-                                        <th class="whitespace-nowrap">รหัสคำร้อง</th>
-                                        <th class="whitespace-nowrap">ชื่อผู้ยื่น</th>
-                                        <th class="whitespace-nowrap">ทะเบียนรถ</th>
-                                        <th class="whitespace-nowrap">ประเภทรถ</th>
-                                        <th class="whitespace-nowrap">วันที่ยื่น</th>
+                                        <th data-sort-by="search_id">รหัสคำร้อง<i class="fa-solid fa-sort"></i></th>
+                                        <th data-sort-by="name">ชื่อผู้ยื่น<i class="fa-solid fa-sort"></i></th>
+                                        <th data-sort-by="license">ทะเบียนรถ<i class="fa-solid fa-sort"></i></th>
+                                        <th data-sort-by="type">ประเภทรถ<i class="fa-solid fa-sort"></i></th>
+                                        <th data-sort-by="date" class="sort-asc">วันที่ยื่น<i class="fa-solid fa-sort-up"></i></th>
                                         <th></th>
                                     </tr>
                                 </thead>
@@ -171,9 +213,10 @@ function format_thai_datetime($datetime) {
                                             <td class="whitespace-nowrap"><?php echo htmlspecialchars($req['vehicle_type']); ?></td>
                                             <td class="whitespace-nowrap"><?php echo format_thai_datetime($req['created_at']); ?></td>
                                             <td>
-                                                <div class="tooltip" data-tip="ตรวจสอบ">
-                                                     <button class="btn btn-xs btn-ghost btn-square inspect-btn" data-id="<?php echo $req['id']; ?>"><i class="fa-solid fa-search text-primary"></i></button>
-                                                </div>
+                                                <button class="btn btn-sm btn-primary inspect-btn" data-id="<?php echo $req['id']; ?>">
+                                                    <i class="fa-solid fa-search mr-1"></i>
+                                                    ตรวจสอบ
+                                                </button>
                                             </td>
                                         </tr>
                                         <?php endforeach; ?>
@@ -189,7 +232,7 @@ function format_thai_datetime($datetime) {
 
         <div class="drawer-side">
             <label for="my-drawer-2" class="drawer-overlay"></label> 
-            <ul class="menu p-4 w-64 min-h-full bg-base-200 text-base-content space-y-1" id="sidebar-menu">
+            <ul class="menu p-4 w-56 min-h-full bg-base-200 text-base-content space-y-1" id="sidebar-menu">
                  <li class="mb-4">
                     <a href="../home/home.php" class="text-xl font-bold flex items-center gap-2">
                         <img src="https://img2.pic.in.th/pic/CARPASS-logo11af8574a9cc9906.png" alt="Logo" class="h-10 w-10">
@@ -213,9 +256,12 @@ function format_thai_datetime($datetime) {
         </div>
     </div>
 
-    <!-- Modal for Inspection -->
+    <!-- Modals -->
     <dialog id="inspectModal" class="modal">
         <div class="modal-box max-w-5xl">
+            <form method="dialog">
+                <button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2 text-xl bg-base-200/50 hover:bg-base-200/80">✕</button>
+            </form>
             <h3 class="font-bold text-lg" id="modal-title-inspect">รายละเอียดคำร้อง: <span></span></h3>
             <div id="modal-body-inspect" class="py-4 space-y-4">
                 <div class="text-center"><span class="loading loading-spinner loading-lg"></span></div>
@@ -236,11 +282,13 @@ function format_thai_datetime($datetime) {
     </dialog>
     
     <dialog id="imageZoomModal" class="modal">
-        <div class="modal-box w-11/12 max-w-4xl">
-             <form method="dialog">
-                <button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
-            </form>
-            <img id="zoomed-image" src="" alt="ขยายรูปภาพ" class="w-full h-auto rounded-lg">
+        <div class="modal-box w-11/12 max-w-5xl p-0 bg-transparent shadow-none flex justify-center items-center">
+            <div id="zoomed-image-container">
+                <img id="zoomed-image" src="" alt="ขยายรูปภาพ" class="rounded-lg">
+                <form method="dialog">
+                    <button class="btn btn-circle absolute right-2 top-2 bg-black/25 hover:bg-black/50 text-white border-none text-xl z-10">✕</button>
+                </form>
+            </div>
         </div>
         <form method="dialog" class="modal-backdrop">
             <button>close</button>
@@ -258,8 +306,94 @@ function format_thai_datetime($datetime) {
         </div>
     </dialog>
 
-    <div id="alert-container" class="toast toast-top toast-center z-50"></div>
+    <dialog id="exportModal" class="modal">
+        <div class="modal-box">
+            <form method="dialog">
+                <button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
+            </form>
+            <h3 class="font-bold text-lg mb-4">เลือกรูปแบบการ Export</h3>
+            <div class="space-y-3">
+                <div class="p-4 border rounded-lg hover:bg-base-200 transition-colors duration-200">
+                    <label class="flex items-center justify-between cursor-pointer">
+                        <div class="flex items-center gap-3">
+                            <i class="fa-solid fa-table-list text-xl text-primary w-6 text-center"></i>
+                            <div>
+                                <span class="font-semibold">ข้อมูลตามตารางที่แสดง</span>
+                                <span class="text-xs text-slate-500 block">Export 5 คอลัมน์หลักที่แสดงผล</span>
+                            </div>
+                        </div>
+                        <input type="radio" name="export_type" class="radio radio-primary" value="table_view" checked/>
+                    </label>
+                </div>
+                 <div class="p-4 border rounded-lg hover:bg-base-200 transition-colors duration-200">
+                    <label class="flex items-center justify-between cursor-pointer">
+                        <div class="flex items-center gap-3">
+                            <i class="fa-solid fa-file-lines text-xl text-primary w-6 text-center"></i>
+                            <div>
+                                <span class="font-semibold">ข้อมูลทั้งหมด</span>
+                                <span class="text-xs text-slate-500 block">รวมข้อมูลผู้สมัครและยานพาหนะ</span>
+                            </div>
+                        </div>
+                        <input type="radio" name="export_type" class="radio radio-primary" value="all"/>
+                    </label>
+                </div>
+                <div class="p-4 border rounded-lg hover:bg-base-200 transition-colors duration-200">
+                     <label class="flex items-center justify-between cursor-pointer">
+                        <div class="flex items-center gap-3">
+                            <i class="fa-solid fa-user text-xl text-info w-6 text-center"></i>
+                            <div>
+                                <span class="font-semibold">เฉพาะข้อมูลผู้สมัคร</span>
+                                <span class="text-xs text-slate-500 block">ข้อมูลส่วนตัวและที่อยู่</span>
+                            </div>
+                        </div>
+                        <input type="radio" name="export_type" class="radio radio-primary" value="users"/>
+                    </label>
+                </div>
+                <div class="p-4 border rounded-lg hover:bg-base-200 transition-colors duration-200">
+                    <label class="flex items-center justify-between cursor-pointer">
+                        <div class="flex items-center gap-3">
+                            <i class="fa-solid fa-car text-xl text-accent w-6 text-center"></i>
+                            <div>
+                                <span class="font-semibold">เฉพาะข้อมูลยานพาหนะ</span>
+                                <span class="text-xs text-slate-500 block">ข้อมูลทะเบียนและรายละเอียดรถ</span>
+                            </div>
+                        </div>
+                        <input type="radio" name="export_type" class="radio radio-primary" value="vehicles"/>
+                    </label>
+                </div>
+                 <div class="p-4 border rounded-lg hover:bg-base-200 transition-colors duration-200">
+                    <label class="flex items-center justify-between cursor-pointer">
+                        <div class="flex items-center gap-3">
+                            <i class="fa-solid fa-tasks text-xl text-warning w-6 text-center"></i>
+                            <div>
+                                <span class="font-semibold">กำหนดข้อมูลเอง</span>
+                                <span class="text-xs text-slate-500 block">เลือกคอลัมน์ที่ต้องการ Export</span>
+                            </div>
+                        </div>
+                        <input type="radio" name="export_type" class="radio radio-primary" value="custom"/>
+                    </label>
+                </div>
+            </div>
 
+            <div id="custom-columns-section" class="hidden mt-4 pt-4 border-t max-h-60 overflow-y-auto">
+                 <div class="flex justify-between items-center mb-2">
+                    <h4 class="font-semibold text-sm">เลือกคอลัมน์ที่ต้องการ:</h4>
+                    <button id="deselect-all-custom" class="btn btn-xs btn-ghost">ยกเลิกทั้งหมด</button>
+                </div>
+                <div id="columns-checkboxes" class="grid grid-cols-2 gap-2 text-sm">
+                    <!-- Checkboxes will be inserted here by JS -->
+                </div>
+            </div>
+
+            <div class="modal-action">
+                <button id="generateExportBtn" class="btn btn-success btn-sm">สร้างและดาวน์โหลด</button>
+            </div>
+        </div>
+    </dialog>
+
+    <div id="alert-container" class="toast toast-top toast-center z-50"></div>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script>
     document.addEventListener('DOMContentLoaded', function() {
         const currentPage = window.location.pathname;
@@ -278,7 +412,8 @@ function format_thai_datetime($datetime) {
         }
         
         const searchInput = document.getElementById('searchInput');
-        const tableBody = document.getElementById('requestsTable').querySelector('tbody');
+        const table = document.getElementById('requestsTable');
+        const tableBody = table.querySelector('tbody');
         const allRows = Array.from(tableBody.querySelectorAll('tr[data-request-id]'));
         const noResultsRow = document.getElementById('no-results-row');
         
@@ -291,6 +426,49 @@ function format_thai_datetime($datetime) {
                 if (isVisible) visibleCount++;
             });
             noResultsRow.style.display = visibleCount > 0 ? 'none' : 'table-row';
+        });
+
+        // --- Table Sorting ---
+        const headers = table.querySelectorAll('th[data-sort-by]');
+        headers.forEach(header => {
+            header.addEventListener('click', () => {
+                const isAsc = header.classList.contains('sort-asc');
+                const direction = isAsc ? -1 : 1;
+                const columnIndex = Array.from(header.parentNode.children).indexOf(header);
+
+                headers.forEach(h => {
+                    h.classList.remove('sort-asc', 'sort-desc');
+                    h.querySelector('i').className = 'fa-solid fa-sort';
+                });
+
+                header.classList.toggle('sort-asc', !isAsc);
+                header.classList.toggle('sort-desc', isAsc);
+                header.querySelector('i').className = !isAsc ? 'fa-solid fa-sort-up' : 'fa-solid fa-sort-down';
+
+                const rows = Array.from(tableBody.querySelectorAll('tr[data-request-id]'));
+                rows.sort((rowA, rowB) => {
+                    let valA = rowA.children[columnIndex].textContent.trim();
+                    let valB = rowB.children[columnIndex].textContent.trim();
+
+                    if (header.dataset.sortBy === 'date') {
+                        const thaiMonths = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+                        const parseThaiDate = (str) => {
+                            const parts = str.split(/[\s,:]+/);
+                            if (parts.length < 5) return 0;
+                            const day = parseInt(parts[0], 10);
+                            const monthIndex = thaiMonths.indexOf(parts[1]);
+                            const yearBE = parseInt(parts[2], 10);
+                            return new Date(yearBE - 543, monthIndex, day, parseInt(parts[3]), parseInt(parts[4])).getTime();
+                        };
+                        valA = parseThaiDate(valA);
+                        valB = parseThaiDate(valB);
+                    }
+                    
+                    return valA.toString().localeCompare(valB.toString(), undefined, {numeric: true}) * direction;
+                });
+
+                rows.forEach(row => tableBody.appendChild(row));
+            });
         });
 
         // --- Modal & Approval Logic ---
@@ -322,6 +500,25 @@ function format_thai_datetime($datetime) {
                 alertDiv.remove();
             }, 3000);
         }
+        
+        function formatThaiDate(dateString) {
+            if (!dateString || dateString === '0000-00-00') return '-';
+            const date = new Date(dateString);
+            const thaiMonths = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."];
+            return `${date.getDate()} ${thaiMonths[date.getMonth()]} ${date.getFullYear() + 543}`;
+        }
+        
+        function formatThaiDateTime(datetimeString) {
+            if (!datetimeString) return '-';
+            const date = new Date(datetimeString);
+            const thaiMonths = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."];
+            const day = date.getDate();
+            const month = thaiMonths[date.getMonth()];
+            const year = date.getFullYear() + 543;
+            const hours = date.getHours().toString().padStart(2, '0');
+            const minutes = date.getMinutes().toString().padStart(2, '0');
+            return `${day} ${month} ${year}, ${hours}:${minutes} น.`;
+        }
 
         async function openInspectModal(requestId) {
             inspectModal.showModal();
@@ -345,13 +542,13 @@ function format_thai_datetime($datetime) {
         }
 
         function renderModalContent(data) {
-             modalTitle.textContent = data.search_id;
-             const userTypeThai = data.user_type === 'army' ? 'ข้าราชการ ทบ.' : 'บุคคลภายนอก';
-             const ownerTypeThai = data.owner_type === 'self' ? 'รถชื่อตนเอง' : 'รถคนอื่น';
+            modalTitle.textContent = data.search_id;
+            const userTypeThai = data.user_type === 'army' ? 'ข้าราชการ ทบ.' : 'บุคคลภายนอก';
+            const ownerTypeThai = data.owner_type === 'self' ? 'รถชื่อตนเอง' : 'รถคนอื่น';
 
             let historySection = '';
             if (data.status === 'pending' && data.edit_status == 1 && data.rejection_reason) {
-                historySection = `<div role="alert" class="alert alert-warning alert-soft">
+                historySection = `<div role="alert" class="alert alert-warning alert-soft mb-4">
                     <i class="fa-solid fa-clock-rotate-left text-lg"></i>
                     <div>
                         <h3 class="font-bold">คำร้องนี้เคยถูกส่งกลับไปแก้ไข</h3>
@@ -359,15 +556,73 @@ function format_thai_datetime($datetime) {
                     </div>
                 </div>`;
             }
+            
+            const profileImageSrc = `/public/uploads/user_photos/${data.photo_profile}`;
+            
+            const addressParts = [data.address, data.subdistrict, data.district, data.province, data.zipcode].filter(Boolean);
+            const fullAddress = addressParts.join(', ') || '-';
 
-            const profileImage = `<div class="avatar"><div class="w-24 rounded-lg"><img src="/public/uploads/user_photos/${data.photo_profile}" /></div></div>`;
-            const userSection = `<div class="card bg-base-200 shadow-inner flex-1"><div class="card-body p-4"><h3 class="card-title text-base"><i class="fa-solid fa-user mr-2"></i>ข้อมูลผู้ยื่น</h3><div class="grid grid-cols-2 gap-x-4 gap-y-1 text-sm"><div><div class="text-xs text-slate-500">ชื่อ-สกุล</div><div class="font-semibold">${data.user_title}${data.user_firstname} ${data.user_lastname}</div></div><div><div class="text-xs text-slate-500">ประเภท</div><div class="font-semibold">${userTypeThai}</div></div><div><div class="text-xs text-slate-500">เบอร์โทร</div><div class="font-semibold">${data.phone_number}</div></div><div><div class="text-xs text-slate-500">เลขบัตรฯ</div><div class="font-semibold">${data.national_id}</div></div>${data.user_type === 'army' ? `<div><div class="text-xs text-slate-500">สังกัด</div><div class="font-semibold">${data.work_department || '-'}</div></div><div><div class="text-xs text-slate-500">ตำแหน่ง</div><div class="font-semibold">${data.position || '-'}</div></div>` : ''}</div></div></div>`;
-            const vehicleSection = `<div class="card bg-base-200 shadow-inner"><div class="card-body p-4"><h3 class="card-title text-base"><i class="fa-solid fa-car-side mr-2"></i>ข้อมูลยานพาหนะ</h3><div class="grid grid-cols-2 gap-x-4 gap-y-1 text-sm"><div><div class="text-xs text-slate-500">ทะเบียน</div><div class="font-semibold">${data.license_plate} ${data.province}</div></div><div><div class="text-xs text-slate-500">ประเภท</div><div class="font-semibold">${data.vehicle_type}</div></div><div><div class="text-xs text-slate-500">ยี่ห้อ/รุ่น</div><div class="font-semibold">${data.brand} / ${data.model}</div></div><div><div class="text-xs text-slate-500">สี</div><div class="font-semibold">${data.color}</div></div><div><div class="text-xs text-slate-500">เจ้าของ</div><div class="font-semibold">${ownerTypeThai}</div></div>${data.owner_type === 'other' ? `<div><div class="text-xs text-slate-500">ชื่อเจ้าของ</div><div class="font-semibold">${data.other_owner_name}</div></div>` : ''}</div></div></div>`;
-            const imageSection = `<div class="card bg-base-200 shadow-inner"><div class="card-body p-4"><h3 class="card-title text-base"><i class="fa-solid fa-images mr-2"></i>รูปภาพหลักฐาน</h3><div class="grid grid-cols-2 md:grid-cols-4 gap-2 mt-2"><div class="text-center"><p class="text-xs font-semibold mb-1">ทะเบียนรถ</p><img src="/public/uploads/vehicle/registration/${data.photo_reg_copy}" class="w-full h-28 object-cover rounded-md border cursor-pointer" onclick="zoomImage(this.src)"></div><div class="text-center"><p class="text-xs font-semibold mb-1">ป้ายภาษี</p><img src="/public/uploads/vehicle/tax_sticker/${data.photo_tax_sticker}" class="w-full h-28 object-cover rounded-md border cursor-pointer" onclick="zoomImage(this.src)"></div><div class="text-center"><p class="text-xs font-semibold mb-1">ด้านหน้า</p><img src="/public/uploads/vehicle/front_view/${data.photo_front}" class="w-full h-28 object-cover rounded-md border cursor-pointer" onclick="zoomImage(this.src)"></div><div class="text-center"><p class="text-xs font-semibold mb-1">ด้านหลัง</p><img src="/public/uploads/vehicle/rear_view/${data.photo_rear}" class="w-full h-28 object-cover rounded-md border cursor-pointer" onclick="zoomImage(this.src)"></div></div></div></div>`;
-            const qrCodeSection = `<div id="qr-code-result" class="hidden"><div class="card bg-success/10 border-success border shadow-inner"><div class="card-body p-4 items-center text-center"><h3 class="card-title text-base text-success"><i class="fa-solid fa-check-circle mr-2"></i>อนุมัติสำเร็จ</h3><img id="qr-code-image" src="" class="w-32 h-32 rounded-lg p-1 mt-2 bg-white"><p class="text-xs text-slate-500 mt-2">QR Code สำหรับบัตรผ่านถูกสร้างเรียบร้อยแล้ว</p></div></div></div>`;
+            const userDetails = `
+                <h3 class="font-semibold text-base mb-2 uppercase tracking-wider text-slate-500">ข้อมูลผู้ยื่น</h3>
+                <div class="flex flex-col items-center">
+                    <div class="avatar mb-4 cursor-pointer" onclick="zoomImage('${profileImageSrc}')">
+                        <div class="w-24 rounded-lg ring ring-primary ring-offset-base-100 ring-offset-2">
+                            <img src="${profileImageSrc}" />
+                        </div>
+                    </div>
+                    <div class="text-center">
+                        <div class="font-bold">${data.user_title}${data.user_firstname} ${data.user_lastname}</div>
+                        <div class="text-sm text-slate-500">${userTypeThai}</div>
+                    </div>
+                    <div class="divider my-2"></div>
+                    <div class="w-full space-y-2 text-sm text-left">
+                        <div class="grid grid-cols-3 gap-2"><span class="text-slate-500 col-span-1">เบอร์โทร:</span><span class="font-semibold col-span-2">${data.phone_number || '-'}</span></div>
+                        <div class="grid grid-cols-3 gap-2"><span class="text-slate-500 col-span-1">เลขบัตรฯ:</span><span class="font-semibold col-span-2">${data.national_id || '-'}</span></div>
+                        <div class="grid grid-cols-3 gap-2"><span class="text-slate-500 col-span-1">วันเกิด:</span><span class="font-semibold col-span-2">${formatThaiDate(data.dob)}</span></div>
+                        <div class="grid grid-cols-3 gap-2"><span class="text-slate-500 col-span-1">ที่อยู่:</span><span class="font-semibold col-span-2">${fullAddress}</span></div>
+                        ${data.user_type === 'army' ? `
+                        <div class="divider my-1"></div>
+                        <div class="grid grid-cols-3 gap-2"><span class="text-slate-500 col-span-1">สังกัด:</span><span class="font-semibold col-span-2">${data.work_department || '-'}</span></div>
+                        <div class="grid grid-cols-3 gap-2"><span class="text-slate-500 col-span-1">ตำแหน่ง:</span><span class="font-semibold col-span-2">${data.position || '-'}</span></div>
+                        <div class="grid grid-cols-3 gap-2"><span class="text-slate-500 col-span-1">เลข ขรก.:</span><span class="font-semibold col-span-2">${data.official_id || '-'}</span></div>
+                        ` : ''}
+                    </div>
+                </div>`;
 
-            modalBody.innerHTML = `${historySection}<div class="flex flex-col md:flex-row gap-4"><div class="flex flex-col gap-4 items-center md:items-start md:w-1/3">${profileImage}${userSection}</div><div class="flex flex-col gap-4 md:w-2/3">${vehicleSection}</div></div>${imageSection}${qrCodeSection}`;
+            const vehicleDetails = `
+                <h3 class="font-semibold text-base mb-2 uppercase tracking-wider text-slate-500">ข้อมูลยานพาหนะ</h3>
+                <div class="space-y-3 text-sm">
+                    <div>
+                        <div class="text-xs text-slate-500">ทะเบียน</div>
+                        <div class="font-bold text-xl bg-base-300 text-center p-2 rounded-md">${data.license_plate} ${data.province}</div>
+                    </div>
+                    <div><div class="text-xs text-slate-500">ประเภท</div><div class="font-semibold">${data.vehicle_type}</div></div>
+                    <div><div class="text-xs text-slate-500">ยี่ห้อ / รุ่น</div><div class="font-semibold">${data.brand} / ${data.model}</div></div>
+                    <div><div class="text-xs text-slate-500">สี</div><div class="font-semibold">${data.color}</div></div>
+                    <div><div class="text-xs text-slate-500">วันสิ้นภาษี</div><div class="font-semibold">${formatThaiDate(data.tax_expiry_date)}</div></div>
+                    <div><div class="text-xs text-slate-500">ความเป็นเจ้าของ</div><div class="font-semibold">${ownerTypeThai} ${data.owner_type === 'other' ? `(${data.other_owner_name}, ${data.other_owner_relation})` : ''}</div></div>
+                </div>`;
+            
+            const imageSection = `
+                <h3 class="font-semibold text-base mb-2 uppercase tracking-wider text-slate-500">หลักฐาน</h3>
+                <div class="grid grid-cols-2 gap-2">
+                    <div class="text-center"><img src="/public/uploads/vehicle/registration/${data.photo_reg_copy}" class="w-full h-28 object-cover rounded-md border cursor-pointer hover:scale-105 transition-transform" onclick="zoomImage(this.src)"><p class="text-xs font-semibold mt-1">ทะเบียนรถ</p></div>
+                    <div class="text-center"><img src="/public/uploads/vehicle/tax_sticker/${data.photo_tax_sticker}" class="w-full h-28 object-cover rounded-md border cursor-pointer hover:scale-105 transition-transform" onclick="zoomImage(this.src)"><p class="text-xs font-semibold mt-1">ป้ายภาษี</p></div>
+                    <div class="text-center"><img src="/public/uploads/vehicle/front_view/${data.photo_front}" class="w-full h-28 object-cover rounded-md border cursor-pointer hover:scale-105 transition-transform" onclick="zoomImage(this.src)"><p class="text-xs font-semibold mt-1">ด้านหน้า</p></div>
+                    <div class="text-center"><img src="/public/uploads/vehicle/rear_view/${data.photo_rear}" class="w-full h-28 object-cover rounded-md border cursor-pointer hover:scale-105 transition-transform" onclick="zoomImage(this.src)"><p class="text-xs font-semibold mt-1">ด้านหลัง</p></div>
+                </div>`;
 
+            const qrCodeSection = `<div id="qr-code-result" class="hidden mt-4"><div class="card bg-success/10 border-success border shadow-inner"><div class="card-body p-4 items-center text-center"><h3 class="card-title text-base text-success"><i class="fa-solid fa-check-circle mr-2"></i>อนุมัติสำเร็จ</h3><img id="qr-code-image" src="" class="w-32 h-32 rounded-lg p-1 mt-2 bg-white"><p class="text-xs text-slate-500 mt-2">QR Code สำหรับบัตรผ่านถูกสร้างเรียบร้อยแล้ว</p></div></div></div>`;
+
+            modalBody.innerHTML = `
+                ${historySection}
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="p-4 rounded-lg bg-base-200">${userDetails}</div>
+                    <div class="p-4 rounded-lg bg-base-200">${vehicleDetails}</div>
+                    <div class="p-4 rounded-lg bg-base-200">${imageSection}</div>
+                </div>
+                ${qrCodeSection}`;
+            
             if (data.status === 'pending') {
                  modalActions.innerHTML = `<button id="reject-btn" class="btn btn-sm btn-error">ไม่ผ่าน</button><button id="approve-btn" class="btn btn-sm btn-success">อนุมัติ</button><form method="dialog"><button class="btn btn-sm btn-ghost">ปิด</button></form>`;
             } else {
@@ -447,6 +702,183 @@ function format_thai_datetime($datetime) {
                  showAlert('เกิดข้อผิดพลาดในการเชื่อมต่อ', 'error');
             }
         }
+        
+        const imageZoomModal = document.getElementById('imageZoomModal');
+        if (inspectModal) {
+            inspectModal.addEventListener('click', function(e) {
+                if (e.target === inspectModal) {
+                    inspectModal.close();
+                }
+            });
+        }
+        if (imageZoomModal) {
+            imageZoomModal.addEventListener('click', function(e) {
+                const imageContainer = document.getElementById('zoomed-image-container');
+                if (imageContainer && !imageContainer.contains(e.target)) {
+                    imageZoomModal.close();
+                }
+            });
+        }
+
+        // --- EXPORT MODAL LOGIC ---
+        const exportModal = document.getElementById('exportModal');
+        const openExportModalBtn = document.getElementById('openExportModalBtn');
+        const generateExportBtn = document.getElementById('generateExportBtn');
+        const customColumnsSection = document.getElementById('custom-columns-section');
+        const columnsCheckboxesContainer = document.getElementById('columns-checkboxes');
+        
+        const columnMap = {
+            'ข้อมูลผู้ใช้': {
+                'u.user_type': 'ประเภทผู้ใช้', 'u.phone_number': 'เบอร์โทรศัพท์', 'u.national_id': 'เลขบัตรประชาชน', 'u.title': 'คำนำหน้า', 'u.firstname': 'ชื่อ', 'u.lastname': 'นามสกุล', 'u.dob': 'วันเกิด', 'u.gender': 'เพศ', 'u.address': 'ที่อยู่', 'u.subdistrict': 'ตำบล/แขวง', 'u.district': 'อำเภอ/เขต', 'u.province': 'จังหวัด', 'u.zipcode': 'รหัสไปรษณีย์', 'u.work_department': 'สังกัด', 'u.position': 'ตำแหน่ง', 'u.official_id': 'เลข ขรก.', 'u.created_at as user_created_at': 'วันที่สมัคร'
+            },
+            'ข้อมูลยานพาหนะ': {
+                'vr.search_id': 'รหัสคำร้อง', 'vr.card_type': 'ประเภทบัตร', 'vr.vehicle_type': 'ประเภทรถ', 'vr.brand': 'ยี่ห้อ', 'vr.model': 'รุ่น', 'vr.color': 'สี', 'vr.license_plate': 'ทะเบียน', 'vr.province as vehicle_province': 'จังหวัด (รถ)', 'vr.tax_expiry_date': 'วันสิ้นอายุภาษี', 'vr.owner_type': 'ความเป็นเจ้าของ', 'vr.other_owner_name': 'ชื่อเจ้าของ (อื่น)', 'vr.other_owner_relation': 'ความสัมพันธ์ (อื่น)', 'vr.status': 'สถานะคำร้อง', 'vr.rejection_reason': 'เหตุผลที่ปฏิเสธ', 'vr.approved_at': 'วันที่อนุมัติ', 'vr.card_number': 'เลขที่บัตร', 'vr.card_expiry_year': 'หมดอายุสิ้นปี (พ.ศ.)', 'vr.created_at as request_created_at': 'วันที่ยื่นคำร้อง'
+            }
+        };
+
+        const translationMap = {
+            'sequence': 'ลำดับ',
+            'search_id': 'รหัสคำร้อง',
+            'fullname': 'ชื่อ-สกุลผู้ยื่น',
+            'license': 'ทะเบียนรถ',
+            'vehicle_type': 'ประเภทรถ',
+            'request_created_at': 'วันที่ยื่น',
+        };
+        for (const group in columnMap) {
+            for (const key in columnMap[group]) {
+                let finalKey = key;
+                if (key.includes(' as ')) {
+                    finalKey = key.split(' as ')[1];
+                } else if (key.includes('.')) {
+                    finalKey = key.split('.')[1];
+                }
+                translationMap[finalKey] = columnMap[group][key];
+            }
+        }
+        translationMap['card_expiry_year'] = 'หมดอายุสิ้นปี (พ.ศ.)';
+
+
+        // Populate checkboxes
+        for (const group in columnMap) {
+            columnsCheckboxesContainer.innerHTML += `<div class="col-span-2 font-semibold">${group}</div>`;
+            for (const key in columnMap[group]) {
+                columnsCheckboxesContainer.innerHTML += `
+                    <label class="label cursor-pointer justify-start gap-2">
+                        <input type="checkbox" value="${key}" class="checkbox checkbox-sm checkbox-primary" data-group="${group}"/>
+                        <span class="label-text">${columnMap[group][key]}</span> 
+                    </label>`;
+            }
+        }
+
+        document.querySelectorAll('input[name="export_type"]').forEach(radio => {
+            radio.addEventListener('change', function() {
+                customColumnsSection.classList.toggle('hidden', this.value !== 'custom');
+                const checkboxes = columnsCheckboxesContainer.querySelectorAll('input[type="checkbox"]');
+                 if (this.value === 'table_view') {
+                    checkboxes.forEach(cb => cb.checked = false);
+                } else if (this.value === 'all') {
+                    checkboxes.forEach(cb => cb.checked = true);
+                } else if (this.value === 'users') {
+                    checkboxes.forEach(cb => cb.checked = cb.dataset.group === 'ข้อมูลผู้ใช้');
+                } else if (this.value === 'vehicles') {
+                     checkboxes.forEach(cb => cb.checked = cb.dataset.group === 'ข้อมูลยานพาหนะ');
+                } else if (this.value === 'custom') {
+                     checkboxes.forEach(cb => cb.checked = false);
+                }
+            });
+        });
+
+        document.getElementById('deselect-all-custom').addEventListener('click', () => {
+             columnsCheckboxesContainer.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+        });
+
+        openExportModalBtn.addEventListener('click', () => exportModal.showModal());
+
+        generateExportBtn.addEventListener('click', async function() {
+            const exportType = document.querySelector('input[name="export_type"]:checked').value;
+            const btn = this;
+            btn.classList.add('btn-disabled');
+            btn.innerHTML = '<span class="loading loading-spinner loading-sm"></span> Generating...';
+            
+            const searchTerm = searchInput.value;
+            let url = `../../../controllers/admin/export/export_handler.php?type=${exportType}&search=${encodeURIComponent(searchTerm)}`;
+            
+            let fileNamePrefix = "รายการข้อมูล";
+
+            if (exportType === 'custom') {
+                fileNamePrefix = "รายการข้อมูล-ที่เลือก";
+                const selectedColumns = Array.from(columnsCheckboxesContainer.querySelectorAll('input:checked')).map(cb => cb.value);
+                if (selectedColumns.length === 0) {
+                    showAlert('กรุณาเลือกอย่างน้อย 1 คอลัมน์', 'error');
+                    btn.classList.remove('btn-disabled');
+                    btn.textContent = 'สร้างและดาวน์โหลด';
+                    return;
+                }
+                selectedColumns.forEach(col => {
+                    url += `&columns[]=${encodeURIComponent(col)}`;
+                });
+            } else if (exportType === 'users') {
+                 fileNamePrefix = "รายการข้อมูล-ผู้สมัคร";
+            } else if (exportType === 'vehicles') {
+                 fileNamePrefix = "รายการข้อมูล-ยานพาหนะ";
+            } else if (exportType === 'table_view') {
+                 fileNamePrefix = "รายการข้อมูล-ตามตาราง";
+            } else if (exportType === 'all') {
+                 fileNamePrefix = "รายการข้อมูล-ทั้งหมด";
+            }
+
+
+            try {
+                const response = await fetch(url);
+                const result = await response.json();
+
+                if (result.success && result.data.length > 0) {
+                    let dataForSheet;
+
+                    if (exportType === 'table_view') {
+                        dataForSheet = result.data.map(row => ({
+                            'ลำดับ': row.sequence,
+                            'รหัสคำร้อง': row.search_id,
+                            'ชื่อ-สกุลผู้ยื่น': row.fullname,
+                            'ทะเบียนรถ': row.license,
+                            'ประเภทรถ': row.vehicle_type,
+                            'วันที่ยื่น': row.request_created_at
+                        }));
+                    } else {
+                        dataForSheet = result.data.map(row => {
+                            const newRow = {};
+                            for (const originalKey in row) {
+                                const thaiHeader = translationMap[originalKey] || originalKey;
+                                newRow[thaiHeader] = row[originalKey];
+                            }
+                            return newRow;
+                        });
+                    }
+                    
+
+                    const ws = XLSX.utils.json_to_sheet(dataForSheet);
+                    const wb = XLSX.utils.book_new();
+                    XLSX.utils.book_append_sheet(wb, ws, "Data");
+                    
+                    const now = new Date();
+                    const dateStr = `${now.getDate().toString().padStart(2, '0')}-${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getFullYear() + 543}`;
+                    const timeStr = `${now.getHours().toString().padStart(2, '0')}-${now.getMinutes().toString().padStart(2, '0')}-${now.getSeconds().toString().padStart(2, '0')}`;
+                    const fileName = `${fileNamePrefix}_${dateStr}_${timeStr}.xlsx`;
+                    XLSX.writeFile(wb, fileName);
+                    exportModal.close();
+                } else if (result.success && result.data.length === 0) {
+                    showAlert('ไม่พบข้อมูลสำหรับ Export', 'info');
+                } else {
+                    showAlert(result.message || 'เกิดข้อผิดพลาดในการดึงข้อมูล', 'error');
+                }
+            } catch (error) {
+                showAlert('เกิดข้อผิดพลาดในการเชื่อมต่อ', 'error');
+            } finally {
+                btn.classList.remove('btn-disabled');
+                btn.textContent = 'สร้างและดาวน์โหลด';
+            }
+        });
+
     });
     </script>
 </body>

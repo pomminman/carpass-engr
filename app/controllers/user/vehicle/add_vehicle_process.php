@@ -250,17 +250,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     // --- [แก้ไข] สร้าง Search ID ตามลำดับ ---
     $prefix = ($vehicle_type === 'รถยนต์') ? 'C' : 'M';
-    $today_ymd = date('ymd');
+    $today_ymd = date('ymd'); // yymmdd format from Christian year
 
-    // นับจำนวนคำร้องประเภทเดียวกันในวันนี้
-    $sql_count = "SELECT COUNT(*) as count FROM vehicle_requests WHERE search_id LIKE ?";
-    $stmt_count = $conn->prepare($sql_count);
-    $search_pattern = "{$prefix}{$today_ymd}-%";
-    $stmt_count->bind_param("s", $search_pattern);
-    $stmt_count->execute();
-    $result_count = $stmt_count->get_result();
-    $count_today = $result_count->fetch_assoc()['count'];
-    $stmt_count->close();
+    // นับจำนวนคำร้อง *ทั้งหมด* ที่สร้างในวันนี้ เพื่อหาลำดับถัดไป
+    $sql_count = "SELECT COUNT(*) as count FROM vehicle_requests WHERE DATE(created_at) = CURDATE()";
+    $result_count = $conn->query($sql_count);
+    $count_today = 0;
+    if ($result_count) {
+        $count_today = $result_count->fetch_assoc()['count'];
+    }
 
     // สร้างลำดับถัดไป (เช่น 001, 002)
     $next_seq = str_pad($count_today + 1, 3, '0', STR_PAD_LEFT);
@@ -316,4 +314,3 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
 $conn->close();
 ?>
-
