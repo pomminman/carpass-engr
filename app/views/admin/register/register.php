@@ -44,7 +44,7 @@ $titles = ["นาย", "นาง", "นางสาว", "พล.อ.", "พ�
     <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css" rel="stylesheet" type="text/css" />
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;700&display=swap" rel="stylesheet">
-     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" xintegrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <style>
         body { font-family: 'Prompt', sans-serif; }
     </style>
@@ -184,6 +184,7 @@ $titles = ["นาย", "นาง", "นางสาว", "พล.อ.", "พ�
                         </div>
 
                         <div class="card-actions justify-end mt-8">
+                            <a href="../admins/manage_admins.php" class="btn btn-ghost">ย้อนกลับ</a>
                             <button type="submit" class="btn btn-primary">สร้างบัญชี</button>
                         </div>
                     </form>
@@ -242,4 +243,3 @@ $titles = ["นาย", "นาง", "นางสาว", "พล.อ.", "พ�
     </script>
 </body>
 </html>
-

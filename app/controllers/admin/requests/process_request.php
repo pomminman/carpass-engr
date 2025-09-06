@@ -1,9 +1,6 @@
 <?php
 // --- app/controllers/admin/requests/process_request.php ---
 
-// ini_set('display_errors', 1);
-// error_reporting(E_ALL);
-
 session_start();
 header('Content-Type: application/json');
 
@@ -42,8 +39,8 @@ $conn->begin_transaction();
 try {
     if ($action === 'approve') {
         
-        // --- ดึงข้อมูล User Type และ Created At ---
-        $sql_info = "SELECT u.user_type, vr.created_at FROM users u JOIN vehicle_requests vr ON u.id = vr.user_id WHERE vr.id = ?";
+        // --- ดึงข้อมูล User ID และ Created At จากคำร้อง ---
+        $sql_info = "SELECT user_id, user_type, created_at, request_key FROM users u JOIN vehicle_requests vr ON u.id = vr.user_id WHERE vr.id = ?";
         $stmt_info = $conn->prepare($sql_info);
         $stmt_info->bind_param("i", $request_id);
         $stmt_info->execute();
@@ -52,40 +49,70 @@ try {
         $stmt_info->close();
         
         if(!$request_info) throw new Exception("User or request info not found.");
+        
+        $user_id = $request_info['user_id'];
+        
+        // --- [แก้ไข] ส่วนสำคัญ: บันทึก Snapshot ข้อมูลผู้ใช้ลงในตาราง approved_user_data ---
+        $sql_user_data = "SELECT * FROM users WHERE id = ?";
+        $stmt_user_data = $conn->prepare($sql_user_data);
+        if (!$stmt_user_data) throw new Exception("Failed to prepare user data statement: " . $conn->error);
+        $stmt_user_data->bind_param("i", $user_id);
+        $stmt_user_data->execute();
+        $user_result = $stmt_user_data->get_result();
+        $user_data = $user_result->fetch_assoc();
+        $stmt_user_data->close();
 
-        // --- [แก้ไข] กำหนด Card Type และ Card Expiry Year ---
+        if (!$user_data) throw new Exception("User data not found for snapshot.");
+
+        // ตรวจสอบว่ามี snapshot สำหรับคำร้องนี้อยู่แล้วหรือไม่ (ป้องกันการสร้างซ้ำ)
+        $sql_check_snapshot = "SELECT id FROM approved_user_data WHERE request_id = ?";
+        $stmt_check_snapshot = $conn->prepare($sql_check_snapshot);
+        $stmt_check_snapshot->bind_param("i", $request_id);
+        $stmt_check_snapshot->execute();
+        $stmt_check_snapshot->store_result();
+        if ($stmt_check_snapshot->num_rows == 0) {
+            $sql_snapshot = "INSERT INTO approved_user_data (request_id, user_id, user_key, user_type, phone_number, national_id, title, firstname, lastname, dob, gender, address, subdistrict, district, province, zipcode, photo_profile, work_department, position, official_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            $stmt_snapshot = $conn->prepare($sql_snapshot);
+            if (!$stmt_snapshot) throw new Exception("Failed to prepare snapshot statement: " . $conn->error);
+
+            $stmt_snapshot->bind_param(
+                "iissssssssssssssssss",
+                $request_id, $user_data['id'], $user_data['user_key'], $user_data['user_type'],
+                $user_data['phone_number'], $user_data['national_id'], $user_data['title'],
+                $user_data['firstname'], $user_data['lastname'], $user_data['dob'],
+                $user_data['gender'], $user_data['address'], $user_data['subdistrict'],
+                $user_data['district'], $user_data['province'], $user_data['zipcode'],
+                $user_data['photo_profile'], $user_data['work_department'],
+                $user_data['position'], $user_data['official_id']
+            );
+
+            if (!$stmt_snapshot->execute()) throw new Exception("Failed to save user snapshot: " . $stmt_snapshot->error);
+            $stmt_snapshot->close();
+        }
+        $stmt_check_snapshot->close();
+        // --- [สิ้นสุดส่วนที่แก้ไข] ---
+
+
+        // --- กำหนด Card Type และ Card Expiry Year ---
         $card_type = ($request_info['user_type'] === 'army') ? 'internal' : 'external';
-        // ดึงปี ค.ศ. จากวันที่ยื่นคำร้อง
         $creation_year = date('Y', strtotime($request_info['created_at']));
-        // แปลงเป็นปี พ.ศ. และ Cast เป็น String เพื่อความแน่นอน
         $card_expiry_year = (string)((int)$creation_year + 543); 
 
-        // --- [แก้ไข] สร้าง Card Number จากลำดับการอนุมัติ (วิธีที่เสถียรและมีประสิทธิภาพ) ---
+        // --- สร้าง Card Number ---
         $sql_max_card = "SELECT MAX(CAST(card_number AS UNSIGNED)) as max_num FROM vehicle_requests";
         $result_max_card = $conn->query($sql_max_card);
         $max_card_row = $result_max_card->fetch_assoc();
         $next_card_num = ($max_card_row['max_num'] ?? 0) + 1;
         $card_number = str_pad($next_card_num, 4, '0', STR_PAD_LEFT);
 
-
         // --- สร้าง QR Code ---
-        $sql_key = "SELECT request_key FROM vehicle_requests WHERE id = ?";
-        $stmt_key = $conn->prepare($sql_key);
-        $stmt_key->bind_param("i", $request_id);
-        $stmt_key->execute();
-        $result_key = $stmt_key->get_result();
-        $req_data = $result_key->fetch_assoc();
-        $stmt_key->close();
-        
-        if(!$req_data) throw new Exception("Request key not found.");
-
-        $qr_content = "http://" . $_SERVER['HTTP_HOST'] . "/public/app/verify.php?key=" . $req_data['request_key'];
+        $qr_content = "http://" . $_SERVER['HTTP_HOST'] . "/public/app/verify.php?key=" . $request_info['request_key'];
         $qr_dir = "../../../../public/uploads/vehicle/QR/";
         if (!file_exists($qr_dir)) {
             mkdir($qr_dir, 0777, true);
         }
-        $qr_file_path_relative = $qr_dir . $req_data['request_key'] . '.png';
-        QRcode::png($qr_content, $qr_file_path_relative, QR_ECLEVEL_L, 4);
+        $qr_file_path_relative = $qr_dir . $request_info['request_key'] . '.png';
+        QRcode::png($qr_content, $qr_file_path_relative, QR_ECLEVEL_L, 4, 0);
 
         // --- อัปเดตฐานข้อมูล ---
         $sql = "UPDATE vehicle_requests SET 
@@ -97,12 +124,11 @@ try {
                     card_expiry_year = ? 
                 WHERE id = ?";
         $stmt = $conn->prepare($sql);
-        // [แก้ไข] ปรับปรุงประเภทของ bind_param ให้ถูกต้อง
         $stmt->bind_param("isssi", $admin_id, $card_type, $card_number, $card_expiry_year, $request_id);
         if(!$stmt->execute()) throw new Exception("Database update failed: " . $stmt->error);
         
         log_activity($conn, 'admin_approve_request', ['request_id' => $request_id]);
-        $response = ['success' => true, 'message' => 'อนุมัติคำร้องสำเร็จแล้ว', 'qr_code_url' => '/public/uploads/vehicle/QR/' . $req_data['request_key'] . '.png'];
+        $response = ['success' => true, 'message' => 'อนุมัติคำร้องสำเร็จแล้ว', 'qr_code_url' => '/public/uploads/vehicle/QR/' . $request_info['request_key'] . '.png'];
 
     } elseif ($action === 'reject') {
         $rejection_reason = filter_var($data['reason'] ?? 'ไม่ระบุเหตุผล', FILTER_SANITIZE_STRING);
@@ -124,7 +150,9 @@ try {
         $response = ['success' => true, 'message' => 'ปฏิเสธคำร้องสำเร็จแล้ว'];
     }
     
-    $stmt->close();
+    if (isset($stmt)) {
+        $stmt->close();
+    }
     $conn->commit();
 
 } catch (Exception $e) {

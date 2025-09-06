@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Sep 04, 2025 at 04:22 AM
+-- Generation Time: Sep 06, 2025 at 09:23 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -60,6 +60,43 @@ CREATE TABLE `admins` (
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
+--
+-- Dumping data for table `admins`
+--
+
+INSERT INTO `admins` (`id`, `username`, `password`, `title`, `firstname`, `lastname`, `phone_number`, `position`, `department`, `role`, `view_permission`, `created_by`, `created_at`) VALUES
+(1, 'pommin_in', '$2y$10$yJPG22jldUfy4wU/toj72e/wWnmrUOCR6/NW/Ea9uBnwCMywVfLAy', 'ร.ท.', 'พรหมินทร์', 'อินทมาตย์', '0875692155', 'น.ควบคุมข้อมูล', 'กยข.กช.', 'superadmin', 1, NULL, '2025-09-03 16:22:12');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `approved_user_data`
+--
+
+CREATE TABLE `approved_user_data` (
+  `id` int(11) NOT NULL COMMENT 'กำหนดให้ id เป็น auto-increment',
+  `request_id` int(11) NOT NULL COMMENT 'FK อ้างอิงถึง id ของคำร้องในตาราง vehicle_requests',
+  `original_user_id` int(11) NOT NULL COMMENT 'FK อ้างอิงถึง id เดิมของผู้ใช้ในตาราง users',
+  `user_type` varchar(50) DEFAULT NULL COMMENT 'ประเภทผู้สมัคร (army, external) ณ เวลาที่อนุมัติ',
+  `phone_number` varchar(15) NOT NULL COMMENT 'เบอร์โทรศัพท์ ณ เวลาที่อนุมัติ',
+  `national_id` varchar(20) NOT NULL COMMENT 'เลขบัตรประชาชน ณ เวลาที่อนุมัติ',
+  `title` varchar(100) NOT NULL COMMENT 'คำนำหน้าชื่อ ณ เวลาที่อนุมัติ',
+  `firstname` varchar(255) NOT NULL COMMENT 'ชื่อจริง ณ เวลาที่อนุมัติ',
+  `lastname` varchar(255) NOT NULL COMMENT 'นามสกุล ณ เวลาที่อนุมัติ',
+  `dob` date DEFAULT NULL COMMENT 'วันเดือนปีเกิด ณ เวลาที่อนุมัติ',
+  `gender` varchar(10) NOT NULL COMMENT 'เพศ ณ เวลาที่อนุมัติ',
+  `address` text NOT NULL COMMENT 'ที่อยู่ ณ เวลาที่อนุมัติ',
+  `subdistrict` varchar(255) NOT NULL COMMENT 'ตำบล/แขวง ณ เวลาที่อนุมัติ',
+  `district` varchar(255) NOT NULL COMMENT 'อำเภอ/เขต ณ เวลาที่อนุมัติ',
+  `province` varchar(255) NOT NULL COMMENT 'จังหวัด ณ เวลาที่อนุมัติ',
+  `zipcode` varchar(5) NOT NULL COMMENT 'รหัสไปรษณีย์ ณ เวลาที่อนุมัติ',
+  `photo_profile` varchar(255) NOT NULL COMMENT 'ชื่อไฟล์รูปโปรไฟล์ ณ เวลาที่อนุมัติ',
+  `work_department` varchar(255) DEFAULT NULL COMMENT 'หน่วยงาน/สังกัด ณ เวลาที่อนุมัติ (ถ้ามี)',
+  `position` varchar(255) DEFAULT NULL COMMENT 'ตำแหน่ง ณ เวลาที่อนุมัติ (ถ้ามี)',
+  `official_id` varchar(10) DEFAULT NULL COMMENT 'เลขบัตรข้าราชการ ณ เวลาที่อนุมัติ (ถ้ามี)',
+  `snapshotted_at` timestamp NOT NULL DEFAULT current_timestamp() COMMENT 'วันและเวลาที่ข้อมูลนี้ถูกบันทึก'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+
 -- --------------------------------------------------------
 
 --
@@ -72,6 +109,116 @@ CREATE TABLE `car_brands` (
   `display_order` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
+--
+-- Dumping data for table `car_brands`
+--
+
+INSERT INTO `car_brands` (`id`, `name`, `display_order`) VALUES
+(1, 'ALFA ROMEO', 1),
+(2, 'ALPHA VOLANTIS', 2),
+(3, 'APIRILIA', 3),
+(4, 'ASTON MARTIN', 4),
+(5, 'AUDI', 5),
+(6, 'AVATR', 6),
+(7, 'BENELLI', 7),
+(8, 'BENTLEY', 8),
+(9, 'BMW', 9),
+(10, 'BYD', 10),
+(11, 'CHANGAN', 11),
+(12, 'CHERY', 12),
+(13, 'CHEVROLET', 13),
+(14, 'CITROEN', 14),
+(15, 'CYCLONE', 15),
+(16, 'DAEWOO', 16),
+(17, 'DAIHATSU', 17),
+(18, 'DECO', 18),
+(19, 'DEEPAL', 19),
+(20, 'DODGE', 20),
+(21, 'DONGFENG', 21),
+(22, 'DUCATI', 22),
+(23, 'EM', 23),
+(24, 'FERRARI', 24),
+(25, 'FIAT', 25),
+(26, 'FORD', 26),
+(27, 'FOTON', 27),
+(28, 'GAC', 28),
+(29, 'GAC AION', 29),
+(30, 'GPX', 30),
+(31, 'GWM', 31),
+(32, 'HARLEY-DAVIDSON', 32),
+(33, 'HAVAL', 33),
+(34, 'H SEM', 34),
+(35, 'HINO', 35),
+(36, 'HONDA', 36),
+(37, 'HUMMER', 37),
+(38, 'HUSQVARNA', 38),
+(39, 'HYUNDAI', 39),
+(40, 'INDIAN MOTORCYCLE', 40),
+(41, 'INFINITI', 41),
+(42, 'ISUZU', 42),
+(43, 'JAC', 43),
+(44, 'JEEP', 44),
+(45, 'JAECOO', 45),
+(46, 'KAWASAKI', 46),
+(47, 'KEEWAY', 47),
+(48, 'KIA', 48),
+(49, 'KTM', 49),
+(50, 'LAMBRETTA', 50),
+(51, 'LAMBORGHINI', 51),
+(52, 'LAND ROVER', 52),
+(53, 'LEAPMOTOR', 53),
+(54, 'LEXUS', 54),
+(55, 'LION EV', 55),
+(56, 'LOTUS', 56),
+(57, 'MAN', 57),
+(58, 'MASERATI', 58),
+(59, 'MAYBACH', 59),
+(60, 'MAZDA', 60),
+(61, 'MCLAREN', 61),
+(62, 'MERCEDES-BENZ', 62),
+(63, 'MG', 63),
+(64, 'MINI', 64),
+(65, 'MITSUBISHI', 65),
+(66, 'NETA', 66),
+(67, 'NISSAN', 67),
+(68, 'OBAIC', 68),
+(69, 'OMODA', 69),
+(70, 'OPEL', 70),
+(71, 'ORA', 71),
+(72, 'PEUGEOT', 72),
+(73, 'PLATINUM', 73),
+(74, 'PORSCHE', 74),
+(75, 'PROTON', 75),
+(76, 'RAM', 76),
+(77, 'RENAULT', 77),
+(78, 'ROLLS-ROYCE', 78),
+(79, 'ROVER', 79),
+(80, 'ROYAL ALLOY', 80),
+(81, 'ROYAL ENFIELD', 81),
+(82, 'RYUKA', 82),
+(83, 'SAAB', 83),
+(84, 'SANGYONG', 84),
+(85, 'STALLIONS', 85),
+(86, 'STROM', 86),
+(87, 'SUBARU', 87),
+(88, 'SUZUKI', 88),
+(89, 'SYM', 89),
+(90, 'TATA', 90),
+(91, 'TESLA', 91),
+(92, 'THAIRUNG', 92),
+(93, 'TIGER', 93),
+(94, 'TOYOTA', 94),
+(95, 'TRIUMPH', 95),
+(96, 'VESPA', 96),
+(97, 'VOLKSWAGEN', 97),
+(98, 'VOLVO', 98),
+(99, 'WILLYS', 99),
+(100, 'WULING', 100),
+(101, 'XPENG', 101),
+(102, 'YAMAHA', 102),
+(103, 'ZEEKR', 103),
+(104, 'ZONTES', 104);
+
 -- --------------------------------------------------------
 
 --
@@ -83,6 +230,62 @@ CREATE TABLE `departments` (
   `name` varchar(255) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL,
   `display_order` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+
+--
+-- Dumping data for table `departments`
+--
+
+INSERT INTO `departments` (`id`, `name`, `display_order`) VALUES
+(1, 'สง.จก.กช.', 1),
+(2, 'สง.รอง จก.กช.(1)', 2),
+(3, 'สง.รอง จก.กช.(2)', 3),
+(4, 'สง.เสธ.กช.', 4),
+(5, 'สง.รอง เสธ.กช.(1)', 5),
+(6, 'สง.รอง เสธ.กช.(2)', 6),
+(7, 'กกพ.กช.', 7),
+(8, 'กยข.กช.', 8),
+(9, 'กกบ.กช.', 9),
+(10, 'กกร.กช.', 10),
+(11, 'กปช.กช.', 11),
+(12, 'กกส.กช.', 12),
+(13, 'กคช.กช.', 13),
+(14, 'กวก.กช.', 14),
+(15, 'กจห.กช.', 15),
+(16, 'กบร.กช.', 16),
+(17, 'กชฝ.กช.', 17),
+(18, 'กอ.กส.กช.', 18),
+(19, 'ผธก.กช.', 19),
+(20, 'ผกง.กช.', 20),
+(21, 'รร.ช.กช.', 21),
+(22, 'พัน.นร.รร.ช.กช.', 22),
+(23, 'พัน.บร.กบร.กช.', 23),
+(24, 'ช.21', 24),
+(25, 'ร้อย.ช.ซบร.หนัก', 25),
+(26, 'ร้อย.ช.ซบร.สนาม', 26),
+(27, 'ที่ปรึกษา กช.', 27),
+(28, 'นปก.กช.', 28),
+(29, 'ฝ่ายกิจการพิเศษ กช.', 29),
+(30, 'ศูนย์กีฬา กช.', 30),
+(31, 'รร.โยธินวิทยา', 31),
+(32, 'สหกรณ์ออมทรัพย์ค่ายภาณุรังษี', 32),
+(33, 'ร้านค้าสหกรณ์ค่ายภาณุรังษี', 33),
+(34, 'มทบ.16', 34),
+(35, 'รพ.ค่ายภาณุรังษี', 35),
+(36, 'บก.พล.ช.', 36),
+(37, 'ช.11', 37),
+(38, 'ช.11 พัน.111', 38),
+(39, 'ช.11 พัน.602', 39),
+(40, 'พัน.ช.คมศ.พล.ช.', 40),
+(41, 'ช.ร้อย.14', 41),
+(42, 'ช.ร้อย.18', 42),
+(43, 'ช.ร้อย.115', 43),
+(44, 'ช.พัน.51', 44),
+(45, 'ตอน ช.93', 45),
+(46, 'พัน.ช.กช.ร้อย.1', 46),
+(47, 'ช.1', 47),
+(48, 'ช.1 พัน.52', 48),
+(49, 'ช.1 พัน.112', 49),
+(50, 'พล.พัฒนา.1', 50);
 
 -- --------------------------------------------------------
 
@@ -112,6 +315,15 @@ CREATE TABLE `users` (
   `official_id` varchar(10) DEFAULT NULL COMMENT 'เลขบัตรข้าราชการ (สำหรับข้าราชการ)',
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+
+--
+-- Dumping data for table `users`
+--
+
+INSERT INTO `users` (`id`, `user_key`, `user_type`, `phone_number`, `national_id`, `title`, `firstname`, `lastname`, `dob`, `gender`, `address`, `subdistrict`, `district`, `province`, `zipcode`, `photo_profile`, `work_department`, `position`, `official_id`, `created_at`) VALUES
+(1, '7c8fc75e6356eb41c17b', 'army', '0875692155', '1709901092886', 'ร.ท.', 'พรหมินทร์', 'อินทมาตย์', '1996-11-06', 'ชาย', '3 ม.1', 'ดอนทราย', 'โพธาราม', 'ราชบุรี', '70120', 'd8e08c5c7fb21e86f483699ec9d8eb2d.jpg', 'กยข.กช.', 'น.ควบคุมข้อมูล', '5246546465', '2025-09-03 16:29:15'),
+(2, '5131dc1b11e6ae1a82b1', 'army', '0000000000', '0000000000000', 'พ.อ.หญิง', 'ฟหฟห', 'ฟหกฟหก', '2010-11-14', 'ชาย', 'หก', 'หงษ์เจริญ', 'ท่าแซะ', 'ชุมพร', '86140', 'abd0c6eefa897ed52d02f92efc95631b.jpg', 'กกพ.กช.', 'ฟหกฟห', '2332416545', '2025-09-04 08:03:05'),
+(3, 'a2099a4f363d5ae4d60d', 'external', '2222222222', '1111111111111', 'นางสาว', 'ฟดกกs', 'หกดกหs', '2022-03-02', 'ชาย', 'หกดs', 'องครักษ์', 'องครักษ์', 'นครนายก', '26120', 'dd786484bc419171f93b202e1566e49f.jpg', NULL, NULL, NULL, '2025-09-05 07:20:43');
 
 -- --------------------------------------------------------
 
@@ -175,6 +387,14 @@ ALTER TABLE `admins`
   ADD KEY `created_by` (`created_by`);
 
 --
+-- Indexes for table `approved_user_data`
+--
+ALTER TABLE `approved_user_data`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `request_id` (`request_id`) COMMENT 'กำหนดให้ 1 คำร้องมีข้อมูล snapshot ได้เพียง 1 ชุด',
+  ADD KEY `original_user_id` (`original_user_id`) COMMENT 'Index สำหรับการค้นหาข้อมูลจาก user id เดิม';
+
+--
 -- Indexes for table `car_brands`
 --
 ALTER TABLE `car_brands`
@@ -222,25 +442,31 @@ ALTER TABLE `activity_logs`
 -- AUTO_INCREMENT for table `admins`
 --
 ALTER TABLE `admins`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+
+--
+-- AUTO_INCREMENT for table `approved_user_data`
+--
+ALTER TABLE `approved_user_data`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT COMMENT 'กำหนดให้ id เป็น auto-increment';
 
 --
 -- AUTO_INCREMENT for table `car_brands`
 --
 ALTER TABLE `car_brands`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=105;
 
 --
 -- AUTO_INCREMENT for table `departments`
 --
 ALTER TABLE `departments`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=51;
 
 --
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT for table `vehicle_requests`
@@ -257,6 +483,13 @@ ALTER TABLE `vehicle_requests`
 --
 ALTER TABLE `admins`
   ADD CONSTRAINT `admins_ibfk_1` FOREIGN KEY (`created_by`) REFERENCES `admins` (`id`) ON DELETE SET NULL ON UPDATE CASCADE;
+
+--
+-- Constraints for table `approved_user_data`
+--
+ALTER TABLE `approved_user_data`
+  ADD CONSTRAINT `approved_user_data_ibfk_1` FOREIGN KEY (`request_id`) REFERENCES `vehicle_requests` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `approved_user_data_ibfk_2` FOREIGN KEY (`original_user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
 -- Constraints for table `vehicle_requests`
