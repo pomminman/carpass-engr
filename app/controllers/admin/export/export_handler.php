@@ -27,7 +27,7 @@ $search_term = $_GET['search'] ?? '';
 // Whitelist of all possible columns to prevent SQL injection
 $allowed_columns_map = [
     'users' => [ 'u.user_type', 'u.phone_number', 'u.national_id', 'u.title', 'u.firstname', 'u.lastname', 'u.dob', 'u.gender', 'u.address', 'u.subdistrict', 'u.district', 'u.province', 'u.zipcode', 'u.work_department', 'u.position', 'u.official_id', 'u.created_at as user_created_at'],
-    'vehicles' => ['vr.search_id', 'vr.card_type', 'vr.vehicle_type', 'vr.brand', 'vr.model', 'vr.color', 'vr.license_plate', 'vr.province as vehicle_province', 'vr.tax_expiry_date', 'vr.owner_type', 'vr.other_owner_name', 'vr.other_owner_relation', 'vr.status', 'vr.rejection_reason', 'vr.approved_at', 'vr.card_number', 'vr.card_expiry_year', 'vr.card_pickup_status', 'vr.edit_status', 'vr.created_at as request_created_at']
+    'vehicles' => ['vr.search_id', 'vr.card_type', 'vr.vehicle_type', 'vr.brand', 'vr.model', 'vr.color', 'vr.license_plate', 'vr.province as vehicle_province', 'vr.tax_expiry_date', 'vr.owner_type', 'vr.other_owner_name', 'vr.other_owner_relation', 'vr.status', 'vr.rejection_reason', 'vr.approved_at', 'vr.card_number', 'vr.card_expiry_year', 'vr.card_pickup_status', 'vr.card_pickup_date', 'vr.edit_status', 'vr.created_at as request_created_at']
 ];
 $allowed_columns = array_merge($allowed_columns_map['users'], $allowed_columns_map['vehicles']);
 
@@ -36,7 +36,7 @@ $data_to_export = [];
 
 switch ($export_type) {
     case 'table_view':
-        $select_clause = "vr.search_id, u.title, u.firstname, u.lastname, vr.license_plate, vr.province as vehicle_province, vr.vehicle_type, vr.created_at as request_created_at";
+        $select_clause = "vr.search_id, u.title, u.firstname, u.lastname, u.work_department, vr.license_plate, vr.province as vehicle_province, vr.vehicle_type, vr.created_at as request_created_at, vr.card_pickup_date";
         break;
     case 'users':
         $select_clause = implode(', ', $allowed_columns_map['users']);
@@ -124,9 +124,11 @@ if ($stmt) {
                     'sequence' => $processed_row['sequence'],
                     'search_id' => $processed_row['search_id'],
                     'fullname' => ($processed_row['title'] ?? '') . ($processed_row['firstname'] ?? '') . ' ' . ($processed_row['lastname'] ?? ''),
+                    'work_department' => $processed_row['work_department'] ?? '-',
                     'license' => ($processed_row['license_plate'] ?? '') . ' ' . ($processed_row['vehicle_province'] ?? ''),
                     'vehicle_type' => $processed_row['vehicle_type'],
                     'request_created_at' => $processed_row['request_created_at'],
+                    'card_pickup_date' => $processed_row['card_pickup_date']
                 ];
             } else {
                 $data_to_export[] = $processed_row;

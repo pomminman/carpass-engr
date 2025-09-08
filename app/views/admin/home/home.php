@@ -59,7 +59,7 @@ if($result_total_req) $stats['total_requests'] = $result_total_req->fetch_assoc(
 
 // 5. [แก้ไข] ดึงเฉพาะรายการคำร้องที่ "รออนุมัติ" และเรียงจากเก่าสุดไปใหม่สุด
 $pending_requests = [];
-$sql_pending_requests = "SELECT vr.id, vr.search_id, u.title, u.firstname, u.lastname, vr.license_plate, vr.province, vr.vehicle_type, vr.created_at, vr.status, vr.card_pickup_date
+$sql_pending_requests = "SELECT vr.id, vr.search_id, u.title, u.firstname, u.lastname, u.work_department, vr.license_plate, vr.province, vr.vehicle_type, vr.created_at, vr.status, vr.card_pickup_date
                      FROM vehicle_requests vr
                      JOIN users u ON vr.user_id = u.id
                      WHERE vr.status = 'pending'
@@ -201,6 +201,7 @@ function format_thai_date($date) {
                                     <tr>
                                         <th data-sort-by="search_id">รหัสคำร้อง<i class="fa-solid fa-sort"></i></th>
                                         <th data-sort-by="name">ชื่อผู้ยื่น<i class="fa-solid fa-sort"></i></th>
+                                        <th data-sort-by="department">สังกัด<i class="fa-solid fa-sort"></i></th>
                                         <th data-sort-by="license">ทะเบียนรถ<i class="fa-solid fa-sort"></i></th>
                                         <th data-sort-by="type">ประเภทรถ<i class="fa-solid fa-sort"></i></th>
                                         <th data-sort-by="date" class="sort-asc">วันที่ยื่น<i class="fa-solid fa-sort-up"></i></th>
@@ -210,26 +211,26 @@ function format_thai_date($date) {
                                 </thead>
                                 <tbody>
                                     <?php if (empty($pending_requests)): ?>
-                                        <tr><td colspan="7" class="text-center text-slate-500 py-4">ไม่พบรายการที่รอการอนุมัติ</td></tr>
+                                        <tr><td colspan="8" class="text-center text-slate-500 py-4">ไม่พบรายการที่รอการอนุมัติ</td></tr>
                                     <?php else: ?>
                                         <?php foreach ($pending_requests as $req): ?>
                                         <tr data-request-id="<?php echo $req['id']; ?>">
                                             <td class="font-semibold whitespace-nowrap"><?php echo htmlspecialchars($req['search_id']); ?></td>
                                             <td class="whitespace-nowrap"><?php echo htmlspecialchars($req['title'] . $req['firstname'] . ' ' . $req['lastname']); ?></td>
+                                            <td class="whitespace-nowrap"><?php echo htmlspecialchars($req['work_department'] ?? '-'); ?></td>
                                             <td class="whitespace-nowrap"><?php echo htmlspecialchars($req['license_plate'] . ' ' . $req['province']); ?></td>
                                             <td class="whitespace-nowrap"><?php echo htmlspecialchars($req['vehicle_type']); ?></td>
                                             <td class="whitespace-nowrap"><?php echo format_thai_datetime($req['created_at']); ?></td>
                                             <td class="whitespace-nowrap font-semibold text-info"><?php echo format_thai_date($req['card_pickup_date']); ?></td>
-                                            <td>
+                                            <td class="whitespace-nowrap">
                                                 <button class="btn btn-sm btn-primary inspect-btn" data-id="<?php echo $req['id']; ?>">
-                                                    <i class="fa-solid fa-search mr-1"></i>
-                                                    ตรวจสอบ
+                                                    <span><i class="fa-solid fa-search mr-1"></i>ตรวจสอบ</span>
                                                 </button>
                                             </td>
                                         </tr>
                                         <?php endforeach; ?>
                                     <?php endif; ?>
-                                    <tr id="no-results-row" class="hidden"><td colspan="7" class="text-center text-slate-500 py-4">ไม่พบข้อมูลคำร้องที่ค้นหา</td></tr>
+                                    <tr id="no-results-row" class="hidden"><td colspan="8" class="text-center text-slate-500 py-4">ไม่พบข้อมูลคำร้องที่ค้นหา</td></tr>
                                 </tbody>
                             </table>
                         </div>
@@ -406,7 +407,7 @@ function format_thai_date($date) {
     document.addEventListener('DOMContentLoaded', function() {
         const currentPage = window.location.pathname;
         const menuLinks = document.querySelectorAll('#sidebar-menu > li:not(.mb-4) > a');
-
+        
         menuLinks.forEach(link => link.classList.remove('active'));
 
         const currentPageFilename = currentPage.substring(currentPage.lastIndexOf('/') + 1);
@@ -418,7 +419,7 @@ function format_thai_date($date) {
         if (activeLink) {
             activeLink.classList.add('active');
         }
-        
+
         const searchInput = document.getElementById('searchInput');
         const table = document.getElementById('requestsTable');
         const tableBody = table.querySelector('tbody');
@@ -570,16 +571,14 @@ function format_thai_date($date) {
             
             const profileImageSrc = `/public/uploads/user_photos/${data.photo_profile}`;
             
-            const addressParts = [data.address, data.subdistrict, data.district, data.province, data.zipcode].filter(Boolean);
+            const addressParts = [data.address, data.subdistrict, data.district, data.user_province, data.zipcode].filter(Boolean);
             const fullAddress = addressParts.join(', ') || '-';
 
             const userDetails = `
                 <h3 class="font-semibold text-base mb-2 uppercase tracking-wider text-slate-500">ข้อมูลผู้ยื่น</h3>
                 <div class="flex flex-col items-center">
-                    <div class="avatar mb-4 cursor-pointer" onclick="zoomImage('${profileImageSrc}')">
-                        <div class="w-24 rounded-lg ring ring-primary ring-offset-base-100 ring-offset-2">
-                            <img src="${profileImageSrc}" />
-                        </div>
+                    <div class="w-24 h-24 bg-base-300 rounded-lg p-1 mb-4">
+                        <img src="${profileImageSrc}" class="w-full h-full object-contain rounded-md cursor-pointer" onclick="zoomImage('${profileImageSrc}')" />
                     </div>
                     <div class="text-center">
                         <div class="font-bold">${data.user_title}${data.user_firstname} ${data.user_lastname}</div>
@@ -618,10 +617,30 @@ function format_thai_date($date) {
             const imageSection = `
                 <h3 class="font-semibold text-base mb-2 uppercase tracking-wider text-slate-500">หลักฐาน</h3>
                 <div class="grid grid-cols-2 gap-2">
-                    <div class="text-center"><img src="/public/uploads/vehicle/registration/${data.photo_reg_copy}" class="w-full h-28 object-cover rounded-md border cursor-pointer hover:scale-105 transition-transform" onclick="zoomImage(this.src)"><p class="text-xs font-semibold mt-1">ทะเบียนรถ</p></div>
-                    <div class="text-center"><img src="/public/uploads/vehicle/tax_sticker/${data.photo_tax_sticker}" class="w-full h-28 object-cover rounded-md border cursor-pointer hover:scale-105 transition-transform" onclick="zoomImage(this.src)"><p class="text-xs font-semibold mt-1">ป้ายภาษี</p></div>
-                    <div class="text-center"><img src="/public/uploads/vehicle/front_view/${data.photo_front}" class="w-full h-28 object-cover rounded-md border cursor-pointer hover:scale-105 transition-transform" onclick="zoomImage(this.src)"><p class="text-xs font-semibold mt-1">ด้านหน้า</p></div>
-                    <div class="text-center"><img src="/public/uploads/vehicle/rear_view/${data.photo_rear}" class="w-full h-28 object-cover rounded-md border cursor-pointer hover:scale-105 transition-transform" onclick="zoomImage(this.src)"><p class="text-xs font-semibold mt-1">ด้านหลัง</p></div>
+                    <div class="text-center">
+                        <div class="bg-base-300 rounded-lg p-1 flex items-center justify-center h-28">
+                            <img src="/public/uploads/vehicle/registration/${data.photo_reg_copy}" class="w-full h-full object-contain rounded-md cursor-pointer" onclick="zoomImage(this.src)">
+                        </div>
+                        <p class="text-xs font-semibold mt-1">ทะเบียนรถ</p>
+                    </div>
+                    <div class="text-center">
+                        <div class="bg-base-300 rounded-lg p-1 flex items-center justify-center h-28">
+                            <img src="/public/uploads/vehicle/tax_sticker/${data.photo_tax_sticker}" class="w-full h-full object-contain rounded-md cursor-pointer" onclick="zoomImage(this.src)">
+                        </div>
+                        <p class="text-xs font-semibold mt-1">ป้ายภาษี</p>
+                    </div>
+                    <div class="text-center">
+                        <div class="bg-base-300 rounded-lg p-1 flex items-center justify-center h-28">
+                            <img src="/public/uploads/vehicle/front_view/${data.photo_front}" class="w-full h-full object-contain rounded-md cursor-pointer" onclick="zoomImage(this.src)">
+                        </div>
+                        <p class="text-xs font-semibold mt-1">ด้านหน้า</p>
+                    </div>
+                    <div class="text-center">
+                        <div class="bg-base-300 rounded-lg p-1 flex items-center justify-center h-28">
+                            <img src="/public/uploads/vehicle/rear_view/${data.photo_rear}" class="w-full h-full object-contain rounded-md cursor-pointer" onclick="zoomImage(this.src)">
+                        </div>
+                        <p class="text-xs font-semibold mt-1">ด้านหลัง</p>
+                    </div>
                 </div>`;
 
             const qrCodeSection = `<div id="qr-code-result" class="hidden mt-4"><div class="card bg-success/10 border-success border shadow-inner"><div class="card-body p-4 items-center text-center"><h3 class="card-title text-base text-success"><i class="fa-solid fa-check-circle mr-2"></i>อนุมัติสำเร็จ</h3><img id="qr-code-image" src="" class="w-32 h-32 rounded-lg p-1 mt-2 bg-white"><p class="text-xs text-slate-500 mt-2">QR Code สำหรับบัตรผ่านถูกสร้างเรียบร้อยแล้ว</p></div></div></div>`;
@@ -718,7 +737,7 @@ function format_thai_date($date) {
                     }
                     
                     if (tableBody.querySelectorAll('tr[data-request-id]').length === 0) {
-                         tableBody.innerHTML = '<tr><td colspan="7" class="text-center text-slate-500 py-4">ไม่พบรายการที่รอการอนุมัติ</td></tr>';
+                         tableBody.innerHTML = '<tr><td colspan="8" class="text-center text-slate-500 py-4">ไม่พบรายการที่รอการอนุมัติ</td></tr>';
                     }
 
                 } else {
@@ -758,7 +777,7 @@ function format_thai_date($date) {
                 'u.user_type': 'ประเภทผู้ใช้', 'u.phone_number': 'เบอร์โทรศัพท์', 'u.national_id': 'เลขบัตรประชาชน', 'u.title': 'คำนำหน้า', 'u.firstname': 'ชื่อ', 'u.lastname': 'นามสกุล', 'u.dob': 'วันเกิด', 'u.gender': 'เพศ', 'u.address': 'ที่อยู่', 'u.subdistrict': 'ตำบล/แขวง', 'u.district': 'อำเภอ/เขต', 'u.province': 'จังหวัด', 'u.zipcode': 'รหัสไปรษณีย์', 'u.work_department': 'สังกัด', 'u.position': 'ตำแหน่ง', 'u.official_id': 'เลข ขรก.', 'u.created_at as user_created_at': 'วันที่สมัคร'
             },
             'ข้อมูลยานพาหนะ': {
-                'vr.search_id': 'รหัสคำร้อง', 'vr.card_type': 'ประเภทบัตร', 'vr.vehicle_type': 'ประเภทรถ', 'vr.brand': 'ยี่ห้อ', 'vr.model': 'รุ่น', 'vr.color': 'สี', 'vr.license_plate': 'ทะเบียน', 'vr.province as vehicle_province': 'จังหวัด (รถ)', 'vr.tax_expiry_date': 'วันสิ้นอายุภาษี', 'vr.owner_type': 'ความเป็นเจ้าของ', 'vr.other_owner_name': 'ชื่อเจ้าของ (อื่น)', 'vr.other_owner_relation': 'ความสัมพันธ์ (อื่น)', 'vr.status': 'สถานะคำร้อง', 'vr.rejection_reason': 'เหตุผลที่ปฏิเสธ', 'vr.approved_at': 'วันที่อนุมัติ', 'vr.card_number': 'เลขที่บัตร', 'vr.card_expiry_year': 'หมดอายุสิ้นปี (พ.ศ.)', 'vr.created_at as request_created_at': 'วันที่ยื่นคำร้อง'
+                'vr.search_id': 'รหัสคำร้อง', 'vr.card_type': 'ประเภทบัตร', 'vr.vehicle_type': 'ประเภทรถ', 'vr.brand': 'ยี่ห้อ', 'vr.model': 'รุ่น', 'vr.color': 'สี', 'vr.license_plate': 'ทะเบียน', 'vr.province as vehicle_province': 'จังหวัด (รถ)', 'vr.tax_expiry_date': 'วันสิ้นอายุภาษี', 'vr.owner_type': 'ความเป็นเจ้าของ', 'vr.other_owner_name': 'ชื่อเจ้าของ (อื่น)', 'vr.other_owner_relation': 'ความสัมพันธ์ (อื่น)', 'vr.status': 'สถานะคำร้อง', 'vr.rejection_reason': 'เหตุผลที่ปฏิเสธ', 'vr.approved_at': 'วันที่อนุมัติ', 'vr.card_number': 'เลขที่บัตร', 'vr.card_expiry_year': 'หมดอายุสิ้นปี (พ.ศ.)', 'vr.card_pickup_status': 'สถานะรับบัตร', 'vr.edit_status': 'สถานะแก้ไข', 'vr.created_at as request_created_at': 'วันที่ยื่นคำร้อง'
             }
         };
 
@@ -769,6 +788,8 @@ function format_thai_date($date) {
             'license': 'ทะเบียนรถ',
             'vehicle_type': 'ประเภทรถ',
             'request_created_at': 'วันที่ยื่น',
+            'work_department': 'สังกัด',
+            'card_pickup_date': 'วันที่นัดรับบัตร'
         };
         for (const group in columnMap) {
             for (const key in columnMap[group]) {
@@ -866,9 +887,11 @@ function format_thai_date($date) {
                             'ลำดับ': row.sequence,
                             'รหัสคำร้อง': row.search_id,
                             'ชื่อ-สกุลผู้ยื่น': row.fullname,
+                            'สังกัด': row.work_department,
                             'ทะเบียนรถ': row.license,
                             'ประเภทรถ': row.vehicle_type,
-                            'วันที่ยื่น': row.request_created_at
+                            'วันที่ยื่น': formatThaiDateTime(row.request_created_at),
+                            'วันที่นัดรับบัตร': formatThaiDate(row.card_pickup_date)
                         }));
                     } else {
                         dataForSheet = result.data.map(row => {
