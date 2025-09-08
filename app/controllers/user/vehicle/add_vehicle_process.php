@@ -3,6 +3,9 @@
 
 session_start();
 
+// [แก้ไข] ตั้งค่าโซนเวลาให้เป็นของกรุงเทพฯ เพื่อให้แน่ใจว่าวันที่ถูกต้องเสมอ
+date_default_timezone_set('Asia/Bangkok');
+
 // ตรวจสอบว่าผู้ใช้ล็อกอินแล้วหรือยัง
 if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true || !isset($_SESSION['user_id'])) {
     header("Location: ../../../views/user/login/login.php");
@@ -250,7 +253,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     // --- [แก้ไข] สร้าง Search ID ตามลำดับ ---
     $prefix = ($vehicle_type === 'รถยนต์') ? 'C' : 'M';
-    $today_ymd = date('ymd'); // yymmdd format from Christian year
+    
+    // [แก้ไข] เปลี่ยนการดึงวันที่เป็นปี พ.ศ. เพื่อให้รหัสคำร้องถูกต้อง
+    $buddhist_year_full = date('Y') + 543;
+    $buddhist_year_short = substr($buddhist_year_full, -2);
+    $today_md = date('md');
+    $today_ymd = $buddhist_year_short . $today_md; // YYMMDD format from Buddhist year (พ.ศ.)
 
     // นับจำนวนคำร้อง *ทั้งหมด* ที่สร้างในวันนี้ เพื่อหาลำดับถัดไป
     $sql_count = "SELECT COUNT(*) as count FROM vehicle_requests WHERE DATE(created_at) = CURDATE()";
@@ -314,3 +322,4 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
 $conn->close();
 ?>
+

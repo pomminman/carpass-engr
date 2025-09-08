@@ -185,7 +185,7 @@ $conn->close();
                         </div>
                     </a>
                 </div>
-                <div class="flex-none hidden lg:flex items-center">
+                <div class="flex-none hidden xl:flex items-center">
                     <ul class="menu menu-horizontal gap-1" id="desktop-menu">
                         <!-- เมนูสำหรับหน้าจอคอมพิวเตอร์ -->
                         <li><a href="#overview-section" class="active"><i class="fa-solid fa-chart-pie w-4"></i> ภาพรวม</a></li>
@@ -194,13 +194,13 @@ $conn->close();
                         <li><a href="#contact-section"><i class="fa-solid fa-address-book w-4"></i> ติดต่อ</a></li>
                         <li><a href="#profile-section"><i class="fa-solid fa-user-pen w-4"></i> ข้อมูลส่วนตัว</a></li>
                     </ul>
-                    <div class="divider lg:divider-horizontal mx-2"></div>
+                    <div class="divider xl:divider-horizontal mx-2"></div>
                     <a href="../../../controllers/user/logout/logout.php" class="btn btn-ghost btn-sm">
                         <i class="fa-solid fa-right-from-bracket w-4"></i>
                         ออกจากระบบ
                     </a>
                 </div>
-                <div class="flex-none lg:hidden">
+                <div class="flex-none xl:hidden">
                     <label for="my-drawer-3" aria-label="open sidebar" class="btn btn-square btn-ghost">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="inline-block w-6 h-6 stroke-current"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
                     </label>
@@ -366,45 +366,37 @@ $conn->close();
                                     </div>
                                 </div>
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div class="border border-base-300 rounded-lg p-4">
+                                    <div class="form-control w-full">
                                         <label class="block font-medium mb-2 text-center">สำเนาทะเบียนรถ</label>
-                                        <div class="form-control w-full mx-auto">
-                                            <div id="reg-copy-container" class="flex justify-center bg-base-200 p-2 rounded-lg border">
-                                                <img id="reg-copy-preview" src="https://img5.pic.in.th/file/secure-sv1/registration.jpg" alt="ตัวอย่างสำเนาทะเบียนรถ" class="w-full max-h-48 rounded-lg object-contain">
-                                            </div>
-                                            <input type="file" name="reg_copy_upload" id="reg-copy-upload" class="file-input file-input-bordered file-input-sm w-full mt-2" accept=".jpg, .jpeg, .png" required>
-                                            <p class="error-message hidden"></p>
+                                        <div id="reg-copy-container" class="flex justify-center bg-base-200 p-2 rounded-lg border overflow-hidden">
+                                            <img id="reg-copy-preview" src="https://img5.pic.in.th/file/secure-sv1/registration.jpg" alt="ตัวอย่างสำเนาทะเบียนรถ" class="w-full max-h-48 object-contain">
                                         </div>
+                                        <input type="file" name="reg_copy_upload" id="reg-copy-upload" class="file-input file-input-bordered file-input-sm w-full mt-2" accept=".jpg, .jpeg, .png" required>
+                                        <p class="error-message hidden"></p>
                                     </div>
-                                    <div class="border border-base-300 rounded-lg p-4">
+                                    <div class="form-control w-full">
                                         <label class="block font-medium mb-2 text-center">ป้ายภาษีรถยนต์ (ป้ายวงกลม)</label>
-                                        <div class="form-control w-full mx-auto">
-                                            <div id="tax-sticker-container" class="flex justify-center bg-base-200 p-2 rounded-lg border">
-                                                <img id="tax-sticker-preview" src="https://img2.pic.in.th/pic/tax_sticker.jpg" alt="ตัวอย่างป้ายภาษี" class="w-full max-h-48 rounded-lg object-contain">
-                                            </div>
-                                            <input type="file" name="tax_sticker_upload" id="tax-sticker-upload" class="file-input file-input-bordered file-input-sm w-full mt-2" accept=".jpg, .jpeg, .png" required>
-                                            <p class="error-message hidden"></p>
+                                        <div id="tax-sticker-container" class="flex justify-center bg-base-200 p-2 rounded-lg border overflow-hidden">
+                                            <img id="tax-sticker-preview" src="https://img2.pic.in.th/pic/tax_sticker.jpg" alt="ตัวอย่างป้ายภาษี" class="w-full max-h-48 object-contain">
                                         </div>
+                                        <input type="file" name="tax_sticker_upload" id="tax-sticker-upload" class="file-input file-input-bordered file-input-sm w-full mt-2" accept=".jpg, .jpeg, .png" required>
+                                        <p class="error-message hidden"></p>
                                     </div>
-                                    <div class="border border-base-300 rounded-lg p-4">
+                                    <div class="form-control w-full">
                                         <label class="block font-medium mb-2 text-center">รูปถ่ายรถด้านหน้า</label>
-                                        <div class="form-control w-full mx-auto">
-                                            <div id="front-view-container" class="flex justify-center bg-base-200 p-2 rounded-lg border">
-                                                <img id="front-view-preview" src="https://img2.pic.in.th/pic/front_view.png" alt="ตัวอย่างรูปถ่ายรถด้านหน้า" class="w-full max-h-48 rounded-lg object-contain">
-                                            </div>
-                                            <input type="file" name="front_view_upload" id="front-view-upload" class="file-input file-input-bordered file-input-sm w-full mt-2" accept=".jpg, .jpeg, .png" required>
-                                            <p class="error-message hidden"></p>
+                                        <div id="front-view-container" class="flex justify-center bg-base-200 p-2 rounded-lg border overflow-hidden">
+                                            <img id="front-view-preview" src="https://img2.pic.in.th/pic/front_view.png" alt="ตัวอย่างรูปถ่ายรถด้านหน้า" class="w-full max-h-48 object-contain">
                                         </div>
+                                        <input type="file" name="front_view_upload" id="front-view-upload" class="file-input file-input-bordered file-input-sm w-full mt-2" accept=".jpg, .jpeg, .png" required>
+                                        <p class="error-message hidden"></p>
                                     </div>
-                                    <div class="border border-base-300 rounded-lg p-4">
+                                    <div class="form-control w-full">
                                         <label class="block font-medium mb-2 text-center">รูปถ่ายรถด้านหลัง</label>
-                                        <div class="form-control w-full mx-auto">
-                                            <div id="rear-view-container" class="flex justify-center bg-base-200 p-2 rounded-lg border">
-                                                <img id="rear-view-preview" src="https://img5.pic.in.th/file/secure-sv1/rear_view.png" alt="ตัวอย่างรูปถ่ายรถด้านหลัง" class="w-full max-h-48 rounded-lg object-contain">
-                                            </div>
-                                            <input type="file" name="rear_view_upload" id="rear-view-upload" class="file-input file-input-bordered file-input-sm w-full mt-2" accept=".jpg, .jpeg, .png" required>
-                                            <p class="error-message hidden"></p>
+                                        <div id="rear-view-container" class="flex justify-center bg-base-200 p-2 rounded-lg border overflow-hidden">
+                                            <img id="rear-view-preview" src="https://img5.pic.in.th/file/secure-sv1/rear_view.png" alt="ตัวอย่างรูปถ่ายรถด้านหลัง" class="w-full max-h-48 object-contain">
                                         </div>
+                                        <input type="file" name="rear_view_upload" id="rear-view-upload" class="file-input file-input-bordered file-input-sm w-full mt-2" accept=".jpg, .jpeg, .png" required>
+                                        <p class="error-message hidden"></p>
                                     </div>
                                 </div>
                                 <div class="flex justify-center mt-6">
@@ -439,10 +431,10 @@ $conn->close();
                             <form id="profileForm" action="../../../controllers/user/profile/edit_profile_process.php" method="POST" enctype="multipart/form-data" novalidate>
                                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                                     <div class="md:col-span-1">
-                                        <div class="border border-base-300 rounded-lg p-4 w-full h-full flex flex-col form-control">
+                                        <div class="form-control w-full">
                                             <label class="block font-medium mb-2 text-center">รูปถ่ายหน้าตรง</label>
-                                            <div id="profile-photo-container" class="flex justify-center bg-base-200 p-2 rounded-lg border cursor-pointer" onclick="zoomImage('<?php echo $user_photo_path; ?>')">
-                                                <img id="profile-photo-preview" src="<?php echo $user_photo_path; ?>" alt="รูปโปรไฟล์" class="w-full max-h-48 rounded-lg object-contain" onerror="this.onerror=null;this.src='https://placehold.co/192x192/CCCCCC/FFFFFF?text=Profile';">
+                                            <div id="profile-photo-container" class="flex justify-center bg-base-200 p-2 rounded-lg border overflow-hidden cursor-pointer" onclick="zoomImage('<?php echo $user_photo_path; ?>')">
+                                                <img id="profile-photo-preview" src="<?php echo $user_photo_path; ?>" alt="รูปโปรไฟล์" class="w-full max-h-48 object-contain" onerror="this.onerror=null;this.src='https://placehold.co/192x192/CCCCCC/FFFFFF?text=Profile';">
                                             </div>
                                             <div id="photo-guidance" class="mt-2 text-xs p-2 rounded-lg bg-blue-50 border border-blue-200 text-blue-800 hidden">
                                                 <ul class="list-disc list-inside">
@@ -674,6 +666,7 @@ $conn->close();
             </div>
             <div class="card bg-base-100 rounded-t-none">
                  <div class="card-body p-4">
+                     <div id="modal-pickup-date-info" class="hidden"></div>
                      <div class="card bg-base-200 shadow-inner mb-4">
                         <div class="card-body p-3 text-center">
                             <p class="text-xs text-slate-500">รหัสคำร้อง</p>
@@ -801,6 +794,23 @@ $conn->close();
                 if(data.status === 'rejected' && data.rejectionReason) {
                     statusReasonEl.textContent = `เหตุผล: ${data.rejectionReason}`;
                 }
+                
+                // --- Set Pickup Date Info ---
+                const pickupDateInfoEl = modal.querySelector('#modal-pickup-date-info');
+                pickupDateInfoEl.innerHTML = '';
+                pickupDateInfoEl.classList.add('hidden');
+                if (data.status === 'approved' && data.cardPickupDate) {
+                    pickupDateInfoEl.innerHTML = `
+                        <div class="alert alert-info alert-soft mb-4 flex flex-col items-center text-center">
+                            <div class="flex items-center gap-2">
+                                <i class="fa-solid fa-calendar-check text-lg"></i>
+                                <h4 class="font-bold">กำหนดการรับบัตร</h4>
+                            </div>
+                            <p class="text-lg font-semibold leading-tight">${formatDateToThai(data.cardPickupDate)}</p>
+                            <p class="text-xs text-slate-500 leading-tight">กรุณาติดต่อรับบัตรและชำระเงินในวันและเวลาราชการ</p>
+                        </div>`;
+                    pickupDateInfoEl.classList.remove('hidden');
+                }
 
                 // --- Set Search ID ---
                 modal.querySelector('#modal-search-id').textContent = data.searchId || '-';
@@ -825,15 +835,35 @@ $conn->close();
                         ${ownerDetailsHTML}
                     </div>`;
 
-                // --- Evidence Photos ---
+                // --- [แก้ไข] Evidence Photos ---
                 const evidencePhotosEl = modal.querySelector('#modal-evidence-photos');
                 evidencePhotosEl.innerHTML = `
                     <h3 class="font-semibold text-base mb-2"><i class="fa-solid fa-images opacity-70 mr-2"></i>หลักฐาน</h3>
                     <div class="grid grid-cols-2 gap-2 text-xs">
-                        <div class="text-center"><p class="font-semibold mb-1">ทะเบียนรถ</p><img src="${data.imgReg}" class="w-full h-24 object-cover rounded-md border cursor-pointer" onclick="zoomImage(this.src)"></div>
-                        <div class="text-center"><p class="font-semibold mb-1">ป้ายภาษี</p><img src="${data.imgTax}" class="w-full h-24 object-cover rounded-md border cursor-pointer" onclick="zoomImage(this.src)"></div>
-                        <div class="text-center"><p class="font-semibold mb-1">ด้านหน้า</p><img src="${data.imgFront}" class="w-full h-24 object-cover rounded-md border cursor-pointer" onclick="zoomImage(this.src)"></div>
-                        <div class="text-center"><p class="font-semibold mb-1">ด้านหลัง</p><img src="${data.imgRear}" class="w-full h-24 object-cover rounded-md border cursor-pointer" onclick="zoomImage(this.src)"></div>
+                        <div class="text-center">
+                            <p class="font-semibold mb-1">ทะเบียนรถ</p>
+                            <div class="flex justify-center bg-base-200 p-2 rounded-lg border h-24">
+                               <img src="${data.imgReg}" class="max-w-full max-h-full object-contain cursor-pointer" onclick="zoomImage(this.src)">
+                            </div>
+                        </div>
+                        <div class="text-center">
+                            <p class="font-semibold mb-1">ป้ายภาษี</p>
+                             <div class="flex justify-center bg-base-200 p-2 rounded-lg border h-24">
+                                <img src="${data.imgTax}" class="max-w-full max-h-full object-contain cursor-pointer" onclick="zoomImage(this.src)">
+                            </div>
+                        </div>
+                        <div class="text-center">
+                            <p class="font-semibold mb-1">ด้านหน้า</p>
+                            <div class="flex justify-center bg-base-200 p-2 rounded-lg border h-24">
+                                <img src="${data.imgFront}" class="max-w-full max-h-full object-contain cursor-pointer" onclick="zoomImage(this.src)">
+                            </div>
+                        </div>
+                        <div class="text-center">
+                            <p class="font-semibold mb-1">ด้านหลัง</p>
+                            <div class="flex justify-center bg-base-200 p-2 rounded-lg border h-24">
+                                <img src="${data.imgRear}" class="max-w-full max-h-full object-contain cursor-pointer" onclick="zoomImage(this.src)">
+                            </div>
+                        </div>
                     </div>`;
                 
                 // --- QR Code & Card Info ---
@@ -857,7 +887,6 @@ $conn->close();
                              <div class="text-slate-500">เลขที่บัตร</div><div>${data.cardNumber || '-'}</div>
                              <div class="text-slate-500">ประเภทบัตร</div><div>${translateCardType(data.cardType)}</div>
                              <div class="text-slate-500">ผู้อนุมัติ</div><div>${data.adminName}</div>
-                             <div class="text-slate-500">รับบัตรได้วันที่</div><div>${formatDateToThai(data.cardPickupDate)}</div>
                              <div class="text-slate-500">บัตรหมดอายุ</div><div>สิ้นปี ${data.cardExpiryYear || '-'}</div>
                            </div>
                         </div>`;
@@ -1026,11 +1055,31 @@ $conn->close();
                 let html = '<div class="grid grid-cols-1 md:grid-cols-2 gap-4">';
                 html += `<div class="md:col-span-1">
                             <div class="font-bold text-base-content/70 text-xs uppercase tracking-wider mb-1">หลักฐานรูปถ่าย</div>
-                            <div class="grid grid-cols-2 gap-2 p-2 bg-base-200 rounded-md">
-                                <div><img src="${document.getElementById('reg-copy-preview').src}" class="w-full h-24 object-cover rounded-lg border"><p class="text-[10px] font-semibold text-center mt-1">สำเนาทะเบียนรถ</p></div>
-                                <div><img src="${document.getElementById('tax-sticker-preview').src}" class="w-full h-24 object-cover rounded-lg border"><p class="text-[10px] font-semibold text-center mt-1">ป้ายภาษี</p></div>
-                                <div><img src="${document.getElementById('front-view-preview').src}" class="w-full h-24 object-cover rounded-lg border"><p class="text-[10px] font-semibold text-center mt-1">รูปถ่ายด้านหน้า</p></div>
-                                <div><img src="${document.getElementById('rear-view-preview').src}" class="w-full h-24 object-cover rounded-lg border"><p class="text-[10px] font-semibold text-center mt-1">รูปถ่ายด้านหลัง</p></div>
+                            <div class="grid grid-cols-2 gap-2">
+                                <div class="text-center">
+                                    <div class="flex justify-center bg-base-200 p-2 rounded-lg border h-24">
+                                        <img src="${document.getElementById('reg-copy-preview').src}" class="max-w-full max-h-full object-contain">
+                                    </div>
+                                    <p class="text-[10px] font-semibold mt-1">สำเนาทะเบียนรถ</p>
+                                </div>
+                                <div class="text-center">
+                                    <div class="flex justify-center bg-base-200 p-2 rounded-lg border h-24">
+                                        <img src="${document.getElementById('tax-sticker-preview').src}" class="max-w-full max-h-full object-contain">
+                                    </div>
+                                    <p class="text-[10px] font-semibold mt-1">ป้ายภาษี</p>
+                                </div>
+                                <div class="text-center">
+                                    <div class="flex justify-center bg-base-200 p-2 rounded-lg border h-24">
+                                        <img src="${document.getElementById('front-view-preview').src}" class="max-w-full max-h-full object-contain">
+                                    </div>
+                                    <p class="text-[10px] font-semibold mt-1">รูปถ่ายด้านหน้า</p>
+                                </div>
+                                <div class="text-center">
+                                    <div class="flex justify-center bg-base-200 p-2 rounded-lg border h-24">
+                                        <img src="${document.getElementById('rear-view-preview').src}" class="max-w-full max-h-full object-contain">
+                                    </div>
+                                    <p class="text-[10px] font-semibold mt-1">รูปถ่ายด้านหลัง</p>
+                                </div>
                             </div>
                          </div>`;
                 html += '<div class="md:col-span-1 space-y-3">';

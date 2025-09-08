@@ -2,6 +2,7 @@
 // controllers/user/profile/edit_profile_process.php
 
 session_start();
+date_default_timezone_set('Asia/Bangkok');
 
 // ตรวจสอบสิทธิ์การเข้าถึง
 if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true || !isset($_SESSION['user_id'])) {
@@ -226,4 +227,3 @@ $conn->close();
 header("Location: ../../../views/user/home/home.php#profile-section");
 exit();
 ?>
-

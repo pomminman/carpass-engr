@@ -32,18 +32,47 @@ if ($request_key) {
     }
     $conn->set_charset("utf8");
 
-    // [แก้ไข] เพิ่ม card_type ใน SQL query
-    $sql = "SELECT
-                vr.status, vr.card_number, vr.card_expiry_year, vr.approved_at, vr.vehicle_type, vr.card_type,
-                vr.brand, vr.model, vr.color, vr.license_plate, vr.province,
-                vr.photo_front, vr.photo_rear,
-                u.title, u.firstname, u.lastname, u.phone_number, u.photo_profile
-            FROM
-                vehicle_requests AS vr
-            JOIN
-                users AS u ON vr.user_id = u.id
-            WHERE
-                vr.request_key = ?";
+    // --- ตรวจสอบสถานะของคำร้องก่อน ---
+    $status = null;
+    $sql_status = "SELECT status FROM vehicle_requests WHERE request_key = ?";
+    $stmt_status = $conn->prepare($sql_status);
+    $stmt_status->bind_param("s", $request_key);
+    $stmt_status->execute();
+    $result_status = $stmt_status->get_result();
+    if($row_status = $result_status->fetch_assoc()){
+        $status = $row_status['status'];
+    }
+    $stmt_status->close();
+    
+    // --- เลือก Query ตามสถานะ ---
+    if($status === 'approved') {
+        // ถ้าอนุมัติแล้ว, ดึงข้อมูลจากตาราง snapshot (approved_user_data)
+        $sql = "SELECT
+                    vr.status, vr.card_number, vr.card_expiry_year, vr.approved_at, vr.vehicle_type, vr.card_type,
+                    vr.brand, vr.model, vr.color, vr.license_plate, vr.province,
+                    vr.photo_front, vr.photo_rear,
+                    aud.title, aud.firstname, aud.lastname
+                FROM
+                    vehicle_requests AS vr
+                JOIN
+                    approved_user_data AS aud ON vr.id = aud.request_id
+                WHERE
+                    vr.request_key = ?";
+    } else {
+         // ถ้ายังไม่อนุมัติ (pending, rejected), ดึงข้อมูลล่าสุดจากตาราง users
+        $sql = "SELECT
+                    vr.status, vr.card_number, vr.card_expiry_year, vr.approved_at, vr.vehicle_type, vr.card_type,
+                    vr.brand, vr.model, vr.color, vr.license_plate, vr.province,
+                    vr.photo_front, vr.photo_rear,
+                    u.title, u.firstname, u.lastname
+                FROM
+                    vehicle_requests AS vr
+                JOIN
+                    users AS u ON vr.user_id = u.id
+                WHERE
+                    vr.request_key = ?";
+    }
+
 
     $stmt = $conn->prepare($sql);
     $stmt->bind_param("s", $request_key);
@@ -117,6 +146,8 @@ if ($found) {
         body { font-family: 'Prompt', sans-serif; background-color: #f0f2f5; }
         .info-label { font-size: 0.75rem; color: #6b7280; }
         .info-data { font-size: 1rem; font-weight: 500; color: #1f2937; }
+        #zoomed-image-container { display: inline-block; position: relative; }
+        #zoomed-image { max-height: 85vh; width: auto; margin: auto; object-fit: contain; }
     </style>
 </head>
 <body>
@@ -140,68 +171,46 @@ if ($found) {
                             <?php endif; ?>
                         </div>
 
-                        <div class="divider text-sm">รายละเอียด</div>
-                        
-                        <!-- ข้อมูลบัตรผ่าน -->
-                        <div class="p-3 bg-base-200 rounded-lg">
-                            <h3 class="font-semibold mb-2 text-center">ข้อมูลบัตรผ่าน</h3>
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-y-4 sm:gap-x-4 text-center">
-                                <div>
-                                    <div class="info-label">ประเภทบัตร</div>
-                                    <div class="info-data"><?php echo ($is_active_card && !empty($card_type_thai)) ? htmlspecialchars($card_type_thai) : '-'; ?></div>
-                                </div>
-                                <div>
-                                    <div class="info-label">เลขที่บัตร</div>
-                                    <div class="info-data"><?php echo htmlspecialchars($data['card_number'] ?: '-'); ?></div>
-                                </div>
-                                <div>
-                                    <div class="info-label">วันที่อนุมัติ</div>
-                                    <div class="info-data"><?php echo format_thai_datetime($data['approved_at']); ?></div>
-                                </div>
-                                <div>
-                                    <div class="info-label">หมดอายุสิ้นปี (พ.ศ.)</div>
-                                    <div class="info-data"><?php echo htmlspecialchars($data['card_expiry_year'] ?: '-'); ?></div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- ข้อมูลยานพาหนะ -->
-                        <div class="mt-4 p-3 border border-base-300 rounded-lg">
-                            <h3 class="font-semibold mb-2 text-center">ข้อมูลยานพาหนะ</h3>
-                            <div class="grid grid-cols-2 gap-2 mb-4">
-                                <div>
-                                    <img src="../../../public/uploads/vehicle/front_view/<?php echo htmlspecialchars($data['photo_front']); ?>" class="w-full h-auto rounded-lg border" alt="รูปถ่ายรถด้านหน้า" onerror="this.onerror=null;this.src='https://placehold.co/200x150/CCCCCC/FFFFFF?text=No+Img';">
-                                    <p class="text-xs text-center mt-1 text-gray-500">ด้านหน้า</p>
-                                </div>
-                                <div>
-                                    <img src="../../../public/uploads/vehicle/rear_view/<?php echo htmlspecialchars($data['photo_rear']); ?>" class="w-full h-auto rounded-lg border" alt="รูปถ่ายรถด้านหลัง" onerror="this.onerror=null;this.src='https://placehold.co/200x150/CCCCCC/FFFFFF?text=No+Img';">
-                                     <p class="text-xs text-center mt-1 text-gray-500">ด้านหลัง</p>
-                                </div>
-                            </div>
-                            <div class="space-y-3 text-sm w-full">
+                        <!-- [แก้ไข] รวมข้อมูลทั้งหมดให้กระชับขึ้น -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 mt-4">
+                            <!-- คอลัมน์ซ้าย: รูปภาพ -->
+                            <div class="space-y-4">
+                                <h3 class="font-semibold text-center text-sm uppercase tracking-wider text-slate-500">ยานพาหนะ</h3>
                                 <div class="grid grid-cols-2 gap-2">
                                     <div>
-                                        <div class="info-label">ประเภท</div>
-                                        <div class="info-data"><?php echo htmlspecialchars($data['vehicle_type']); ?></div>
+                                        <img src="../../../public/uploads/vehicle/front_view/<?php echo htmlspecialchars($data['photo_front']); ?>" class="w-full h-auto rounded-lg border cursor-pointer hover:scale-105 transition-transform" alt="รูปถ่ายรถด้านหน้า" onclick="zoomImage(this.src)" onerror="this.onerror=null;this.src='https://placehold.co/200x150/CCCCCC/FFFFFF?text=No+Img';">
+                                        <p class="text-xs text-center mt-1 text-gray-500">ด้านหน้า</p>
                                     </div>
                                     <div>
-                                        <div class="info-label">ยี่ห้อ</div>
-                                        <div class="info-data"><?php echo htmlspecialchars($data['brand']); ?></div>
-                                    </div>
-                                    <div class="border-t border-base-300 col-span-2 my-1"></div>
-                                    <div>
-                                        <div class="info-label">สี</div>
-                                        <div class="info-data"><?php echo htmlspecialchars($data['color']); ?></div>
-                                    </div>
-                                    <div>
-                                        <div class="info-label">รุ่น</div>
-                                        <div class="info-data"><?php echo htmlspecialchars($data['model']); ?></div>
+                                        <img src="../../../public/uploads/vehicle/rear_view/<?php echo htmlspecialchars($data['photo_rear']); ?>" class="w-full h-auto rounded-lg border cursor-pointer hover:scale-105 transition-transform" alt="รูปถ่ายรถด้านหลัง" onclick="zoomImage(this.src)" onerror="this.onerror=null;this.src='https://placehold.co/200x150/CCCCCC/FFFFFF?text=No+Img';">
+                                        <p class="text-xs text-center mt-1 text-gray-500">ด้านหลัง</p>
                                     </div>
                                 </div>
-                                <div class="border-t border-base-300 col-span-2 my-1"></div>
+                            </div>
+
+                            <!-- คอลัมน์ขวา: รายละเอียด -->
+                            <div class="space-y-3">
                                 <div>
-                                    <div class="info-label">หมายเลขทะเบียน</div>
-                                    <div class="info-data text-lg bg-gray-200 text-center p-1 rounded"><?php echo htmlspecialchars($data['license_plate'] . ' ' . $data['province']); ?></div>
+                                    <div class="info-label text-center">เจ้าของบัตร</div>
+                                    <div class="info-data text-center font-bold text-lg"><?php echo htmlspecialchars($data['title'] . $data['firstname'] . ' ' . $data['lastname']); ?></div>
+                                </div>
+
+                                <div class="divider my-1"></div>
+
+                                <div class="text-sm space-y-1">
+                                    <div class="grid grid-cols-2 gap-1"><div class="text-slate-500">ทะเบียน:</div><div class="font-semibold col-span-1"><?php echo htmlspecialchars($data['license_plate'] . ' ' . $data['province']); ?></div></div>
+                                    <div class="grid grid-cols-2 gap-1"><div class="text-slate-500">ประเภท:</div><div class="col-span-1"><?php echo htmlspecialchars($data['vehicle_type']); ?></div></div>
+                                    <div class="grid grid-cols-2 gap-1"><div class="text-slate-500">ยี่ห้อ/รุ่น:</div><div class="col-span-1"><?php echo htmlspecialchars($data['brand'] . ' / ' . $data['model']); ?></div></div>
+                                    <div class="grid grid-cols-2 gap-1"><div class="text-slate-500">สี:</div><div class="col-span-1"><?php echo htmlspecialchars($data['color']); ?></div></div>
+                                </div>
+                                
+                                <div class="divider my-1"></div>
+
+                                <div class="text-sm space-y-1">
+                                    <div class="grid grid-cols-2 gap-1"><div class="text-slate-500">เลขที่บัตร:</div><div class="font-semibold col-span-1"><?php echo htmlspecialchars($data['card_number'] ?: '-'); ?></div></div>
+                                    <div class="grid grid-cols-2 gap-1"><div class="text-slate-500">ประเภทบัตร:</div><div class="col-span-1"><?php echo ($is_active_card && !empty($card_type_thai)) ? htmlspecialchars($card_type_thai) : '-'; ?></div></div>
+                                    <div class="grid grid-cols-2 gap-1"><div class="text-slate-500">วันอนุมัติ:</div><div class="col-span-1"><?php echo format_thai_datetime($data['approved_at']); ?></div></div>
+                                    <div class="grid grid-cols-2 gap-1"><div class="text-slate-500">หมดอายุสิ้นปี:</div><div class="font-semibold col-span-1"><?php echo htmlspecialchars($data['card_expiry_year'] ?: '-'); ?></div></div>
                                 </div>
                             </div>
                         </div>
@@ -224,6 +233,42 @@ if ($found) {
             <p class="text-xs">ร.ท.พรหมินทร์ อินทมาตย์ (ผู้พัฒนาระบบ)</p>
         </footer>
     </div>
+
+    <!-- [เพิ่ม] Modal for Image Zoom -->
+    <dialog id="imageZoomModal" class="modal">
+        <div class="modal-box w-11/12 max-w-5xl p-0 bg-transparent shadow-none flex justify-center items-center">
+            <div id="zoomed-image-container">
+                <img id="zoomed-image" src="" alt="ขยายรูปภาพ" class="rounded-lg">
+                <form method="dialog">
+                    <button class="btn btn-circle absolute right-2 top-2 bg-black/25 hover:bg-black/50 text-white border-none text-xl z-10">✕</button>
+                </form>
+            </div>
+        </div>
+        <form method="dialog" class="modal-backdrop">
+            <button>close</button>
+        </form>
+    </dialog>
+
+    <script>
+        // --- [เพิ่ม] Functionality for Image Zoom ---
+        function zoomImage(src) {
+            document.getElementById('zoomed-image').src = src;
+            document.getElementById('imageZoomModal').showModal();
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const imageZoomModal = document.getElementById('imageZoomModal');
+            if (imageZoomModal) {
+                imageZoomModal.addEventListener('click', function(e) {
+                    const imageContainer = document.getElementById('zoomed-image-container');
+                    // Close modal if click is outside the image container
+                    if (imageContainer && !imageContainer.contains(e.target)) {
+                        imageZoomModal.close();
+                    }
+                });
+            }
+        });
+    </script>
 </body>
 </html>
 

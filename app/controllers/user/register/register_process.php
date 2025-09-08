@@ -2,6 +2,8 @@
 // controllers/user/register/register_process.php
 
 session_start();
+date_default_timezone_set('Asia/Bangkok');
+
 require_once '../../../models/db_config.php';
 require_once '../../../models/log_helper.php';
 

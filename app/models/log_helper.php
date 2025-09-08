@@ -1,5 +1,6 @@
 <?php
 // --- models/log_helper.php ---
+date_default_timezone_set('Asia/Bangkok');
 
 /**
  * ฟังก์ชันสำหรับบันทึกกิจกรรมลงในตาราง activity_logs

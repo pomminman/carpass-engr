@@ -1,6 +1,7 @@
 <?php
 // --- app/controllers/admin/register/process_register.php ---
 session_start();
+date_default_timezone_set('Asia/Bangkok');
 
 // --- [แก้ไข] เพิ่มการตรวจสอบสิทธิ์: ต้องเป็นแอดมินที่ล็อกอินอยู่แล้ว ---
 if (!isset($_SESSION['admin_loggedin']) || $_SESSION['admin_loggedin'] !== true) {

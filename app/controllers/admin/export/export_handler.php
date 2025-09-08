@@ -1,6 +1,7 @@
 <?php
 session_start();
 header('Content-Type: application/json');
+date_default_timezone_set('Asia/Bangkok');
 
 // Security check: only logged-in admins can access
 if (!isset($_SESSION['admin_loggedin']) || $_SESSION['admin_loggedin'] !== true) {
@@ -144,4 +145,3 @@ if ($stmt) {
 
 $conn->close();
 ?>
-

@@ -3,6 +3,7 @@
 
 session_start();
 header('Content-Type: application/json');
+date_default_timezone_set('Asia/Bangkok');
 
 // 1. ตรวจสอบสิทธิ์: ตรวจสอบว่าผู้ใช้ล็อกอินเข้าระบบแล้วหรือยัง
 if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true || !isset($_SESSION['user_id'])) {

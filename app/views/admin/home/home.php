@@ -1,5 +1,6 @@
 <?php
 session_start();
+date_default_timezone_set('Asia/Bangkok');
 
 // 1. ตรวจสอบสิทธิ์: ต้องเป็นแอดมินที่ล็อกอินแล้วเท่านั้น
 if (!isset($_SESSION['admin_loggedin']) || $_SESSION['admin_loggedin'] !== true) {
@@ -39,7 +40,7 @@ if ($stmt_admin = $conn->prepare($sql_admin)) {
 // 4. ดึงข้อมูลสถิติสำหรับ Dashboard
 $stats = [
     'pending_requests' => 0,
-    'approved_today' => 0,
+    'approved_requests' => 0,
     'total_users' => 0,
     'total_requests' => 0,
 ];
@@ -47,10 +48,8 @@ $stats = [
 $result_pending = $conn->query("SELECT COUNT(*) as count FROM vehicle_requests WHERE status = 'pending'");
 if($result_pending) $stats['pending_requests'] = $result_pending->fetch_assoc()['count'];
 
-$today = date('Y-m-d');
-$sql_approved_today = "SELECT COUNT(*) as count FROM vehicle_requests WHERE status = 'approved' AND DATE(approved_at) = '$today'";
-$result_approved_today = $conn->query($sql_approved_today);
-if($result_approved_today) $stats['approved_today'] = $result_approved_today->fetch_assoc()['count'];
+$result_approved = $conn->query("SELECT COUNT(*) as count FROM vehicle_requests WHERE status = 'approved'");
+if($result_approved) $stats['approved_requests'] = $result_approved->fetch_assoc()['count'];
 
 $result_users = $conn->query("SELECT COUNT(*) as count FROM users");
 if($result_users) $stats['total_users'] = $result_users->fetch_assoc()['count'];
@@ -60,7 +59,7 @@ if($result_total_req) $stats['total_requests'] = $result_total_req->fetch_assoc(
 
 // 5. [แก้ไข] ดึงเฉพาะรายการคำร้องที่ "รออนุมัติ" และเรียงจากเก่าสุดไปใหม่สุด
 $pending_requests = [];
-$sql_pending_requests = "SELECT vr.id, vr.search_id, u.title, u.firstname, u.lastname, vr.license_plate, vr.province, vr.vehicle_type, vr.created_at, vr.status
+$sql_pending_requests = "SELECT vr.id, vr.search_id, u.title, u.firstname, u.lastname, vr.license_plate, vr.province, vr.vehicle_type, vr.created_at, vr.status, vr.card_pickup_date
                      FROM vehicle_requests vr
                      JOIN users u ON vr.user_id = u.id
                      WHERE vr.status = 'pending'
@@ -86,6 +85,13 @@ function format_thai_datetime($datetime) {
     $day = date('d', $timestamp);
     $time = date('H:i', $timestamp);
     return "$day $month $year, $time น.";
+}
+
+function format_thai_date($date) {
+    if (empty($date) || $date === '0000-00-00') return '-';
+    $timestamp = strtotime($date);
+    $thai_months = [1 => 'ม.ค.', 2 => 'ก.พ.', 3 => 'มี.ค.', 4 => 'เม.ย.', 5 => 'พ.ค.', 6 => 'มิ.ย.', 7 => 'ก.ค.', 8 => 'ส.ค.', 9 => 'ก.ย.', 10 => 'ต.ค.', 11 => 'พ.ย.', 12 => 'ธ.ค.'];
+    return date('d', $timestamp) . ' ' . $thai_months[date('n', $timestamp)] . ' ' . (date('Y', $timestamp) + 543);
 }
 
 ?>
@@ -145,15 +151,15 @@ function format_thai_datetime($datetime) {
                         <div class="flex items-center justify-between sm:block">
                             <div class="stat-title">รออนุมัติ <i class="fas fa-clock text-warning sm:hidden"></i></div>
                         </div>
-                        <div class="stat-value text-warning text-2xl sm:text-3xl"><?php echo number_format($stats['pending_requests']); ?></div>
+                        <div class="stat-value text-warning text-2xl sm:text-3xl" id="stat-pending"><?php echo number_format($stats['pending_requests']); ?></div>
                         <div class="stat-desc">รายการ</div>
                     </div>
                     <div class="stat bg-base-100 rounded-lg shadow">
                         <div class="stat-figure text-success hidden sm:flex"><i class="fas fa-check-circle text-3xl"></i></div>
                         <div class="flex items-center justify-between sm:block">
-                            <div class="stat-title">อนุมัติวันนี้ <i class="fas fa-check-circle text-success sm:hidden"></i></div>
+                            <div class="stat-title">อนุมัติแล้ว <i class="fas fa-check-circle text-success sm:hidden"></i></div>
                         </div>
-                        <div class="stat-value text-success text-2xl sm:text-3xl"><?php echo number_format($stats['approved_today']); ?></div>
+                        <div class="stat-value text-success text-2xl sm:text-3xl" id="stat-approved-total"><?php echo number_format($stats['approved_requests']); ?></div>
                         <div class="stat-desc">รายการ</div>
                     </div>
                     <div class="stat bg-base-100 rounded-lg shadow">
@@ -161,7 +167,7 @@ function format_thai_datetime($datetime) {
                         <div class="flex items-center justify-between sm:block">
                             <div class="stat-title">ผู้ใช้งานทั้งหมด <i class="fas fa-users text-info sm:hidden"></i></div>
                         </div>
-                        <div class="stat-value text-info text-2xl sm:text-3xl"><?php echo number_format($stats['total_users']); ?></div>
+                        <div class="stat-value text-info text-2xl sm:text-3xl" id="stat-total-users"><?php echo number_format($stats['total_users']); ?></div>
                         <div class="stat-desc">บัญชี</div>
                     </div>
                     <div class="stat bg-base-100 rounded-lg shadow">
@@ -169,7 +175,7 @@ function format_thai_datetime($datetime) {
                         <div class="flex items-center justify-between sm:block">
                             <div class="stat-title">คำร้องทั้งหมด <i class="fas fa-file-alt text-secondary sm:hidden"></i></div>
                         </div>
-                        <div class="stat-value text-secondary text-2xl sm:text-3xl"><?php echo number_format($stats['total_requests']); ?></div>
+                        <div class="stat-value text-secondary text-2xl sm:text-3xl" id="stat-total-requests"><?php echo number_format($stats['total_requests']); ?></div>
                         <div class="stat-desc">รายการ</div>
                     </div>
                 </div>
@@ -198,12 +204,13 @@ function format_thai_datetime($datetime) {
                                         <th data-sort-by="license">ทะเบียนรถ<i class="fa-solid fa-sort"></i></th>
                                         <th data-sort-by="type">ประเภทรถ<i class="fa-solid fa-sort"></i></th>
                                         <th data-sort-by="date" class="sort-asc">วันที่ยื่น<i class="fa-solid fa-sort-up"></i></th>
+                                        <th data-sort-by="pickup_date">วันที่นัดรับบัตร<i class="fa-solid fa-sort"></i></th>
                                         <th></th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     <?php if (empty($pending_requests)): ?>
-                                        <tr><td colspan="6" class="text-center text-slate-500 py-4">ไม่พบรายการที่รอการอนุมัติ</td></tr>
+                                        <tr><td colspan="7" class="text-center text-slate-500 py-4">ไม่พบรายการที่รอการอนุมัติ</td></tr>
                                     <?php else: ?>
                                         <?php foreach ($pending_requests as $req): ?>
                                         <tr data-request-id="<?php echo $req['id']; ?>">
@@ -212,6 +219,7 @@ function format_thai_datetime($datetime) {
                                             <td class="whitespace-nowrap"><?php echo htmlspecialchars($req['license_plate'] . ' ' . $req['province']); ?></td>
                                             <td class="whitespace-nowrap"><?php echo htmlspecialchars($req['vehicle_type']); ?></td>
                                             <td class="whitespace-nowrap"><?php echo format_thai_datetime($req['created_at']); ?></td>
+                                            <td class="whitespace-nowrap font-semibold text-info"><?php echo format_thai_date($req['card_pickup_date']); ?></td>
                                             <td>
                                                 <button class="btn btn-sm btn-primary inspect-btn" data-id="<?php echo $req['id']; ?>">
                                                     <i class="fa-solid fa-search mr-1"></i>
@@ -221,7 +229,7 @@ function format_thai_datetime($datetime) {
                                         </tr>
                                         <?php endforeach; ?>
                                     <?php endif; ?>
-                                    <tr id="no-results-row" class="hidden"><td colspan="6" class="text-center text-slate-500 py-4">ไม่พบข้อมูลคำร้องที่ค้นหา</td></tr>
+                                    <tr id="no-results-row" class="hidden"><td colspan="7" class="text-center text-slate-500 py-4">ไม่พบข้อมูลคำร้องที่ค้นหา</td></tr>
                                 </tbody>
                             </table>
                         </div>
@@ -449,16 +457,19 @@ function format_thai_datetime($datetime) {
                 rows.sort((rowA, rowB) => {
                     let valA = rowA.children[columnIndex].textContent.trim();
                     let valB = rowB.children[columnIndex].textContent.trim();
-
-                    if (header.dataset.sortBy === 'date') {
+                    
+                    if (header.dataset.sortBy === 'date' || header.dataset.sortBy === 'pickup_date') {
                         const thaiMonths = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
                         const parseThaiDate = (str) => {
+                            if (str === '-') return 0;
                             const parts = str.split(/[\s,:]+/);
-                            if (parts.length < 5) return 0;
+                            if (parts.length < 3) return 0;
                             const day = parseInt(parts[0], 10);
                             const monthIndex = thaiMonths.indexOf(parts[1]);
                             const yearBE = parseInt(parts[2], 10);
-                            return new Date(yearBE - 543, monthIndex, day, parseInt(parts[3]), parseInt(parts[4])).getTime();
+                            const hours = parts.length > 3 ? parseInt(parts[3], 10) : 0;
+                            const minutes = parts.length > 4 ? parseInt(parts[4], 10) : 0;
+                            return new Date(yearBE - 543, monthIndex, day, hours, minutes).getTime();
                         };
                         valA = parseThaiDate(valA);
                         valB = parseThaiDate(valB);
@@ -601,6 +612,7 @@ function format_thai_datetime($datetime) {
                     <div><div class="text-xs text-slate-500">สี</div><div class="font-semibold">${data.color}</div></div>
                     <div><div class="text-xs text-slate-500">วันสิ้นภาษี</div><div class="font-semibold">${formatThaiDate(data.tax_expiry_date)}</div></div>
                     <div><div class="text-xs text-slate-500">ความเป็นเจ้าของ</div><div class="font-semibold">${ownerTypeThai} ${data.owner_type === 'other' ? `(${data.other_owner_name}, ${data.other_owner_relation})` : ''}</div></div>
+                    <div><div class="text-xs text-slate-500">วันที่นัดรับบัตร</div><div class="font-semibold text-blue-600">${formatThaiDate(data.card_pickup_date)}</div></div>
                 </div>`;
             
             const imageSection = `
@@ -687,14 +699,28 @@ function format_thai_datetime($datetime) {
                 if (result.success) {
                     showAlert(result.message, 'success');
                     tableBody.querySelector(`tr[data-request-id="${requestId}"]`)?.remove();
+                    
+                    const pendingStatEl = document.getElementById('stat-pending');
+                    let pendingCount = parseInt(pendingStatEl.textContent.replace(/,/g, ''), 10);
+                    pendingStatEl.textContent = (pendingCount > 0 ? pendingCount - 1 : 0).toLocaleString('en-US');
+
                     if (action === 'approve') {
+                        const approvedStatEl = document.getElementById('stat-approved-total');
+                        let approvedCount = parseInt(approvedStatEl.textContent.replace(/,/g, ''), 10);
+                        approvedStatEl.textContent = (approvedCount + 1).toLocaleString('en-US');
+                        
                         document.getElementById('qr-code-image').src = result.qr_code_url;
                         document.getElementById('qr-code-result').classList.remove('hidden');
                         modalActions.innerHTML = '<form method="dialog"><button class="btn btn-sm btn-ghost">ปิด</button></form>';
                         rejectionSection.classList.add('hidden');
-                    } else {
+                    } else { // 'reject'
                         inspectModal.close();
                     }
+                    
+                    if (tableBody.querySelectorAll('tr[data-request-id]').length === 0) {
+                         tableBody.innerHTML = '<tr><td colspan="7" class="text-center text-slate-500 py-4">ไม่พบรายการที่รอการอนุมัติ</td></tr>';
+                    }
+
                 } else {
                     showAlert(result.message, 'error');
                 }

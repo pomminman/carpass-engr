@@ -3,6 +3,7 @@
 
 session_start();
 header('Content-Type: application/json');
+date_default_timezone_set('Asia/Bangkok');
 
 // --- 1. ตรวจสอบสิทธิ์และข้อมูลนำเข้า ---
 if (!isset($_SESSION['admin_loggedin']) || $_SESSION['admin_loggedin'] !== true) {
