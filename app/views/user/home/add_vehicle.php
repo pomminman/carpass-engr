@@ -13,7 +13,8 @@ if ($result_period->num_rows > 0) {
 
 // [ลบ] ข้อมูลยี่ห้อรถและจังหวัดถูกย้ายไปที่ auth_check.php แล้ว
 
-$conn->close();
+// [แก้ไข] ลบบรรทัดนี้ออกเพื่อป้องกันการปิดการเชื่อมต่อซ้ำซ้อน
+// $conn->close();
 
 require_once __DIR__ . '/../layouts/header.php';
 ?>
@@ -139,4 +140,3 @@ require_once __DIR__ . '/../layouts/header.php';
 </main>
 
 <?php require_once __DIR__ . '/../layouts/footer.php'; ?>
-

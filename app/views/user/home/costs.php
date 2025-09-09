@@ -3,7 +3,8 @@
 
 // 1. ตรวจสอบสิทธิ์และดึงข้อมูลผู้ใช้
 require_once '../shared/auth_check.php';
-$conn->close();
+// [แก้ไข] ลบบรรทัดนี้ออกเพื่อป้องกันการปิดการเชื่อมต่อซ้ำซ้อน
+// $conn->close();
 
 // 2. เรียกใช้ Header
 require_once '../layouts/header.php';
