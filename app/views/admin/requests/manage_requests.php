@@ -1,5 +1,6 @@
 <?php
 session_start();
+date_default_timezone_set('Asia/Bangkok');
 
 // 1. ตรวจสอบสิทธิ์: ต้องเป็นแอดมินที่ล็อกอินแล้วเท่านั้น
 if (!isset($_SESSION['admin_loggedin']) || $_SESSION['admin_loggedin'] !== true) {
@@ -18,26 +19,40 @@ $conn->set_charset("utf8");
 
 // 3. ดึงข้อมูลแอดมินที่ล็อกอินอยู่
 $admin_id = $_SESSION['admin_id'];
-$admin_info = ['name' => '', 'department' => '', 'role' => ''];
-$sql_admin = "SELECT title, firstname, department, role FROM admins WHERE id = ?";
+$admin_info = [
+    'name' => '',
+    'lastname' => '',
+    'department' => '',
+    'role' => '',
+    'view_permission_text' => ''
+];
+$sql_admin = "SELECT title, firstname, lastname, department, role, view_permission FROM admins WHERE id = ?";
 if ($stmt_admin = $conn->prepare($sql_admin)) {
     $stmt_admin->bind_param("i", $admin_id);
     $stmt_admin->execute();
     $result_admin = $stmt_admin->get_result();
     if ($admin_user = $result_admin->fetch_assoc()) {
         $admin_info['name'] = htmlspecialchars($admin_user['title'] . $admin_user['firstname']);
+        $admin_info['lastname'] = htmlspecialchars($admin_user['lastname']);
         $admin_info['department'] = htmlspecialchars($admin_user['department']);
         $admin_info['role'] = htmlspecialchars($admin_user['role']);
+        $admin_info['view_permission_text'] = $admin_user['view_permission'] == 1 ? 'ดูได้ทุกสังกัด' : 'เฉพาะสังกัดตนเอง';
     }
     $stmt_admin->close();
 }
 
 // 4. ดึงข้อมูลคำร้องทั้งหมด
 $all_requests = [];
-$sql_all_requests = "SELECT vr.id, vr.search_id, u.title, u.firstname, u.lastname, vr.license_plate, vr.province, vr.vehicle_type, vr.created_at, vr.status, vr.card_number
+$sql_all_requests = "SELECT vr.id, vr.search_id, u.title, u.firstname, u.lastname, u.work_department, vr.license_plate, vr.province, vr.vehicle_type, vr.created_at, vr.status, vr.card_pickup_date
                      FROM vehicle_requests vr
                      JOIN users u ON vr.user_id = u.id
-                     ORDER BY vr.created_at DESC";
+                     ORDER BY 
+                        CASE vr.status
+                            WHEN 'pending' THEN 1
+                            WHEN 'rejected' THEN 2
+                            WHEN 'approved' THEN 3
+                            ELSE 4
+                        END, vr.created_at DESC";
 $result_all_requests = $conn->query($sql_all_requests);
 if ($result_all_requests->num_rows > 0) {
     while($row = $result_all_requests->fetch_assoc()) {
@@ -53,13 +68,20 @@ function format_thai_datetime($datetime) {
     $thai_months = [1 => 'ม.ค.', 2 => 'ก.พ.', 3 => 'มี.ค.', 4 => 'เม.ย.', 5 => 'พ.ค.', 6 => 'มิ.ย.', 7 => 'ก.ค.', 8 => 'ส.ค.', 9 => 'ก.ย.', 10 => 'ต.ค.', 11 => 'พ.ย.', 12 => 'ธ.ค.'];
     return date('d', $timestamp) . ' ' . $thai_months[date('n', $timestamp)] . ' ' . (date('Y', $timestamp) + 543) . ', ' . date('H:i', $timestamp) . ' น.';
 }
+
+function format_thai_date($date) {
+    if (empty($date) || $date === '0000-00-00') return '-';
+    $timestamp = strtotime($date);
+    $thai_months = [1 => 'ม.ค.', 2 => 'ก.พ.', 3 => 'มี.ค.', 4 => 'เม.ย.', 5 => 'พ.ค.', 6 => 'มิ.ย.', 7 => 'ก.ค.', 8 => 'ส.ค.', 9 => 'ก.ย.', 10 => 'ต.ค.', 11 => 'พ.ย.', 12 => 'ธ.ค.'];
+    return date('d', $timestamp) . ' ' . $thai_months[date('n', $timestamp)] . ' ' . (date('Y', $timestamp) + 543);
+}
 ?>
 <!DOCTYPE html>
 <html lang="th" data-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>จัดการคำร้อง - ระบบแอดมิน</title>
+    <title>จัดการคำร้อง - ระบบจัดการคำร้อง</title>
     <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css" rel="stylesheet" type="text/css" />
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;700&display=swap" rel="stylesheet">
@@ -70,116 +92,160 @@ function format_thai_datetime($datetime) {
         .alert-soft { border-width: 1px; }
         .alert-error.alert-soft { background-color: #fee2e2; border-color: #fca5a5; color: #b91c1c; }
         .alert-success.alert-soft { background-color: #dcfce7; border-color: #86efac; color: #166534; }
+        th[data-sort-by] { cursor: pointer; user-select: none; }
+        th[data-sort-by] .fa-sort, th[data-sort-by] .fa-sort-up, th[data-sort-by] .fa-sort-down {
+            color: #9ca3af;
+            margin-left: 0.5rem;
+            transition: color 0.2s ease-in-out;
+        }
+        th[data-sort-by]:hover .fa-sort { color: #1f2937; }
+        th[data-sort-by].sort-asc .fa-sort-up, th[data-sort-by].sort-desc .fa-sort-down { color: #2563eb; }
         #zoomed-image-container { display: inline-block; position: relative; }
         #zoomed-image { max-height: 85vh; width: auto; margin: auto; object-fit: contain; }
     </style>
 </head>
 <body>
-    <div class="drawer lg:drawer-open">
-        <input id="my-drawer-2" type="checkbox" class="drawer-toggle" />
-        <div class="drawer-content flex flex-col">
-            <!-- Navbar -->
-            <div class="w-full navbar bg-base-100 lg:hidden">
-                <div class="flex-none"><label for="my-drawer-2" class="btn btn-square btn-ghost"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="inline-block w-5 h-5 stroke-current"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg></label></div>
-                <div class="flex-1"><a class="btn btn-ghost text-xl">จัดการคำร้อง</a></div>
+    <div class="flex flex-col min-h-screen">
+        <!-- Navbar -->
+        <div class="navbar bg-base-100 shadow-md sticky top-0 z-30">
+            <div class="navbar-start">
+                <div class="dropdown">
+                    <label tabindex="0" class="btn btn-ghost lg:hidden">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h8m-8 6h16" /></svg>
+                    </label>
+                    <ul tabindex="0" id="mobile-menu" class="menu menu-sm dropdown-content mt-3 z-[1] p-2 shadow bg-base-100 rounded-box w-52">
+                        <li><a href="../home/home.php"><i class="fa-solid fa-tachometer-alt w-4"></i> Dashboard</a></li>
+                        <li><a href="../requests/manage_requests.php"><i class="fa-solid fa-file-signature w-4"></i> จัดการคำร้อง</a></li>
+                        <li><a href="../users/manage_users.php"><i class="fa-solid fa-users-cog w-4"></i> จัดการผู้ใช้</a></li>
+                        <li><a href="../admins/manage_admins.php"><i class="fa-solid fa-user-shield w-4"></i> จัดการเจ้าหน้าที่</a></li>
+                    </ul>
+                </div>
+                 <div class="flex items-center gap-2 ml-2">
+                    <img src="https://img2.pic.in.th/pic/CARPASS-logo11af8574a9cc9906.png" alt="Logo" class="h-12 w-12">
+                    <div>
+                        <div class="font-bold text-sm sm:text-base whitespace-nowrap">ระบบจัดการ</div>
+                        <div class="text-xs font-normal text-gray-500 whitespace-nowrap">สำหรับเจ้าหน้าที่</div>
+                    </div>
+                </div>
             </div>
-
-            <!-- Page content -->
-            <main class="flex-1 p-4 md:p-6 lg:p-8">
-                <h1 class="text-2xl font-bold flex items-center gap-2"><i class="fa-solid fa-file-signature text-primary"></i> จัดการคำร้องทั้งหมด</h1>
-                <p class="text-slate-500 mb-6">ค้นหาและตรวจสอบคำร้องทั้งหมดในระบบ</p>
-
-                <!-- Requests Table -->
-                <div class="card bg-base-100 shadow-lg">
-                    <div class="card-body">
-                         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                            <div class="flex items-center gap-2">
-                                <select id="statusFilter" class="select select-sm select-bordered">
-                                    <option value="all" selected>ทุกสถานะ</option>
-                                    <option value="pending">รออนุมัติ</option>
-                                    <option value="approved">อนุมัติแล้ว</option>
-                                    <option value="rejected">ไม่ผ่าน</option>
-                                </select>
-                            </div>
-                            <input type="text" id="searchInput" placeholder="ค้นหาจากชื่อ, ทะเบียน, รหัส..." class="input input-sm input-bordered w-full sm:w-auto">
+            <div class="navbar-center hidden lg:flex">
+                <ul class="menu menu-horizontal px-1" id="desktop-menu">
+                    <li><a href="../home/home.php"><i class="fa-solid fa-tachometer-alt"></i> Dashboard</a></li>
+                    <li><a href="../requests/manage_requests.php"><i class="fa-solid fa-file-signature"></i> จัดการคำร้อง</a></li>
+                    <li><a href="../users/manage_users.php"><i class="fa-solid fa-users-cog"></i> จัดการผู้ใช้</a></li>
+                    <li><a href="../admins/manage_admins.php"><i class="fa-solid fa-user-shield"></i> จัดการเจ้าหน้าที่</a></li>
+                </ul>
+            </div>
+            <div class="navbar-end">
+                <div class="dropdown dropdown-end">
+                    <label tabindex="0" class="btn btn-ghost btn-circle avatar">
+                        <div class="w-10 rounded-full ring ring-primary ring-offset-base-100 ring-offset-2">
+                             <i class="fa-solid fa-user text-xl text-primary flex items-center justify-center h-full"></i>
                         </div>
+                    </label>
+                    <ul tabindex="0" class="mt-3 z-[1] p-2 shadow menu menu-sm dropdown-content bg-base-100 rounded-box w-64 space-y-1">
+                         <li class="p-2 text-center">
+                            <div class="font-semibold"><?php echo $admin_info['name'] . ' ' . $admin_info['lastname']; ?></div>
+                            <div class="text-xs text-slate-500">สังกัด: <?php echo $admin_info['department']; ?></div>
+                            <div class="text-xs text-slate-500">ระดับสิทธิ์: <?php echo ucfirst($admin_info['role']); ?></div>
+                            <div class="text-xs text-slate-500">สิทธิ์เข้าถึง: <?php echo $admin_info['view_permission_text']; ?></div>
+                         </li>
+                         <div class="divider my-0"></div>
+                         <li>
+                            <a href="../admins/manage_admins.php">
+                                <i class="fa-solid fa-user-pen"></i> แก้ไขข้อมูลส่วนตัว
+                            </a>
+                        </li>
+                         <li>
+                            <a href="../../../controllers/admin/logout/logout.php" class="text-error">
+                                <i class="fa-solid fa-right-from-bracket"></i> ออกจากระบบ
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
 
-                        <div class="overflow-x-auto mt-4">
-                            <table class="table table-sm" id="requestsTable">
-                                <thead>
-                                    <tr>
-                                        <th class="whitespace-nowrap">รหัสคำร้อง</th>
-                                        <th class="whitespace-nowrap">ชื่อผู้ยื่น</th>
-                                        <th class="whitespace-nowrap">ทะเบียนรถ</th>
-                                        <th class="whitespace-nowrap">สถานะ</th>
-                                        <th class="whitespace-nowrap">เลขที่บัตร</th>
-                                        <th class="whitespace-nowrap">วันที่ยื่น</th>
-                                        <th></th>
-                                    </tr>
-                                </thead>
-                                <tbody>
+        <!-- Page content -->
+        <main class="flex-1 p-4 md:p-6 lg:p-8 pb-24">
+            <h1 class="text-2xl font-bold flex items-center gap-2"><i class="fa-solid fa-file-signature text-primary"></i> จัดการคำร้องทั้งหมด</h1>
+            <p class="text-slate-500 mb-6">ตรวจสอบและจัดการคำร้องขอบัตรผ่านทั้งหมดในระบบ</p>
+            
+            <div class="card bg-base-100 shadow-lg">
+                <div class="card-body">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                        <div class="tabs tabs-boxed">
+                            <a class="tab tab-sm sm:tab-md status-filter active" data-filter="all">ทั้งหมด</a>
+                            <a class="tab tab-sm sm:tab-md status-filter" data-filter="pending">รออนุมัติ</a>
+                            <a class="tab tab-sm sm:tab-md status-filter" data-filter="approved">อนุมัติแล้ว</a>
+                            <a class="tab tab-sm sm:tab-md status-filter" data-filter="rejected">ไม่ผ่าน</a>
+                        </div>
+                        <div class="flex items-center gap-2 w-full sm:w-auto">
+                           <input type="text" id="searchInput" placeholder="ค้นหา..." class="input input-sm input-bordered w-full sm:w-auto">
+                        </div>
+                    </div>
+
+                    <div class="overflow-x-auto mt-4">
+                        <table class="table table-sm" id="requestsTable">
+                             <thead class="bg-slate-50">
+                                <tr>
+                                    <th data-sort-by="search_id">รหัสคำร้อง<i class="fa-solid fa-sort"></i></th>
+                                    <th data-sort-by="name">ชื่อผู้ยื่น<i class="fa-solid fa-sort"></i></th>
+                                    <th data-sort-by="department">สังกัด<i class="fa-solid fa-sort"></i></th>
+                                    <th data-sort-by="license">ทะเบียนรถ<i class="fa-solid fa-sort"></i></th>
+                                    <th data-sort-by="type">ประเภทรถ<i class="fa-solid fa-sort"></i></th>
+                                    <th data-sort-by="date">วันที่ยื่น<i class="fa-solid fa-sort"></i></th>
+                                    <th data-sort-by="pickup_date">วันที่นัดรับบัตร<i class="fa-solid fa-sort"></i></th>
+                                    <th data-sort-by="status">สถานะ<i class="fa-solid fa-sort"></i></th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php if (empty($all_requests)): ?>
+                                    <tr><td colspan="9" class="text-center text-slate-500 py-4">ไม่พบข้อมูลคำร้องในระบบ</td></tr>
+                                <?php else: ?>
                                     <?php foreach ($all_requests as $req): ?>
-                                    <tr data-request-id="<?php echo $req['id']; ?>">
+                                    <tr class="hover:bg-slate-50" data-request-id="<?php echo $req['id']; ?>" data-status="<?php echo $req['status']; ?>">
                                         <td class="font-semibold whitespace-nowrap"><?php echo htmlspecialchars($req['search_id']); ?></td>
                                         <td class="whitespace-nowrap"><?php echo htmlspecialchars($req['title'] . $req['firstname'] . ' ' . $req['lastname']); ?></td>
+                                        <td class="whitespace-nowrap"><?php echo htmlspecialchars($req['work_department'] ?? '-'); ?></td>
                                         <td class="whitespace-nowrap"><?php echo htmlspecialchars($req['license_plate'] . ' ' . $req['province']); ?></td>
-                                        <td class="whitespace-nowrap">
-                                            <?php
-                                            $status_text = ''; $status_class = '';
-                                            switch ($req['status']) {
-                                                case 'approved': $status_text = 'อนุมัติ'; $status_class = 'badge-success'; break;
-                                                case 'pending': $status_text = 'รออนุมัติ'; $status_class = 'badge-warning'; break;
-                                                case 'rejected': $status_text = 'ไม่ผ่าน'; $status_class = 'badge-error'; break;
-                                            }
-                                            ?>
-                                            <span class="badge <?php echo $status_class; ?> text-white text-xs"><?php echo $status_text; ?></span>
-                                        </td>
-                                        <td class="whitespace-nowrap"><?php echo htmlspecialchars($req['card_number'] ?? '-'); ?></td>
+                                        <td class="whitespace-nowrap"><?php echo htmlspecialchars($req['vehicle_type']); ?></td>
                                         <td class="whitespace-nowrap"><?php echo format_thai_datetime($req['created_at']); ?></td>
+                                        <td class="whitespace-nowrap font-semibold text-info"><?php echo format_thai_date($req['card_pickup_date']); ?></td>
                                         <td>
-                                            <button class="btn btn-sm btn-primary inspect-btn" data-id="<?php echo $req['id']; ?>">
-                                                <i class="fa-solid fa-search mr-1"></i>
-                                                ตรวจสอบ
+                                            <?php
+                                                $status_badge = '';
+                                                switch ($req['status']) {
+                                                    case 'pending': $status_badge = '<div class="badge badge-warning">รออนุมัติ</div>'; break;
+                                                    case 'approved': $status_badge = '<div class="badge badge-success">อนุมัติแล้ว</div>'; break;
+                                                    case 'rejected': $status_badge = '<div class="badge badge-error">ไม่ผ่าน</div>'; break;
+                                                }
+                                                echo $status_badge;
+                                            ?>
+                                        </td>
+                                        <td class="whitespace-nowrap">
+                                            <button class="btn btn-xs btn-primary inspect-btn" data-id="<?php echo $req['id']; ?>">
+                                                <span><i class="fa-solid fa-search mr-1"></i>ตรวจสอบ</span>
                                             </button>
                                         </td>
                                     </tr>
                                     <?php endforeach; ?>
-                                    <tr id="no-results-row" class="hidden"><td colspan="7" class="text-center text-slate-500 py-4">ไม่พบข้อมูลคำร้องที่ตรงตามเงื่อนไข</td></tr>
-                                </tbody>
-                            </table>
-                        </div>
+                                <?php endif; ?>
+                                <tr id="no-results-row" class="hidden"><td colspan="9" class="text-center text-slate-500 py-4">ไม่พบข้อมูลคำร้องที่ค้นหา</td></tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
-            </main>
-        </div> 
-
-        <div class="drawer-side">
-            <label for="my-drawer-2" class="drawer-overlay"></label> 
-            <ul class="menu p-4 w-56 min-h-full bg-base-200 text-base-content space-y-1" id="sidebar-menu">
-                 <li class="mb-4">
-                    <a href="../home/home.php" class="text-xl font-bold flex items-center gap-2">
-                        <img src="https://img2.pic.in.th/pic/CARPASS-logo11af8574a9cc9906.png" alt="Logo" class="h-10 w-10">
-                        <div><span class="whitespace-nowrap text-base">ระบบจัดการ</span><span class="text-xs font-normal text-gray-500 block">สำหรับเจ้าหน้าที่</span></div>
-                    </a>
-                </li>
-                <li><a href="../home/home.php"><i class="fa-solid fa-tachometer-alt w-4"></i> Dashboard</a></li>
-                <li><a href="../requests/manage_requests.php"><i class="fa-solid fa-file-signature w-4"></i> จัดการคำร้อง</a></li>
-                <li><a href="../users/manage_users.php"><i class="fa-solid fa-users-cog w-4"></i> จัดการผู้ใช้</a></li>
-                <li><a href="../admins/manage_admins.php"><i class="fa-solid fa-user-shield w-4"></i> จัดการเจ้าหน้าที่</a></li>
-                <div class="divider"></div>
-                 <li class="mt-auto">
-                    <div class="flex flex-col items-start p-2">
-                        <div class="font-semibold"><?php echo $admin_info['name']; ?></div>
-                        <div class="text-xs text-slate-500">สังกัด: <?php echo $admin_info['department']; ?></div>
-                        <div class="text-xs text-slate-500">สิทธิ์: <?php echo $admin_info['role']; ?></div>
-                        <a href="../../../controllers/admin/logout/logout.php" class="text-xs text-error link-hover mt-2">ออกจากระบบ</a>
-                    </div>
-                </li>
-            </ul>
-        </div>
+            </div>
+        </main>
     </div>
-    
-    <!-- Modals (Copied from home.php for full functionality) -->
+    <!-- Footer -->
+    <footer class="fixed bottom-0 left-0 right-0 bg-base-200 text-base-content shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] p-1 text-center z-40">
+        <p class="text-[10px] sm:text-xs whitespace-nowrap">Developed by ร.ท.พรหมินทร์ อินทมาตย์ (ผู้พัฒนาระบบ/กยข.กช.)</p>
+    </footer>
+
+    <!-- Modals -->
     <dialog id="inspectModal" class="modal">
         <div class="modal-box max-w-5xl">
             <form method="dialog">
@@ -194,7 +260,10 @@ function format_thai_datetime($datetime) {
             </div>
              <div id="rejection-section" class="hidden mt-4 p-4 border-t">
                 <h4 class="font-bold mb-2">กรุณาระบุเหตุผลที่ไม่ผ่านการอนุมัติ:</h4>
-                <textarea id="rejection-reason" class="textarea textarea-bordered w-full" rows="2" placeholder="เช่น เอกสารไม่ชัดเจน, ข้อมูลไม่ถูกต้อง..."></textarea>
+                <div class="form-control">
+                    <textarea id="rejection-reason" class="textarea textarea-bordered w-full" rows="2" placeholder="เช่น เอกสารไม่ชัดเจน, ข้อมูลไม่ถูกต้อง..."></textarea>
+                    <p id="rejection-error-msg" class="text-error text-xs mt-1 hidden">กรุณาระบุเหตุผล</p>
+                </div>
                 <div class="flex justify-end gap-2 mt-2">
                     <button id="cancel-reject-btn" class="btn btn-sm btn-ghost">ยกเลิก</button>
                     <button id="confirm-reject-btn" class="btn btn-sm btn-error">ยืนยันการปฏิเสธ</button>
@@ -213,9 +282,7 @@ function format_thai_datetime($datetime) {
                 </form>
             </div>
         </div>
-        <form method="dialog" class="modal-backdrop">
-            <button>close</button>
-        </form>
+        <form method="dialog" class="modal-backdrop"><button>close</button></form>
     </dialog>
     
     <dialog id="confirmActionModal" class="modal">
@@ -230,65 +297,100 @@ function format_thai_datetime($datetime) {
     </dialog>
 
     <div id="alert-container" class="toast toast-top toast-center z-50"></div>
-
+    
     <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Sidebar active state
+        // --- Set Active Menu ---
         const currentPage = window.location.pathname;
-        const menuLinks = document.querySelectorAll('#sidebar-menu > li:not(.mb-4) > a');
-
+        const menuLinks = document.querySelectorAll('#desktop-menu a, #mobile-menu a');
         menuLinks.forEach(link => link.classList.remove('active'));
-
         const currentPageFilename = currentPage.substring(currentPage.lastIndexOf('/') + 1);
-        const activeLink = Array.from(menuLinks).find(link => {
+        const activeLinks = Array.from(menuLinks).filter(link => {
             const linkHref = link.getAttribute('href');
             return linkHref && linkHref.endsWith(currentPageFilename);
         });
+        activeLinks.forEach(link => link.classList.add('active'));
 
-        if (activeLink) {
-            activeLink.classList.add('active');
-        }
-
-        // Filtering Logic
         const searchInput = document.getElementById('searchInput');
-        const statusFilter = document.getElementById('statusFilter');
-        const tableBody = document.getElementById('requestsTable').querySelector('tbody');
+        const table = document.getElementById('requestsTable');
+        const tableBody = table.querySelector('tbody');
         const allRows = Array.from(tableBody.querySelectorAll('tr[data-request-id]'));
         const noResultsRow = document.getElementById('no-results-row');
+        const statusFilters = document.querySelectorAll('.status-filter');
+        let currentFilter = 'all';
 
-        function filterTable() {
+        function filterAndSearch() {
             const searchTerm = searchInput.value.toLowerCase().trim();
-            const statusValue = statusFilter.value;
             let visibleCount = 0;
-
             allRows.forEach(row => {
-                const rowText = row.textContent.toLowerCase();
-                const statusCellText = row.cells[3].textContent.trim().toLowerCase();
-                
-                const matchesSearch = rowText.includes(searchTerm);
-                let matchesStatus = false;
-                if (statusValue === 'all') {
-                    matchesStatus = true;
-                } else if (statusValue === 'pending' && statusCellText.includes('รออนุมัติ')) {
-                    matchesStatus = true;
-                } else if (statusValue === 'approved' && statusCellText.includes('อนุมัติ')) {
-                    matchesStatus = true;
-                } else if (statusValue === 'rejected' && statusCellText.includes('ไม่ผ่าน')) {
-                    matchesStatus = true;
-                }
-
-                const isVisible = matchesSearch && matchesStatus;
+                const statusMatch = currentFilter === 'all' || row.dataset.status === currentFilter;
+                const searchMatch = row.textContent.toLowerCase().includes(searchTerm);
+                const isVisible = statusMatch && searchMatch;
                 row.style.display = isVisible ? '' : 'none';
                 if (isVisible) visibleCount++;
             });
-
             noResultsRow.style.display = visibleCount > 0 ? 'none' : 'table-row';
         }
 
-        searchInput.addEventListener('input', filterTable);
-        statusFilter.addEventListener('change', filterTable);
+        searchInput.addEventListener('input', filterAndSearch);
+
+        statusFilters.forEach(filter => {
+            filter.addEventListener('click', function(e) {
+                e.preventDefault();
+                statusFilters.forEach(f => f.classList.remove('active'));
+                this.classList.add('active');
+                currentFilter = this.dataset.filter;
+                filterAndSearch();
+            });
+        });
+
+        // --- Table Sorting ---
+        const headers = table.querySelectorAll('th[data-sort-by]');
+        headers.forEach(header => {
+            header.addEventListener('click', () => {
+                const isAsc = header.classList.contains('sort-asc');
+                const direction = isAsc ? -1 : 1;
+                const columnIndex = Array.from(header.parentNode.children).indexOf(header);
+
+                headers.forEach(h => {
+                    h.classList.remove('sort-asc', 'sort-desc');
+                    h.querySelector('i').className = 'fa-solid fa-sort';
+                });
+
+                header.classList.toggle('sort-asc', !isAsc);
+                header.classList.toggle('sort-desc', isAsc);
+                header.querySelector('i').className = !isAsc ? 'fa-solid fa-sort-up' : 'fa-solid fa-sort-down';
+
+                const rows = Array.from(tableBody.querySelectorAll('tr[data-request-id]'));
+                rows.sort((rowA, rowB) => {
+                    let valA = rowA.children[columnIndex].textContent.trim();
+                    let valB = rowB.children[columnIndex].textContent.trim();
+                    
+                    if (header.dataset.sortBy === 'date' || header.dataset.sortBy === 'pickup_date') {
+                        const thaiMonths = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+                        const parseThaiDate = (str) => {
+                            if (str === '-') return 0;
+                            const parts = str.split(/[\s,:]+/);
+                            if (parts.length < 3) return 0;
+                            const day = parseInt(parts[0], 10);
+                            const monthIndex = thaiMonths.indexOf(parts[1]);
+                            const yearBE = parseInt(parts[2], 10);
+                            const hours = parts.length > 3 ? parseInt(parts[3], 10) : 0;
+                            const minutes = parts.length > 4 ? parseInt(parts[4], 10) : 0;
+                            return new Date(yearBE - 543, monthIndex, day, hours, minutes).getTime();
+                        };
+                        valA = parseThaiDate(valA);
+                        valB = parseThaiDate(valB);
+                    }
+                    
+                    return valA.toString().localeCompare(valB.toString(), undefined, {numeric: true}) * direction;
+                });
+
+                rows.forEach(row => tableBody.appendChild(row));
+            });
+        });
         
-        // --- Modal & Approval Logic (Copied from home.php) ---
+        // --- Modal & Approval Logic ---
         const inspectModal = document.getElementById('inspectModal');
         const modalTitle = document.getElementById('modal-title-inspect').querySelector('span');
         const modalBody = document.getElementById('modal-body-inspect');
@@ -318,13 +420,6 @@ function format_thai_datetime($datetime) {
             }, 3000);
         }
         
-        function formatThaiDate(dateString) {
-            if (!dateString || dateString === '0000-00-00') return '-';
-            const date = new Date(dateString);
-            const thaiMonths = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."];
-            return `${date.getDate()} ${thaiMonths[date.getMonth()]} ${date.getFullYear() + 543}`;
-        }
-
         async function openInspectModal(requestId) {
             inspectModal.showModal();
             modalTitle.textContent = '';
@@ -332,6 +427,8 @@ function format_thai_datetime($datetime) {
             modalActions.innerHTML = '<form method="dialog"><button class="btn btn-sm btn-ghost">ปิด</button></form>';
             rejectionSection.classList.add('hidden');
             document.getElementById('rejection-reason').value = '';
+            document.getElementById('rejection-reason').classList.remove('textarea-error');
+            document.getElementById('rejection-error-msg').classList.add('hidden');
 
             try {
                 const response = await fetch(`../../../controllers/admin/requests/get_request_details.php?id=${requestId}`);
@@ -348,7 +445,7 @@ function format_thai_datetime($datetime) {
 
         function renderModalContent(data) {
             modalTitle.textContent = data.search_id;
-            const userTypeThai = data.user_type === 'army' ? 'ข้าราชการ ทบ.' : 'บุคคลภายนอก';
+            const userTypeThai = data.user_type === 'army' ? 'ข้าราชการ/ลูกจ้าง/พนักงานราชการ ทบ.' : 'บุคคลภายนอก';
             const ownerTypeThai = data.owner_type === 'self' ? 'รถชื่อตนเอง' : 'รถคนอื่น';
 
             let historySection = '';
@@ -364,16 +461,14 @@ function format_thai_datetime($datetime) {
             
             const profileImageSrc = `/public/uploads/user_photos/${data.photo_profile}`;
             
-            const addressParts = [data.address, data.subdistrict, data.district, data.province, data.zipcode].filter(Boolean);
+            const addressParts = [data.address, data.subdistrict, data.district, data.user_province, data.zipcode].filter(Boolean);
             const fullAddress = addressParts.join(', ') || '-';
 
             const userDetails = `
                 <h3 class="font-semibold text-base mb-2 uppercase tracking-wider text-slate-500">ข้อมูลผู้ยื่น</h3>
                 <div class="flex flex-col items-center">
-                    <div class="avatar mb-4 cursor-pointer" onclick="zoomImage('${profileImageSrc}')">
-                        <div class="w-24 rounded-lg ring ring-primary ring-offset-base-100 ring-offset-2">
-                            <img src="${profileImageSrc}" />
-                        </div>
+                    <div class="w-24 h-24 bg-base-300 rounded-lg p-1 mb-4">
+                        <img src="${profileImageSrc}" class="w-full h-full object-contain rounded-md cursor-pointer" onclick="zoomImage('${profileImageSrc}')" />
                     </div>
                     <div class="text-center">
                         <div class="font-bold">${data.user_title}${data.user_firstname} ${data.user_lastname}</div>
@@ -383,7 +478,7 @@ function format_thai_datetime($datetime) {
                     <div class="w-full space-y-2 text-sm text-left">
                         <div class="grid grid-cols-3 gap-2"><span class="text-slate-500 col-span-1">เบอร์โทร:</span><span class="font-semibold col-span-2">${data.phone_number || '-'}</span></div>
                         <div class="grid grid-cols-3 gap-2"><span class="text-slate-500 col-span-1">เลขบัตรฯ:</span><span class="font-semibold col-span-2">${data.national_id || '-'}</span></div>
-                        <div class="grid grid-cols-3 gap-2"><span class="text-slate-500 col-span-1">วันเกิด:</span><span class="font-semibold col-span-2">${formatThaiDate(data.dob)}</span></div>
+                        <div class="grid grid-cols-3 gap-2"><span class="text-slate-500 col-span-1">วันเกิด:</span><span class="font-semibold col-span-2">${format_thai_date(data.dob)}</span></div>
                         <div class="grid grid-cols-3 gap-2"><span class="text-slate-500 col-span-1">ที่อยู่:</span><span class="font-semibold col-span-2">${fullAddress}</span></div>
                         ${data.user_type === 'army' ? `
                         <div class="divider my-1"></div>
@@ -404,17 +499,38 @@ function format_thai_datetime($datetime) {
                     <div><div class="text-xs text-slate-500">ประเภท</div><div class="font-semibold">${data.vehicle_type}</div></div>
                     <div><div class="text-xs text-slate-500">ยี่ห้อ / รุ่น</div><div class="font-semibold">${data.brand} / ${data.model}</div></div>
                     <div><div class="text-xs text-slate-500">สี</div><div class="font-semibold">${data.color}</div></div>
-                    <div><div class="text-xs text-slate-500">วันสิ้นภาษี</div><div class="font-semibold">${formatThaiDate(data.tax_expiry_date)}</div></div>
+                    <div><div class="text-xs text-slate-500">วันสิ้นภาษี</div><div class="font-semibold">${format_thai_date(data.tax_expiry_date)}</div></div>
                     <div><div class="text-xs text-slate-500">ความเป็นเจ้าของ</div><div class="font-semibold">${ownerTypeThai} ${data.owner_type === 'other' ? `(${data.other_owner_name}, ${data.other_owner_relation})` : ''}</div></div>
+                    <div><div class="text-xs text-slate-500">วันที่นัดรับบัตร</div><div class="font-semibold text-blue-600">${format_thai_date(data.card_pickup_date)}</div></div>
                 </div>`;
             
             const imageSection = `
                 <h3 class="font-semibold text-base mb-2 uppercase tracking-wider text-slate-500">หลักฐาน</h3>
                 <div class="grid grid-cols-2 gap-2">
-                    <div class="text-center"><img src="/public/uploads/vehicle/registration/${data.photo_reg_copy}" class="w-full h-28 object-cover rounded-md border cursor-pointer hover:scale-105 transition-transform" onclick="zoomImage(this.src)"><p class="text-xs font-semibold mt-1">ทะเบียนรถ</p></div>
-                    <div class="text-center"><img src="/public/uploads/vehicle/tax_sticker/${data.photo_tax_sticker}" class="w-full h-28 object-cover rounded-md border cursor-pointer hover:scale-105 transition-transform" onclick="zoomImage(this.src)"><p class="text-xs font-semibold mt-1">ป้ายภาษี</p></div>
-                    <div class="text-center"><img src="/public/uploads/vehicle/front_view/${data.photo_front}" class="w-full h-28 object-cover rounded-md border cursor-pointer hover:scale-105 transition-transform" onclick="zoomImage(this.src)"><p class="text-xs font-semibold mt-1">ด้านหน้า</p></div>
-                    <div class="text-center"><img src="/public/uploads/vehicle/rear_view/${data.photo_rear}" class="w-full h-28 object-cover rounded-md border cursor-pointer hover:scale-105 transition-transform" onclick="zoomImage(this.src)"><p class="text-xs font-semibold mt-1">ด้านหลัง</p></div>
+                    <div class="text-center">
+                        <div class="bg-base-300 rounded-lg p-1 flex items-center justify-center h-28">
+                            <img src="/public/uploads/vehicle/registration/${data.photo_reg_copy}" class="w-full h-full object-contain rounded-md cursor-pointer" onclick="zoomImage(this.src)">
+                        </div>
+                        <p class="text-xs font-semibold mt-1">ทะเบียนรถ</p>
+                    </div>
+                    <div class="text-center">
+                        <div class="bg-base-300 rounded-lg p-1 flex items-center justify-center h-28">
+                            <img src="/public/uploads/vehicle/tax_sticker/${data.photo_tax_sticker}" class="w-full h-full object-contain rounded-md cursor-pointer" onclick="zoomImage(this.src)">
+                        </div>
+                        <p class="text-xs font-semibold mt-1">ป้ายภาษี</p>
+                    </div>
+                    <div class="text-center">
+                        <div class="bg-base-300 rounded-lg p-1 flex items-center justify-center h-28">
+                            <img src="/public/uploads/vehicle/front_view/${data.photo_front}" class="w-full h-full object-contain rounded-md cursor-pointer" onclick="zoomImage(this.src)">
+                        </div>
+                        <p class="text-xs font-semibold mt-1">ด้านหน้า</p>
+                    </div>
+                    <div class="text-center">
+                        <div class="bg-base-300 rounded-lg p-1 flex items-center justify-center h-28">
+                            <img src="/public/uploads/vehicle/rear_view/${data.photo_rear}" class="w-full h-full object-contain rounded-md cursor-pointer" onclick="zoomImage(this.src)">
+                        </div>
+                        <p class="text-xs font-semibold mt-1">ด้านหลัง</p>
+                    </div>
                 </div>`;
 
             const qrCodeSection = `<div id="qr-code-result" class="hidden mt-4"><div class="card bg-success/10 border-success border shadow-inner"><div class="card-body p-4 items-center text-center"><h3 class="card-title text-base text-success"><i class="fa-solid fa-check-circle mr-2"></i>อนุมัติสำเร็จ</h3><img id="qr-code-image" src="" class="w-32 h-32 rounded-lg p-1 mt-2 bg-white"><p class="text-xs text-slate-500 mt-2">QR Code สำหรับบัตรผ่านถูกสร้างเรียบร้อยแล้ว</p></div></div></div>`;
@@ -455,10 +571,25 @@ function format_thai_datetime($datetime) {
             modalActions.style.display = '';
         });
 
+        document.getElementById('rejection-reason').addEventListener('input', function() {
+            if (this.value.trim()) {
+                this.classList.remove('textarea-error');
+                document.getElementById('rejection-error-msg').classList.add('hidden');
+            }
+        });
+
         document.getElementById('confirm-reject-btn').addEventListener('click', () => {
-            const reason = document.getElementById('rejection-reason').value;
+            const reasonInput = document.getElementById('rejection-reason');
+            const reasonErrorMsg = document.getElementById('rejection-error-msg');
+            const reason = reasonInput.value.trim();
             const requestId = inspectModal.dataset.currentRequestId;
-            if(!reason.trim()){ showAlert('กรุณาระบุเหตุผลที่ไม่ผ่าน', 'error'); return; }
+            
+            if(!reason){
+                reasonInput.classList.add('textarea-error');
+                reasonErrorMsg.classList.remove('hidden');
+                return;
+            }
+            
             showConfirmModal('ปฏิเสธคำร้อง', 'คุณต้องการยืนยันการปฏิเสธคำร้องนี้ใช่หรือไม่?', 'btn-error', () => processRequest(requestId, 'reject', reason));
         });
         
@@ -491,8 +622,29 @@ function format_thai_datetime($datetime) {
                 const result = await response.json();
                 if (result.success) {
                     showAlert(result.message, 'success');
-                    // Reload the page to reflect the changes in the table
-                    setTimeout(() => window.location.reload(), 1500);
+                    
+                    // Update table row
+                    const row = tableBody.querySelector(`tr[data-request-id="${requestId}"]`);
+                    if (row) {
+                        row.dataset.status = action;
+                        const statusCell = row.querySelector('td:nth-last-child(2)');
+                        let newBadge = '';
+                        if (action === 'approved') newBadge = '<div class="badge badge-success">อนุมัติแล้ว</div>';
+                        else if (action === 'rejected') newBadge = '<div class="badge badge-error">ไม่ผ่าน</div>';
+                        statusCell.innerHTML = newBadge;
+                    }
+                    
+                    filterAndSearch(); // Refresh table view
+
+                    if (action === 'approve') {
+                        document.getElementById('qr-code-image').src = result.qr_code_url;
+                        document.getElementById('qr-code-result').classList.remove('hidden');
+                        modalActions.innerHTML = '<form method="dialog"><button class="btn btn-sm btn-ghost">ปิด</button></form>';
+                        rejectionSection.classList.add('hidden');
+                    } else { // 'reject'
+                        inspectModal.close();
+                    }
+
                 } else {
                     showAlert(result.message, 'error');
                 }
@@ -521,4 +673,3 @@ function format_thai_datetime($datetime) {
     </script>
 </body>
 </html>
-

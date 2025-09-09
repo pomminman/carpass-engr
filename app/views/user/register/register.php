@@ -109,7 +109,7 @@ $conn_dept->close(); // ปิดการเชื่อมต่อหลั�
                             <label class="card card-compact bg-primary/5 border border-primary cursor-pointer">
                                 <div class="card-body">
                                     <div class="flex justify-between items-center">
-                                        <h3 class="card-title text-primary text-base">ข้าราชการ ลูกจ้าง และพนักงานราชการ สังกัด ทบ.</h3>
+                                        <h3 class="card-title text-primary text-base">ข้าราชการ/ลูกจ้าง/พนักงานราชการ ทบ.</h3>
                                         <input type="radio" name="user_type_radio" class="radio radio-primary" value="army" />
                                     </div>
                                 </div>

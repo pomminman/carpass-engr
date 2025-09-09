@@ -178,11 +178,15 @@ if ($found) {
                                 <h3 class="font-semibold text-center text-sm uppercase tracking-wider text-slate-500">ยานพาหนะ</h3>
                                 <div class="grid grid-cols-2 gap-2">
                                     <div>
-                                        <img src="../../../public/uploads/vehicle/front_view/<?php echo htmlspecialchars($data['photo_front']); ?>" class="w-full h-auto rounded-lg border cursor-pointer hover:scale-105 transition-transform" alt="รูปถ่ายรถด้านหน้า" onclick="zoomImage(this.src)" onerror="this.onerror=null;this.src='https://placehold.co/200x150/CCCCCC/FFFFFF?text=No+Img';">
+                                        <div class="bg-base-200 rounded-lg p-1 flex items-center justify-center h-28">
+                                            <img src="../../../public/uploads/vehicle/front_view/<?php echo htmlspecialchars($data['photo_front']); ?>" class="max-w-full max-h-full object-contain rounded-md cursor-pointer" alt="รูปถ่ายรถด้านหน้า" onclick="zoomImage(this.src)" onerror="this.onerror=null;this.src='https://placehold.co/200x150/CCCCCC/FFFFFF?text=No+Img';">
+                                        </div>
                                         <p class="text-xs text-center mt-1 text-gray-500">ด้านหน้า</p>
                                     </div>
                                     <div>
-                                        <img src="../../../public/uploads/vehicle/rear_view/<?php echo htmlspecialchars($data['photo_rear']); ?>" class="w-full h-auto rounded-lg border cursor-pointer hover:scale-105 transition-transform" alt="รูปถ่ายรถด้านหลัง" onclick="zoomImage(this.src)" onerror="this.onerror=null;this.src='https://placehold.co/200x150/CCCCCC/FFFFFF?text=No+Img';">
+                                        <div class="bg-base-200 rounded-lg p-1 flex items-center justify-center h-28">
+                                            <img src="../../../public/uploads/vehicle/rear_view/<?php echo htmlspecialchars($data['photo_rear']); ?>" class="max-w-full max-h-full object-contain rounded-md cursor-pointer" alt="รูปถ่ายรถด้านหลัง" onclick="zoomImage(this.src)" onerror="this.onerror=null;this.src='https://placehold.co/200x150/CCCCCC/FFFFFF?text=No+Img';">
+                                        </div>
                                         <p class="text-xs text-center mt-1 text-gray-500">ด้านหลัง</p>
                                     </div>
                                 </div>
@@ -271,4 +275,3 @@ if ($found) {
     </script>
 </body>
 </html>
-

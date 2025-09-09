@@ -17,25 +17,30 @@ if ($conn->connect_error) {
 }
 $conn->set_charset("utf8");
 
-// 3. ดึงข้อมูลแอดมินที่ล็อกอินอยู่
+// 3. ดึงข้อมูลแอดมินที่ล็อกอินอยู่ (เพิ่ม lastname และ view_permission)
 $admin_id = $_SESSION['admin_id'];
 $admin_info = [
     'name' => '',
+    'lastname' => '',
     'department' => '',
-    'role' => ''
+    'role' => '',
+    'view_permission_text' => ''
 ];
-$sql_admin = "SELECT title, firstname, department, role FROM admins WHERE id = ?";
+$sql_admin = "SELECT title, firstname, lastname, department, role, view_permission FROM admins WHERE id = ?";
 if ($stmt_admin = $conn->prepare($sql_admin)) {
     $stmt_admin->bind_param("i", $admin_id);
     $stmt_admin->execute();
     $result_admin = $stmt_admin->get_result();
     if ($admin_user = $result_admin->fetch_assoc()) {
         $admin_info['name'] = htmlspecialchars($admin_user['title'] . $admin_user['firstname']);
+        $admin_info['lastname'] = htmlspecialchars($admin_user['lastname']);
         $admin_info['department'] = htmlspecialchars($admin_user['department']);
         $admin_info['role'] = htmlspecialchars($admin_user['role']);
+        $admin_info['view_permission_text'] = $admin_user['view_permission'] == 1 ? 'ดูได้ทุกสังกัด' : 'เฉพาะสังกัดตนเอง';
     }
     $stmt_admin->close();
 }
+
 
 // 4. ดึงข้อมูลสถิติสำหรับ Dashboard
 $stats = [
@@ -57,7 +62,7 @@ if($result_users) $stats['total_users'] = $result_users->fetch_assoc()['count'];
 $result_total_req = $conn->query("SELECT COUNT(*) as count FROM vehicle_requests");
 if($result_total_req) $stats['total_requests'] = $result_total_req->fetch_assoc()['count'];
 
-// 5. [แก้ไข] ดึงเฉพาะรายการคำร้องที่ "รออนุมัติ" และเรียงจากเก่าสุดไปใหม่สุด
+// 5. ดึงเฉพาะรายการคำร้องที่ "รออนุมัติ" และเรียงจากเก่าสุดไปใหม่สุด
 $pending_requests = [];
 $sql_pending_requests = "SELECT vr.id, vr.search_id, u.title, u.firstname, u.lastname, u.work_department, vr.license_plate, vr.province, vr.vehicle_type, vr.created_at, vr.status, vr.card_pickup_date
                      FROM vehicle_requests vr
@@ -108,7 +113,7 @@ function format_thai_date($date) {
     <style>
         body { font-family: 'Prompt', sans-serif; background-color: #f0f2f5; }
         .menu a.active { background-color: #eef2ff; color: #4338ca; }
-         .alert-soft { border-width: 1px; }
+        .alert-soft { border-width: 1px; }
         .alert-error.alert-soft { background-color: #fee2e2; border-color: #fca5a5; color: #b91c1c; }
         .alert-success.alert-soft { background-color: #dcfce7; border-color: #86efac; color: #166534; }
         th[data-sort-by] { cursor: pointer; user-select: none; }
@@ -124,147 +129,179 @@ function format_thai_date($date) {
     </style>
 </head>
 <body>
-    <div class="drawer lg:drawer-open">
-        <input id="my-drawer-2" type="checkbox" class="drawer-toggle" />
-        <div class="drawer-content flex flex-col">
-            <!-- Navbar -->
-            <div class="w-full navbar bg-base-100 lg:hidden">
-                <div class="flex-none">
-                    <label for="my-drawer-2" class="btn btn-square btn-ghost">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="inline-block w-5 h-5 stroke-current"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+    <div class="flex flex-col min-h-screen">
+        <!-- Navbar -->
+        <div class="navbar bg-base-100 shadow-md sticky top-0 z-30">
+            <div class="navbar-start">
+                <div class="dropdown">
+                    <label tabindex="0" class="btn btn-ghost lg:hidden">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h8m-8 6h16" /></svg>
                     </label>
+                    <ul tabindex="0" id="mobile-menu" class="menu menu-sm dropdown-content mt-3 z-[1] p-2 shadow bg-base-100 rounded-box w-52">
+                        <li><a href="../home/home.php"><i class="fa-solid fa-tachometer-alt w-4"></i> Dashboard</a></li>
+                        <li><a href="../requests/manage_requests.php"><i class="fa-solid fa-file-signature w-4"></i> จัดการคำร้อง</a></li>
+                        <li><a href="../users/manage_users.php"><i class="fa-solid fa-users-cog w-4"></i> จัดการผู้ใช้</a></li>
+                        <li><a href="../admins/manage_admins.php"><i class="fa-solid fa-user-shield w-4"></i> จัดการเจ้าหน้าที่</a></li>
+                    </ul>
                 </div>
-                <div class="flex-1">
-                    <a class="btn btn-ghost text-xl">Dashboard</a>
+                 <div class="flex items-center gap-2 ml-2">
+                    <img src="https://img2.pic.in.th/pic/CARPASS-logo11af8574a9cc9906.png" alt="Logo" class="h-12 w-12">
+                    <div>
+                        <div class="font-bold text-sm sm:text-base whitespace-nowrap">ระบบจัดการ</div>
+                        <div class="text-xs font-normal text-gray-500 whitespace-nowrap">สำหรับเจ้าหน้าที่</div>
+                    </div>
+                </div>
+            </div>
+            <div class="navbar-center hidden lg:flex">
+                <ul class="menu menu-horizontal px-1" id="desktop-menu">
+                    <li><a href="../home/home.php"><i class="fa-solid fa-tachometer-alt"></i> Dashboard</a></li>
+                    <li><a href="../requests/manage_requests.php"><i class="fa-solid fa-file-signature"></i> จัดการคำร้อง</a></li>
+                    <li><a href="../users/manage_users.php"><i class="fa-solid fa-users-cog"></i> จัดการผู้ใช้</a></li>
+                    <li><a href="../admins/manage_admins.php"><i class="fa-solid fa-user-shield"></i> จัดการเจ้าหน้าที่</a></li>
+                </ul>
+            </div>
+            <div class="navbar-end">
+                <div class="dropdown dropdown-end">
+                    <label tabindex="0" class="btn btn-ghost btn-circle avatar">
+                        <div class="w-10 rounded-full ring ring-primary ring-offset-base-100 ring-offset-2">
+                             <i class="fa-solid fa-user text-xl text-primary flex items-center justify-center h-full"></i>
+                        </div>
+                    </label>
+                    <ul tabindex="0" class="mt-3 z-[1] p-2 shadow menu menu-sm dropdown-content bg-base-100 rounded-box w-64 space-y-1">
+                         <li class="p-2 text-center">
+                            <div class="font-semibold"><?php echo $admin_info['name'] . ' ' . $admin_info['lastname']; ?></div>
+                            <div class="text-xs text-slate-500">สังกัด: <?php echo $admin_info['department']; ?></div>
+                            <div class="text-xs text-slate-500">ระดับสิทธิ์: <?php echo ucfirst($admin_info['role']); ?></div>
+                            <div class="text-xs text-slate-500">สิทธิ์เข้าถึง: <?php echo $admin_info['view_permission_text']; ?></div>
+                         </li>
+                         <div class="divider my-0"></div>
+                         <li>
+                            <a href="../admins/manage_admins.php">
+                                <i class="fa-solid fa-user-pen"></i> แก้ไขข้อมูลส่วนตัว
+                            </a>
+                        </li>
+                         <li>
+                            <a href="../../../controllers/admin/logout/logout.php" class="text-error">
+                                <i class="fa-solid fa-right-from-bracket"></i> ออกจากระบบ
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Page content -->
+        <main class="flex-1 p-4 md:p-6 lg:p-8 pb-24">
+            <h1 class="text-2xl font-bold flex items-center gap-2"><i class="fa-solid fa-tachometer-alt text-primary"></i> Dashboard ภาพรวม</h1>
+            <p class="text-slate-500 mb-6">สรุปข้อมูลและคำร้องที่รอการตรวจสอบ</p>
+
+            <!-- Stats Cards -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                <!-- Card 1 -->
+                <div class="bg-white p-6 rounded-xl shadow-lg flex items-center space-x-4">
+                    <div class="bg-yellow-100 p-3 rounded-full">
+                        <i class="fas fa-clock text-xl text-yellow-500"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-500">รออนุมัติ</p>
+                        <p class="text-2xl font-bold text-gray-800" id="stat-pending"><?php echo number_format($stats['pending_requests']); ?></p>
+                    </div>
+                </div>
+                <!-- Card 2 -->
+                <div class="bg-white p-6 rounded-xl shadow-lg flex items-center space-x-4">
+                    <div class="bg-green-100 p-3 rounded-full">
+                        <i class="fas fa-check-circle text-xl text-green-500"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-500">อนุมัติแล้ว</p>
+                        <p class="text-2xl font-bold text-gray-800" id="stat-approved-total"><?php echo number_format($stats['approved_requests']); ?></p>
+                    </div>
+                </div>
+                <!-- Card 3 -->
+                <div class="bg-white p-6 rounded-xl shadow-lg flex items-center space-x-4">
+                    <div class="bg-blue-100 p-3 rounded-full">
+                        <i class="fas fa-users text-xl text-blue-500"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-500">ผู้ใช้งานทั้งหมด</p>
+                        <p class="text-2xl font-bold text-gray-800" id="stat-total-users"><?php echo number_format($stats['total_users']); ?></p>
+                    </div>
+                </div>
+                <!-- Card 4 -->
+                <div class="bg-white p-6 rounded-xl shadow-lg flex items-center space-x-4">
+                    <div class="bg-purple-100 p-3 rounded-full">
+                        <i class="fas fa-file-alt text-xl text-purple-500"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-500">คำร้องทั้งหมด</p>
+                        <p class="text-2xl font-bold text-gray-800" id="stat-total-requests"><?php echo number_format($stats['total_requests']); ?></p>
+                    </div>
                 </div>
             </div>
 
-            <!-- Page content -->
-            <main class="flex-1 p-4 md:p-6 lg:p-8">
-                <h1 class="text-2xl font-bold flex items-center gap-2"><i class="fa-solid fa-tachometer-alt text-primary"></i> Dashboard ภาพรวม</h1>
-                <p class="text-slate-500 mb-6">สรุปข้อมูลและคำร้องที่รอการตรวจสอบ</p>
 
-                <!-- Stats Cards -->
-                <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                    <div class="stat bg-base-100 rounded-lg shadow">
-                        <div class="stat-figure text-warning hidden sm:flex"><i class="fas fa-clock text-3xl"></i></div>
-                        <div class="flex items-center justify-between sm:block">
-                            <div class="stat-title">รออนุมัติ <i class="fas fa-clock text-warning sm:hidden"></i></div>
+            <!-- Requests Table -->
+            <div class="card bg-base-100 shadow-lg mt-8">
+                <div class="card-body">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                         <h2 class="card-title flex items-center gap-2 text-lg"><i class="fa-solid fa-inbox text-slate-600"></i> รายการคำร้องรออนุมัติ</h2>
+                         <div class="flex items-center gap-2 w-full sm:w-auto">
+                            <input type="text" id="searchInput" placeholder="ค้นหา..." class="input input-sm input-bordered w-full sm:w-auto">
+                            <button id="openExportModalBtn" class="btn btn-sm btn-outline btn-success">
+                                <i class="fa-solid fa-file-excel mr-1"></i>
+                                Export
+                            </button>
                         </div>
-                        <div class="stat-value text-warning text-2xl sm:text-3xl" id="stat-pending"><?php echo number_format($stats['pending_requests']); ?></div>
-                        <div class="stat-desc">รายการ</div>
                     </div>
-                    <div class="stat bg-base-100 rounded-lg shadow">
-                        <div class="stat-figure text-success hidden sm:flex"><i class="fas fa-check-circle text-3xl"></i></div>
-                        <div class="flex items-center justify-between sm:block">
-                            <div class="stat-title">อนุมัติแล้ว <i class="fas fa-check-circle text-success sm:hidden"></i></div>
-                        </div>
-                        <div class="stat-value text-success text-2xl sm:text-3xl" id="stat-approved-total"><?php echo number_format($stats['approved_requests']); ?></div>
-                        <div class="stat-desc">รายการ</div>
-                    </div>
-                    <div class="stat bg-base-100 rounded-lg shadow">
-                        <div class="stat-figure text-info hidden sm:flex"><i class="fas fa-users text-3xl"></i></div>
-                        <div class="flex items-center justify-between sm:block">
-                            <div class="stat-title">ผู้ใช้งานทั้งหมด <i class="fas fa-users text-info sm:hidden"></i></div>
-                        </div>
-                        <div class="stat-value text-info text-2xl sm:text-3xl" id="stat-total-users"><?php echo number_format($stats['total_users']); ?></div>
-                        <div class="stat-desc">บัญชี</div>
-                    </div>
-                    <div class="stat bg-base-100 rounded-lg shadow">
-                        <div class="stat-figure text-secondary hidden sm:flex"><i class="fas fa-file-alt text-3xl"></i></div>
-                        <div class="flex items-center justify-between sm:block">
-                            <div class="stat-title">คำร้องทั้งหมด <i class="fas fa-file-alt text-secondary sm:hidden"></i></div>
-                        </div>
-                        <div class="stat-value text-secondary text-2xl sm:text-3xl" id="stat-total-requests"><?php echo number_format($stats['total_requests']); ?></div>
-                        <div class="stat-desc">รายการ</div>
-                    </div>
-                </div>
 
-
-                <!-- Requests Table -->
-                <div class="card bg-base-100 shadow-lg mt-8">
-                    <div class="card-body">
-                        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                             <h2 class="card-title flex items-center gap-2"><i class="fa-solid fa-clock text-warning"></i> รายการคำร้องรออนุมัติ</h2>
-                             <div class="flex items-center gap-2 w-full sm:w-auto">
-                                <input type="text" id="searchInput" placeholder="ค้นหา..." class="input input-sm input-bordered w-full sm:w-auto">
-                                <button id="openExportModalBtn" class="btn btn-sm btn-outline btn-success">
-                                    <i class="fa-solid fa-file-excel mr-1"></i>
-                                    Export
-                                </button>
-                            </div>
-                        </div>
-
-                        <div class="overflow-x-auto mt-4">
-                            <table class="table table-sm" id="requestsTable">
-                                <thead>
-                                    <tr>
-                                        <th data-sort-by="search_id">รหัสคำร้อง<i class="fa-solid fa-sort"></i></th>
-                                        <th data-sort-by="name">ชื่อผู้ยื่น<i class="fa-solid fa-sort"></i></th>
-                                        <th data-sort-by="department">สังกัด<i class="fa-solid fa-sort"></i></th>
-                                        <th data-sort-by="license">ทะเบียนรถ<i class="fa-solid fa-sort"></i></th>
-                                        <th data-sort-by="type">ประเภทรถ<i class="fa-solid fa-sort"></i></th>
-                                        <th data-sort-by="date" class="sort-asc">วันที่ยื่น<i class="fa-solid fa-sort-up"></i></th>
-                                        <th data-sort-by="pickup_date">วันที่นัดรับบัตร<i class="fa-solid fa-sort"></i></th>
-                                        <th></th>
+                    <div class="overflow-x-auto mt-4">
+                        <table class="table table-sm" id="requestsTable">
+                            <thead class="bg-slate-50">
+                                <tr>
+                                    <th data-sort-by="search_id">รหัสคำร้อง<i class="fa-solid fa-sort"></i></th>
+                                    <th data-sort-by="name">ชื่อผู้ยื่น<i class="fa-solid fa-sort"></i></th>
+                                    <th data-sort-by="department">สังกัด<i class="fa-solid fa-sort"></i></th>
+                                    <th data-sort-by="license">ทะเบียนรถ<i class="fa-solid fa-sort"></i></th>
+                                    <th data-sort-by="type">ประเภทรถ<i class="fa-solid fa-sort"></i></th>
+                                    <th data-sort-by="date" class="sort-asc">วันที่ยื่น<i class="fa-solid fa-sort-up"></i></th>
+                                    <th data-sort-by="pickup_date">วันที่นัดรับบัตร<i class="fa-solid fa-sort"></i></th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php if (empty($pending_requests)): ?>
+                                    <tr><td colspan="8" class="text-center text-slate-500 py-4">ไม่พบรายการที่รอการอนุมัติ</td></tr>
+                                <?php else: ?>
+                                    <?php foreach ($pending_requests as $req): ?>
+                                    <tr class="hover:bg-slate-50" data-request-id="<?php echo $req['id']; ?>">
+                                        <td class="font-semibold whitespace-nowrap"><?php echo htmlspecialchars($req['search_id']); ?></td>
+                                        <td class="whitespace-nowrap"><?php echo htmlspecialchars($req['title'] . $req['firstname'] . ' ' . $req['lastname']); ?></td>
+                                        <td class="whitespace-nowrap"><?php echo htmlspecialchars($req['work_department'] ?? '-'); ?></td>
+                                        <td class="whitespace-nowrap"><?php echo htmlspecialchars($req['license_plate'] . ' ' . $req['province']); ?></td>
+                                        <td class="whitespace-nowrap"><?php echo htmlspecialchars($req['vehicle_type']); ?></td>
+                                        <td class="whitespace-nowrap"><?php echo format_thai_datetime($req['created_at']); ?></td>
+                                        <td class="whitespace-nowrap font-semibold text-info"><?php echo format_thai_date($req['card_pickup_date']); ?></td>
+                                        <td class="whitespace-nowrap">
+                                            <button class="btn btn-xs btn-primary inspect-btn" data-id="<?php echo $req['id']; ?>">
+                                                <span><i class="fa-solid fa-search mr-1"></i>ตรวจสอบ</span>
+                                            </button>
+                                        </td>
                                     </tr>
-                                </thead>
-                                <tbody>
-                                    <?php if (empty($pending_requests)): ?>
-                                        <tr><td colspan="8" class="text-center text-slate-500 py-4">ไม่พบรายการที่รอการอนุมัติ</td></tr>
-                                    <?php else: ?>
-                                        <?php foreach ($pending_requests as $req): ?>
-                                        <tr data-request-id="<?php echo $req['id']; ?>">
-                                            <td class="font-semibold whitespace-nowrap"><?php echo htmlspecialchars($req['search_id']); ?></td>
-                                            <td class="whitespace-nowrap"><?php echo htmlspecialchars($req['title'] . $req['firstname'] . ' ' . $req['lastname']); ?></td>
-                                            <td class="whitespace-nowrap"><?php echo htmlspecialchars($req['work_department'] ?? '-'); ?></td>
-                                            <td class="whitespace-nowrap"><?php echo htmlspecialchars($req['license_plate'] . ' ' . $req['province']); ?></td>
-                                            <td class="whitespace-nowrap"><?php echo htmlspecialchars($req['vehicle_type']); ?></td>
-                                            <td class="whitespace-nowrap"><?php echo format_thai_datetime($req['created_at']); ?></td>
-                                            <td class="whitespace-nowrap font-semibold text-info"><?php echo format_thai_date($req['card_pickup_date']); ?></td>
-                                            <td class="whitespace-nowrap">
-                                                <button class="btn btn-sm btn-primary inspect-btn" data-id="<?php echo $req['id']; ?>">
-                                                    <span><i class="fa-solid fa-search mr-1"></i>ตรวจสอบ</span>
-                                                </button>
-                                            </td>
-                                        </tr>
-                                        <?php endforeach; ?>
-                                    <?php endif; ?>
-                                    <tr id="no-results-row" class="hidden"><td colspan="8" class="text-center text-slate-500 py-4">ไม่พบข้อมูลคำร้องที่ค้นหา</td></tr>
-                                </tbody>
-                            </table>
-                        </div>
+                                    <?php endforeach; ?>
+                                <?php endif; ?>
+                                <tr id="no-results-row" class="hidden"><td colspan="8" class="text-center text-slate-500 py-4">ไม่พบข้อมูลคำร้องที่ค้นหา</td></tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
-            </main>
-        </div> 
-
-        <div class="drawer-side">
-            <label for="my-drawer-2" class="drawer-overlay"></label> 
-            <ul class="menu p-4 w-56 min-h-full bg-base-200 text-base-content space-y-1" id="sidebar-menu">
-                 <li class="mb-4">
-                    <a href="../home/home.php" class="text-xl font-bold flex items-center gap-2">
-                        <img src="https://img2.pic.in.th/pic/CARPASS-logo11af8574a9cc9906.png" alt="Logo" class="h-10 w-10">
-                        <div><span class="whitespace-nowrap text-base">ระบบจัดการ</span><span class="text-xs font-normal text-gray-500 block">สำหรับเจ้าหน้าที่</span></div>
-                    </a>
-                </li>
-                <li><a href="../home/home.php"><i class="fa-solid fa-tachometer-alt w-4"></i> Dashboard</a></li>
-                <li><a href="../requests/manage_requests.php"><i class="fa-solid fa-file-signature w-4"></i> จัดการคำร้อง</a></li>
-                <li><a href="../users/manage_users.php"><i class="fa-solid fa-users-cog w-4"></i> จัดการผู้ใช้</a></li>
-                <li><a href="../admins/manage_admins.php"><i class="fa-solid fa-user-shield w-4"></i> จัดการเจ้าหน้าที่</a></li>
-                <div class="divider"></div>
-                 <li class="mt-auto">
-                    <div class="flex flex-col items-start p-2">
-                        <div class="font-semibold"><?php echo $admin_info['name']; ?></div>
-                        <div class="text-xs text-slate-500">สังกัด: <?php echo $admin_info['department']; ?></div>
-                        <div class="text-xs text-slate-500">สิทธิ์: <?php echo $admin_info['role']; ?></div>
-                        <a href="../../../controllers/admin/logout/logout.php" class="text-xs text-error link-hover mt-2">ออกจากระบบ</a>
-                    </div>
-                </li>
-            </ul>
-        </div>
+            </div>
+        </main>
     </div>
-
+    <!-- Footer -->
+    <footer class="fixed bottom-0 left-0 right-0 bg-base-200 text-base-content shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] p-1 text-center z-40">
+        <p class="text-[10px] sm:text-xs whitespace-nowrap">Developed by ร.ท.พรหมินทร์ อินทมาตย์ (ผู้พัฒนาระบบ/กยข.กช.)</p>
+    </footer>
+    
     <!-- Modals -->
     <dialog id="inspectModal" class="modal">
         <div class="modal-box max-w-5xl">
@@ -280,7 +317,10 @@ function format_thai_date($date) {
             </div>
              <div id="rejection-section" class="hidden mt-4 p-4 border-t">
                 <h4 class="font-bold mb-2">กรุณาระบุเหตุผลที่ไม่ผ่านการอนุมัติ:</h4>
-                <textarea id="rejection-reason" class="textarea textarea-bordered w-full" rows="2" placeholder="เช่น เอกสารไม่ชัดเจน, ข้อมูลไม่ถูกต้อง..."></textarea>
+                <div class="form-control">
+                    <textarea id="rejection-reason" class="textarea textarea-bordered w-full" rows="2" placeholder="เช่น เอกสารไม่ชัดเจน, ข้อมูลไม่ถูกต้อง..."></textarea>
+                    <p id="rejection-error-msg" class="text-error text-xs mt-1 hidden">กรุณาระบุเหตุผล</p>
+                </div>
                 <div class="flex justify-end gap-2 mt-2">
                     <button id="cancel-reject-btn" class="btn btn-sm btn-ghost">ยกเลิก</button>
                     <button id="confirm-reject-btn" class="btn btn-sm btn-error">ยืนยันการปฏิเสธ</button>
@@ -328,7 +368,7 @@ function format_thai_date($date) {
                             <i class="fa-solid fa-table-list text-xl text-primary w-6 text-center"></i>
                             <div>
                                 <span class="font-semibold">ข้อมูลตามตารางที่แสดง</span>
-                                <span class="text-xs text-slate-500 block">Export 5 คอลัมน์หลักที่แสดงผล</span>
+                                <span class="text-xs text-slate-500 block">Export 7 คอลัมน์หลักที่แสดงผล</span>
                             </div>
                         </div>
                         <input type="radio" name="export_type" class="radio radio-primary" value="table_view" checked/>
@@ -395,6 +435,9 @@ function format_thai_date($date) {
             </div>
 
             <div class="modal-action">
+                <form method="dialog">
+                    <button class="btn btn-sm btn-ghost">ปิด</button>
+                </form>
                 <button id="generateExportBtn" class="btn btn-success btn-sm">สร้างและดาวน์โหลด</button>
             </div>
         </div>
@@ -405,21 +448,18 @@ function format_thai_date($date) {
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // --- Set Active Menu ---
         const currentPage = window.location.pathname;
-        const menuLinks = document.querySelectorAll('#sidebar-menu > li:not(.mb-4) > a');
-        
+        const menuLinks = document.querySelectorAll('#desktop-menu a, #mobile-menu a');
         menuLinks.forEach(link => link.classList.remove('active'));
-
         const currentPageFilename = currentPage.substring(currentPage.lastIndexOf('/') + 1);
-        const activeLink = Array.from(menuLinks).find(link => {
+        const activeLinks = Array.from(menuLinks).filter(link => {
             const linkHref = link.getAttribute('href');
             return linkHref && linkHref.endsWith(currentPageFilename);
         });
+        activeLinks.forEach(link => link.classList.add('active'));
 
-        if (activeLink) {
-            activeLink.classList.add('active');
-        }
-
+        // --- Search Logic ---
         const searchInput = document.getElementById('searchInput');
         const table = document.getElementById('requestsTable');
         const tableBody = table.querySelector('tbody');
@@ -539,6 +579,9 @@ function format_thai_date($date) {
             modalActions.innerHTML = '<form method="dialog"><button class="btn btn-sm btn-ghost">ปิด</button></form>';
             rejectionSection.classList.add('hidden');
             document.getElementById('rejection-reason').value = '';
+            document.getElementById('rejection-reason').classList.remove('textarea-error');
+            document.getElementById('rejection-error-msg').classList.add('hidden');
+
 
             try {
                 const response = await fetch(`../../../controllers/admin/requests/get_request_details.php?id=${requestId}`);
@@ -555,7 +598,7 @@ function format_thai_date($date) {
 
         function renderModalContent(data) {
             modalTitle.textContent = data.search_id;
-            const userTypeThai = data.user_type === 'army' ? 'ข้าราชการ ทบ.' : 'บุคคลภายนอก';
+            const userTypeThai = data.user_type === 'army' ? 'ข้าราชการ/ลูกจ้าง/พนักงานราชการ ทบ.' : 'บุคคลภายนอก';
             const ownerTypeThai = data.owner_type === 'self' ? 'รถชื่อตนเอง' : 'รถคนอื่น';
 
             let historySection = '';
@@ -681,12 +724,28 @@ function format_thai_date($date) {
             modalActions.style.display = '';
         });
 
+        document.getElementById('rejection-reason').addEventListener('input', function() {
+            if (this.value.trim()) {
+                this.classList.remove('textarea-error');
+                document.getElementById('rejection-error-msg').classList.add('hidden');
+            }
+        });
+
         document.getElementById('confirm-reject-btn').addEventListener('click', () => {
-            const reason = document.getElementById('rejection-reason').value;
+            const reasonInput = document.getElementById('rejection-reason');
+            const reasonErrorMsg = document.getElementById('rejection-error-msg');
+            const reason = reasonInput.value.trim();
             const requestId = inspectModal.dataset.currentRequestId;
-            if(!reason.trim()){ showAlert('กรุณาระบุเหตุผลที่ไม่ผ่าน', 'error'); return; }
+            
+            if(!reason){
+                reasonInput.classList.add('textarea-error');
+                reasonErrorMsg.classList.remove('hidden');
+                return;
+            }
+            
             showConfirmModal('ปฏิเสธคำร้อง', 'คุณต้องการยืนยันการปฏิเสธคำร้องนี้ใช่หรือไม่?', 'btn-error', () => processRequest(requestId, 'reject', reason));
         });
+
         
         function showConfirmModal(title, message, btnClass, callback) {
             confirmModal.querySelector('#confirm-title').textContent = title;
@@ -777,7 +836,7 @@ function format_thai_date($date) {
                 'u.user_type': 'ประเภทผู้ใช้', 'u.phone_number': 'เบอร์โทรศัพท์', 'u.national_id': 'เลขบัตรประชาชน', 'u.title': 'คำนำหน้า', 'u.firstname': 'ชื่อ', 'u.lastname': 'นามสกุล', 'u.dob': 'วันเกิด', 'u.gender': 'เพศ', 'u.address': 'ที่อยู่', 'u.subdistrict': 'ตำบล/แขวง', 'u.district': 'อำเภอ/เขต', 'u.province': 'จังหวัด', 'u.zipcode': 'รหัสไปรษณีย์', 'u.work_department': 'สังกัด', 'u.position': 'ตำแหน่ง', 'u.official_id': 'เลข ขรก.', 'u.created_at as user_created_at': 'วันที่สมัคร'
             },
             'ข้อมูลยานพาหนะ': {
-                'vr.search_id': 'รหัสคำร้อง', 'vr.card_type': 'ประเภทบัตร', 'vr.vehicle_type': 'ประเภทรถ', 'vr.brand': 'ยี่ห้อ', 'vr.model': 'รุ่น', 'vr.color': 'สี', 'vr.license_plate': 'ทะเบียน', 'vr.province as vehicle_province': 'จังหวัด (รถ)', 'vr.tax_expiry_date': 'วันสิ้นอายุภาษี', 'vr.owner_type': 'ความเป็นเจ้าของ', 'vr.other_owner_name': 'ชื่อเจ้าของ (อื่น)', 'vr.other_owner_relation': 'ความสัมพันธ์ (อื่น)', 'vr.status': 'สถานะคำร้อง', 'vr.rejection_reason': 'เหตุผลที่ปฏิเสธ', 'vr.approved_at': 'วันที่อนุมัติ', 'vr.card_number': 'เลขที่บัตร', 'vr.card_expiry_year': 'หมดอายุสิ้นปี (พ.ศ.)', 'vr.card_pickup_status': 'สถานะรับบัตร', 'vr.edit_status': 'สถานะแก้ไข', 'vr.created_at as request_created_at': 'วันที่ยื่นคำร้อง'
+                'vr.search_id': 'รหัสคำร้อง', 'vr.card_type': 'ประเภทบัตร', 'vr.vehicle_type': 'ประเภทรถ', 'vr.brand': 'ยี่ห้อ', 'vr.model': 'รุ่น', 'vr.color': 'สี', 'vr.license_plate': 'ทะเบียน', 'vr.province as vehicle_province': 'จังหวัด (รถ)', 'vr.tax_expiry_date': 'วันสิ้นอายุภาษี', 'vr.owner_type': 'ความเป็นเจ้าของ', 'vr.other_owner_name': 'ชื่อเจ้าของ (อื่น)', 'vr.other_owner_relation': 'ความสัมพันธ์ (อื่น)', 'vr.status': 'สถานะคำร้อง', 'vr.rejection_reason': 'เหตุผลที่ปฏิเสธ', 'vr.approved_at': 'วันที่อนุมัติ', 'vr.card_number': 'เลขที่บัตร', 'vr.card_expiry_year': 'หมดอายุสิ้นปี (พ.ศ.)', 'vr.card_pickup_status': 'สถานะรับบัตร', 'vr.card_pickup_date': 'วันที่นัดรับบัตร', 'vr.edit_status': 'สถานะแก้ไข', 'vr.created_at as request_created_at': 'วันที่ยื่นคำร้อง'
             }
         };
 
@@ -890,8 +949,8 @@ function format_thai_date($date) {
                             'สังกัด': row.work_department,
                             'ทะเบียนรถ': row.license,
                             'ประเภทรถ': row.vehicle_type,
-                            'วันที่ยื่น': formatThaiDateTime(row.request_created_at),
-                            'วันที่นัดรับบัตร': formatThaiDate(row.card_pickup_date)
+                            'วันที่ยื่น': row.request_created_at,
+                            'วันที่นัดรับบัตร': row.card_pickup_date
                         }));
                     } else {
                         dataForSheet = result.data.map(row => {
