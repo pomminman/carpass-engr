@@ -29,20 +29,24 @@ if ($request_key) {
     if ($conn->connect_error) die("Connection failed: " . $conn->connect_error);
     $conn->set_charset("utf8");
 
-    $status = null;
-    $stmt_status = $conn->prepare("SELECT status FROM vehicle_requests WHERE request_key = ?");
-    $stmt_status->bind_param("s", $request_key);
-    $stmt_status->execute();
-    if($row_status = $stmt_status->get_result()->fetch_assoc()) $status = $row_status['status'];
-    $stmt_status->close();
+    // [แก้ไข] ใช้ Query เดียวที่ครอบคลุมทุกสถานะและ JOIN ตาราง vehicles
+    $sql = "
+        SELECT 
+            vr.status, vr.card_number, vr.card_expiry, vr.approved_at, vr.card_type,
+            vr.photo_front, vr.photo_rear,
+            v.vehicle_type, v.brand, v.model, v.color, v.license_plate, v.province,
+            COALESCE(aud.title, u.title) as title,
+            COALESCE(aud.firstname, u.firstname) as firstname,
+            COALESCE(aud.lastname, u.lastname) as lastname,
+            u.user_key, 
+            vr.search_id 
+        FROM vehicle_requests AS vr 
+        JOIN users AS u ON vr.user_id = u.id
+        JOIN vehicles AS v ON vr.vehicle_id = v.id
+        LEFT JOIN approved_user_data AS aud ON vr.id = aud.request_id
+        WHERE vr.request_key = ?
+    ";
     
-    // [แก้ไข] เพิ่มการดึง user_key และ search_id เพื่อสร้าง path และแสดงผล
-    if($status === 'approved') {
-        $sql = "SELECT vr.status, vr.card_number, vr.card_expiry, vr.approved_at, vr.vehicle_type, vr.card_type, vr.brand, vr.model, vr.color, vr.license_plate, vr.province, vr.photo_front, vr.photo_rear, aud.title, aud.firstname, aud.lastname, u.user_key, vr.search_id FROM vehicle_requests AS vr JOIN approved_user_data AS aud ON vr.id = aud.request_id JOIN users AS u ON aud.original_user_id = u.id WHERE vr.request_key = ?";
-    } else {
-        $sql = "SELECT vr.status, vr.card_number, vr.card_expiry, vr.approved_at, vr.vehicle_type, vr.card_type, vr.brand, vr.model, vr.color, vr.license_plate, vr.province, vr.photo_front, vr.photo_rear, u.title, u.firstname, u.lastname, u.user_key, vr.search_id FROM vehicle_requests AS vr JOIN users AS u ON vr.user_id = u.id WHERE vr.request_key = ?";
-    }
-
     $stmt = $conn->prepare($sql);
     $stmt->bind_param("s", $request_key);
     $stmt->execute();
@@ -128,7 +132,6 @@ if ($found) {
                                     <div class="grid grid-cols-2 gap-1"><div class="text-slate-500">สี:</div><div class="col-span-1"><?php echo htmlspecialchars($data['color']); ?></div></div>
                                 </div>
                                 
-                                <?php // --- [ใหม่] แสดงส่วนนี้เฉพาะเมื่อสถานะเป็น 'approved' --- ?>
                                 <?php if ($data['status'] === 'approved'): ?>
                                 <div class="divider my-1"></div>
                                 <div class="text-sm space-y-1">

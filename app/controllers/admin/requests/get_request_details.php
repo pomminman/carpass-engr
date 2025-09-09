@@ -25,57 +25,37 @@ if ($conn->connect_error) {
 }
 $conn->set_charset("utf8");
 
-// 4. ตรวจสอบสถานะของคำร้องก่อน
-$status = null;
-$sql_status = "SELECT status FROM vehicle_requests WHERE id = ?";
-$stmt_status = $conn->prepare($sql_status);
-$stmt_status->bind_param("i", $request_id);
-$stmt_status->execute();
-$result_status = $stmt_status->get_result();
-if ($row_status = $result_status->fetch_assoc()) {
-    $status = $row_status['status'];
-}
-$stmt_status->close();
+// 4. [แก้ไข] สร้าง Query ที่สมบูรณ์เพียงชุดเดียว
+$sql = "SELECT 
+            vr.*, 
+            v.vehicle_type, v.brand, v.model, v.color, v.license_plate, v.province,
+            u.user_key,
+            a.title AS admin_title, a.firstname AS admin_firstname,
+            COALESCE(aud.title, u.title) AS user_title,
+            COALESCE(aud.firstname, u.firstname) AS user_firstname,
+            COALESCE(aud.lastname, u.lastname) AS user_lastname,
+            COALESCE(aud.phone_number, u.phone_number) AS phone_number,
+            COALESCE(aud.national_id, u.national_id) AS national_id,
+            u.photo_profile, -- ดึงรูปโปรไฟล์ล่าสุดจากตาราง users เสมอ
+            COALESCE(aud.user_type, u.user_type) AS user_type,
+            COALESCE(aud.work_department, u.work_department) AS work_department,
+            COALESCE(aud.position, u.position) AS position,
+            COALESCE(aud.official_id, u.official_id) AS official_id,
+            COALESCE(aud.dob, u.dob) AS dob,
+            COALESCE(aud.address, u.address) AS address,
+            COALESCE(aud.subdistrict, u.subdistrict) AS subdistrict,
+            COALESCE(aud.district, u.district) AS district,
+            COALESCE(aud.province, u.province) AS user_province,
+            COALESCE(aud.zipcode, u.zipcode) AS zipcode
+        FROM vehicle_requests vr
+        JOIN users u ON vr.user_id = u.id
+        JOIN vehicles v ON vr.vehicle_id = v.id
+        LEFT JOIN approved_user_data aud ON vr.id = aud.request_id
+        LEFT JOIN admins a ON vr.approved_by_id = a.id
+        WHERE vr.id = ?";
 
-if (!$status) {
-    echo json_encode(['success' => false, 'message' => 'Request not found']);
-    $conn->close();
-    exit;
-}
 
-// 5. [แก้ไข] เลือก Query ตามสถานะ และดึง u.photo_profile เสมอ
-if ($status === 'approved') {
-    // ถ้าอนุมัติแล้ว, ดึงข้อมูลจากตาราง snapshot (approved_user_data) แต่ดึงรูปโปรไฟล์ล่าสุดจาก users
-    $sql = "SELECT 
-                vr.*, 
-                aud.title AS user_title, aud.firstname AS user_firstname, aud.lastname AS user_lastname,
-                aud.phone_number, aud.national_id, u.photo_profile AS photo_profile, aud.user_type,
-                aud.work_department, aud.position, aud.official_id,
-                aud.dob, aud.address, aud.subdistrict, aud.district, aud.province as user_province, aud.zipcode,
-                a.title AS admin_title, a.firstname AS admin_firstname,
-                u.user_key
-            FROM vehicle_requests vr
-            JOIN approved_user_data aud ON vr.id = aud.request_id
-            JOIN users u ON aud.original_user_id = u.id
-            LEFT JOIN admins a ON vr.approved_by_id = a.id
-            WHERE vr.id = ?";
-} else {
-    // ถ้ายังไม่อนุมัติ (pending, rejected), ดึงข้อมูลล่าสุดจากตาราง users
-    $sql = "SELECT 
-                vr.*, 
-                u.title AS user_title, u.firstname AS user_firstname, u.lastname AS user_lastname,
-                u.phone_number, u.national_id, u.photo_profile AS photo_profile, u.user_type,
-                u.work_department, u.position, u.official_id,
-                u.dob, u.address, u.subdistrict, u.district, u.province as user_province, u.zipcode,
-                a.title AS admin_title, a.firstname AS admin_firstname,
-                u.user_key
-            FROM vehicle_requests vr
-            JOIN users u ON vr.user_id = u.id
-            LEFT JOIN admins a ON vr.approved_by_id = a.id
-            WHERE vr.id = ?";
-}
-
-// 6. Execute Query และส่งผลลัพธ์
+// 5. Execute Query และส่งผลลัพธ์
 $stmt = $conn->prepare($sql);
 $stmt->bind_param("i", $request_id);
 $stmt->execute();

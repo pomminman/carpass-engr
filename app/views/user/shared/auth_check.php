@@ -15,7 +15,7 @@ if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true || !isset($_
 
 require_once __DIR__ . '/../../../models/db_config.php';
 
-// --- [ใหม่] ฟังก์ชันสำหรับจัดรูปแบบวันที่ ---
+// --- ฟังก์ชันสำหรับจัดรูปแบบวันที่ ---
 if (!function_exists('format_thai_date_helper')) {
     function format_thai_date_helper($date) {
         if (empty($date) || $date === '0000-00-00') return '-';
@@ -61,10 +61,9 @@ $photo_profile_filename = $user['photo_profile'];
 $user_type_eng = $user['user_type'];
 
 
-// [แก้ไข] สร้าง Full Path สำหรับรูปโปรไฟล์ให้ถูกต้อง
+// สร้าง Full Path สำหรับรูปโปรไฟล์ให้ถูกต้อง
 $user_photo_path = '/public/assets/images/default-profile.png'; // Default image
 if (!empty($user_key) && !empty($photo_profile_filename)) {
-    // [แก้ไข] สร้าง Path จาก user_key และชื่อไฟล์
     $user_photo_path = "/public/uploads/{$user_key}/profile/{$photo_profile_filename}";
 }
 
@@ -83,7 +82,7 @@ switch ($user_type_eng) {
         break;
 }
 
-// --- [ใหม่] ดึงข้อมูลยี่ห้อรถและจังหวัด (เพื่อให้ใช้ได้ในทุกหน้า) ---
+// --- ดึงข้อมูลยี่ห้อรถและจังหวัด (เพื่อให้ใช้ได้ในทุกหน้า) ---
 $car_brands = [];
 $sql_brands = "SELECT name FROM car_brands ORDER BY display_order ASC, name ASC";
 $result_brands = $conn->query($sql_brands);
@@ -95,6 +94,9 @@ if ($result_brands && $result_brands->num_rows > 0) {
 
 $provinces = ['กระบี่', 'กรุงเทพมหานคร', 'กาญจนบุรี', 'กาฬสินธุ์', 'กำแพงเพชร', 'ขอนแก่น', 'จันทบุรี', 'ฉะเชิงเทรา', 'ชลบุรี', 'ชัยนาท', 'ชัยภูมิ', 'ชุมพร', 'เชียงราย', 'เชียงใหม่', 'ตรัง', 'ตราด', 'ตาก', 'นครนายก', 'นครปฐม', 'นครพนม', 'นครราชสีมา', 'นครศรีธรรมราช', 'นครสวรรค์', 'นนทบุรี', 'นราธิวาส', 'น่าน', 'บึงกาฬ', 'บุรีรัมย์', 'ปทุมธานี', 'ประจวบคีรีขันธ์', 'ปราจีนบุรี', 'ปัตตานี', 'พระนครศรีอยุธยา', 'พะเยา', 'พังงา', 'พัทลุง', 'พิจิตร', 'พิษณุโลก', 'เพชรบุรี', 'เพชรบูรณ์', 'แพร่', 'ภูเก็ต', 'มหาสารคาม', 'มุกดาหาร', 'แม่ฮ่องสอน', 'ยโสธร', 'ยะลา', 'ร้อยเอ็ด', 'ระนอง', 'ระยอง', 'ราชบุรี', 'ลพบุรี', 'ลำปาง', 'ลำพูน', 'เลย', 'ศรีสะเกษ', 'สกลนคร', 'สงขลา', 'สตูล', 'สมุทรปราการ', 'สมุทรสงคราม', 'สมุทรสาคร', 'สระแก้ว', 'สระบุรี', 'สิงห์บุรี', 'สุโขทัย', 'สุพรรณบุรี', 'สุราษฎร์ธานี', 'สุรินทร์', 'หนองคาย', 'หนองบัวลำภู', 'อ่างทอง', 'อำนาจเจริญ', 'อุดรธานี', 'อุตรดิตถ์', 'อุทัยธานี', 'อุบลราชานี'];
 
+
+// [แก้ไข] ไม่ปิดการเชื่อมต่อที่นี่ เพื่อให้หน้าเว็บอื่นสามารถใช้งาน $conn ต่อได้
+// $conn->close(); 
 
 // This variable will be used in the header to set the active menu item
 $current_page = basename($_SERVER['PHP_SELF']);

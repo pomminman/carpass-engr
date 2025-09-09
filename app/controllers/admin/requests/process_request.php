@@ -24,8 +24,6 @@ if (!$request_id || !$action || !in_array($action, ['approve', 'reject'])) {
 // --- 2. เรียกใช้ไฟล์ที่จำเป็น ---
 require_once '../../../models/db_config.php';
 require_once '../../../models/log_helper.php';
-// [ลบ] ไม่จำเป็นต้องใช้ library สร้าง QR Code ที่นี่แล้ว
-// require_once '../../../../lib/phpqrcode/qrlib.php'; 
 
 // --- 3. เชื่อมต่อฐานข้อมูล ---
 $conn = new mysqli($servername, $username, $password, $dbname);
@@ -41,9 +39,9 @@ $conn->begin_transaction();
 try {
     if ($action === 'approve') {
         
-        // --- ดึงข้อมูล User ID และ Request Key จากคำร้อง ---
         $sql_info = "SELECT u.id as user_id, u.user_type, vr.request_key FROM users u JOIN vehicle_requests vr ON u.id = vr.user_id WHERE vr.id = ?";
         $stmt_info = $conn->prepare($sql_info);
+        if (!$stmt_info) throw new Exception("Failed to prepare statement (sql_info): " . $conn->error);
         $stmt_info->bind_param("i", $request_id);
         $stmt_info->execute();
         $result_info = $stmt_info->get_result();
@@ -54,10 +52,9 @@ try {
         
         $user_id = $request_info['user_id'];
         
-        // --- บันทึก Snapshot ข้อมูลผู้ใช้ ---
         $sql_user_data = "SELECT * FROM users WHERE id = ?";
         $stmt_user_data = $conn->prepare($sql_user_data);
-        if (!$stmt_user_data) throw new Exception("Failed to prepare user data statement: " . $conn->error);
+        if (!$stmt_user_data) throw new Exception("Failed to prepare statement (sql_user_data): " . $conn->error);
         $stmt_user_data->bind_param("i", $user_id);
         $stmt_user_data->execute();
         $user_result = $stmt_user_data->get_result();
@@ -68,29 +65,53 @@ try {
 
         $sql_check_snapshot = "SELECT id FROM approved_user_data WHERE request_id = ?";
         $stmt_check_snapshot = $conn->prepare($sql_check_snapshot);
+        if (!$stmt_check_snapshot) throw new Exception("Failed to prepare statement (sql_check_snapshot): " . $conn->error);
         $stmt_check_snapshot->bind_param("i", $request_id);
         $stmt_check_snapshot->execute();
         $stmt_check_snapshot->store_result();
         if ($stmt_check_snapshot->num_rows == 0) {
-            $sql_snapshot = "INSERT INTO approved_user_data (request_id, original_user_id, user_type, phone_number, national_id, title, firstname, lastname, dob, gender, address, subdistrict, district, province, zipcode, photo_profile, work_department, position, official_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            
+            $sql_snapshot = "INSERT INTO approved_user_data (request_id, original_user_id, user_type, phone_number, national_id, title, firstname, lastname, dob, gender, address, subdistrict, district, province, zipcode, work_department, position, official_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
             $stmt_snapshot = $conn->prepare($sql_snapshot);
             if (!$stmt_snapshot) throw new Exception("Failed to prepare snapshot statement: " . $conn->error);
-            $stmt_snapshot->bind_param("iisssssssssssssssss", $request_id, $user_data['id'], $user_data['user_type'], $user_data['phone_number'], $user_data['national_id'], $user_data['title'], $user_data['firstname'], $user_data['lastname'], $user_data['dob'], $user_data['gender'], $user_data['address'], $user_data['subdistrict'], $user_data['district'], $user_data['province'], $user_data['zipcode'], $user_data['photo_profile'], $user_data['work_department'], $user_data['position'], $user_data['official_id']);
+            
+            $p_original_user_id = $user_data['id'] ?? null;
+            $p_user_type = $user_data['user_type'] ?? null;
+            $p_phone_number = $user_data['phone_number'] ?? null;
+            $p_national_id = $user_data['national_id'] ?? null;
+            $p_title = $user_data['title'] ?? null;
+            $p_firstname = $user_data['firstname'] ?? null;
+            $p_lastname = $user_data['lastname'] ?? null;
+            $p_dob = $user_data['dob'] ?? null;
+            $p_gender = $user_data['gender'] ?? null;
+            $p_address = $user_data['address'] ?? null;
+            $p_subdistrict = $user_data['subdistrict'] ?? null;
+            $p_district = $user_data['district'] ?? null;
+            $p_province = $user_data['province'] ?? null;
+            $p_zipcode = $user_data['zipcode'] ?? null;
+            $p_work_department = $user_data['work_department'] ?? null;
+            $p_position = $user_data['position'] ?? null;
+            $p_official_id = $user_data['official_id'] ?? null;
+            
+            // [แก้ไข] แก้ไข type string ให้มีจำนวน 's' ครบ 18 ตัว
+            $stmt_snapshot->bind_param("iissssssssssssssss", 
+                $request_id, $p_original_user_id, $p_user_type, $p_phone_number, 
+                $p_national_id, $p_title, $p_firstname, $p_lastname, 
+                $p_dob, $p_gender, $p_address, $p_subdistrict, 
+                $p_district, $p_province, $p_zipcode, 
+                $p_work_department, $p_position, $p_official_id
+            );
             if (!$stmt_snapshot->execute()) throw new Exception("Failed to save user snapshot: " . $stmt_snapshot->error);
             $stmt_snapshot->close();
         }
         $stmt_check_snapshot->close();
 
-        // --- กำหนด Card Type และสร้าง Card Number ---
         $card_type = ($request_info['user_type'] === 'army') ? 'internal' : 'external';
         $sql_max_card = "SELECT MAX(CAST(card_number AS UNSIGNED)) as max_num FROM vehicle_requests";
         $result_max_card = $conn->query($sql_max_card);
         $next_card_num = ($result_max_card->fetch_assoc()['max_num'] ?? 0) + 1;
         $card_number = str_pad($next_card_num, 4, '0', STR_PAD_LEFT);
 
-        // --- [ลบ] ส่วนของการสร้าง QR Code ---
-
-        // --- อัปเดตฐานข้อมูล ---
         $sql = "UPDATE vehicle_requests SET 
                     status = 'approved', 
                     approved_by_id = ?, 
@@ -99,12 +120,12 @@ try {
                     card_number = ?
                 WHERE id = ?";
         $stmt = $conn->prepare($sql);
+        if (!$stmt) throw new Exception("Failed to prepare statement (update_request): " . $conn->error);
         $stmt->bind_param("issi", $admin_id, $card_type, $card_number, $request_id);
         if(!$stmt->execute()) throw new Exception("Database update failed: " . $stmt->error);
         
         log_activity($conn, 'admin_approve_request', ['request_id' => $request_id]);
         
-        // [แก้ไข] ส่ง URL ของ QR Code ที่สร้างไว้แล้วกลับไป
         $response = ['success' => true, 'message' => 'อนุมัติคำร้องสำเร็จแล้ว', 'qr_code_url' => '/public/qr/' . $request_info['request_key'] . '.png'];
 
     } elseif ($action === 'reject') {
@@ -120,6 +141,7 @@ try {
                     rejection_reason = ? 
                 WHERE id = ?";
         $stmt = $conn->prepare($sql);
+        if (!$stmt) throw new Exception("Failed to prepare statement (reject_request): " . $conn->error);
         $stmt->bind_param("isi", $admin_id, $rejection_reason, $request_id);
         if(!$stmt->execute()) throw new Exception("Database update failed: " . $stmt->error);
         

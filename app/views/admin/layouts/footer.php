@@ -331,7 +331,7 @@ if (isset($conn)) {
                     return;
                 }
                 const requestId = inspectModal.dataset.currentRequestId;
-                processRequest(requestId, 'reject', reason);
+                showConfirmModal('ปฏิเสธคำร้อง', 'คุณต้องการยืนยันการปฏิเสธคำร้องนี้ใช่หรือไม่?', 'btn-error', () => processRequest(requestId, 'reject', reason));
             });
         }
 

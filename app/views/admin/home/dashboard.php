@@ -23,7 +23,17 @@ if($result_total_req) $stats['total_requests'] = $result_total_req->fetch_assoc(
 
 
 $pending_requests = [];
-$sql_pending_requests = "SELECT vr.id, vr.search_id, u.title, u.firstname, u.lastname, u.work_department, vr.license_plate, vr.province, vr.vehicle_type, vr.created_at, vr.status, vr.card_pickup_date FROM vehicle_requests vr JOIN users u ON vr.user_id = u.id WHERE vr.status = 'pending' ORDER BY vr.created_at ASC";
+// [แก้ไข] JOIN ตาราง vehicles เพื่อดึงข้อมูลยานพาหนะ
+$sql_pending_requests = "SELECT 
+                            vr.id, vr.search_id, 
+                            u.title, u.firstname, u.lastname, u.work_department, 
+                            v.license_plate, v.province, v.vehicle_type, 
+                            vr.created_at, vr.status, vr.card_pickup_date
+                         FROM vehicle_requests vr
+                         JOIN users u ON vr.user_id = u.id
+                         JOIN vehicles v ON vr.vehicle_id = v.id
+                         WHERE vr.status = 'pending'
+                         ORDER BY vr.created_at ASC";
 $result_pending_requests = $conn->query($sql_pending_requests);
 if ($result_pending_requests->num_rows > 0) {
     while($row = $result_pending_requests->fetch_assoc()) {
@@ -70,24 +80,31 @@ if ($result_pending_requests->num_rows > 0) {
             <div class="overflow-x-auto mt-4">
                 <table class="table table-sm" id="requestsTable">
                     <thead class="bg-slate-50">
+                        <!-- [แก้ไข] เพิ่มคอลัมน์ให้เหมือนกับ manage_requests.php -->
                         <tr>
                             <th data-sort-by="search_id">รหัสคำร้อง<i class="fa-solid fa-sort"></i></th>
-                            <th>ชื่อผู้ยื่น</th>
-                            <th>ทะเบียนรถ</th>
+                            <th data-sort-by="name">ชื่อผู้ยื่น<i class="fa-solid fa-sort"></i></th>
+                            <th data-sort-by="department">สังกัด<i class="fa-solid fa-sort"></i></th>
+                            <th data-sort-by="license">ทะเบียนรถ<i class="fa-solid fa-sort"></i></th>
+                            <th data-sort-by="type">ประเภทรถ<i class="fa-solid fa-sort"></i></th>
                             <th data-sort-by="date" class="sort-asc">วันที่ยื่น<i class="fa-solid fa-sort-up"></i></th>
+                            <th data-sort-by="pickup_date">วันที่นัดรับบัตร<i class="fa-solid fa-sort"></i></th>
                             <th></th>
                         </tr>
                     </thead>
                     <tbody>
                         <?php if (empty($pending_requests)): ?>
-                            <tr><td colspan="5" class="text-center text-slate-500 py-4">ไม่พบรายการที่รอการอนุมัติ</td></tr>
+                            <tr><td colspan="8" class="text-center text-slate-500 py-4">ไม่พบรายการที่รอการอนุมัติ</td></tr>
                         <?php else: ?>
                             <?php foreach ($pending_requests as $req): ?>
                             <tr class="hover:bg-slate-50" data-request-id="<?php echo $req['id']; ?>" data-status="pending">
                                 <td class="font-semibold whitespace-nowrap"><?php echo htmlspecialchars($req['search_id']); ?></td>
                                 <td class="whitespace-nowrap"><?php echo htmlspecialchars($req['title'] . $req['firstname'] . ' ' . $req['lastname']); ?></td>
+                                <td class="whitespace-nowrap"><?php echo htmlspecialchars($req['work_department'] ?? '-'); ?></td>
                                 <td class="whitespace-nowrap"><?php echo htmlspecialchars($req['license_plate'] . ' ' . $req['province']); ?></td>
+                                <td class="whitespace-nowrap"><?php echo htmlspecialchars($req['vehicle_type']); ?></td>
                                 <td class="whitespace-nowrap"><?php echo format_thai_datetime($req['created_at']); ?></td>
+                                <td class="whitespace-nowrap font-semibold text-info"><?php echo format_thai_date($req['card_pickup_date']); ?></td>
                                 <td class="whitespace-nowrap">
                                     <button class="btn btn-xs btn-primary inspect-btn" data-id="<?php echo $req['id']; ?>">
                                         <span><i class="fa-solid fa-search mr-1"></i>ตรวจสอบ</span>
@@ -96,7 +113,7 @@ if ($result_pending_requests->num_rows > 0) {
                             </tr>
                             <?php endforeach; ?>
                         <?php endif; ?>
-                        <tr id="no-results-row" class="hidden"><td colspan="5" class="text-center text-slate-500 py-4">ไม่พบข้อมูลคำร้องที่ค้นหา</td></tr>
+                        <tr id="no-results-row" class="hidden"><td colspan="8" class="text-center text-slate-500 py-4">ไม่พบข้อมูลคำร้องที่ค้นหา</td></tr>
                     </tbody>
                 </table>
             </div>

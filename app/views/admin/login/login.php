@@ -3,7 +3,7 @@ session_start();
 
 // 1. ถ้าแอดมินล็อกอินอยู่แล้ว ให้ redirect ไปที่ dashboard
 if (isset($_SESSION['admin_loggedin']) && $_SESSION['admin_loggedin'] === true) {
-    header("Location: ../home/home.php"); // สมมติว่าหน้า dashboard อยู่ที่นี่
+    header("Location: ../home/dashboard.php"); // สมมติว่าหน้า dashboard อยู่ที่นี่
     exit;
 }
 

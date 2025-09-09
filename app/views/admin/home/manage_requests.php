@@ -4,7 +4,22 @@ require_once __DIR__ . '/../layouts/header.php';
 
 // --- Data fetching specific to this page ---
 $all_requests = [];
-$sql_all_requests = "SELECT vr.id, vr.search_id, u.title, u.firstname, u.lastname, u.work_department, vr.license_plate, vr.province, vr.vehicle_type, vr.created_at, vr.status, vr.card_pickup_date FROM vehicle_requests vr JOIN users u ON vr.user_id = u.id ORDER BY CASE vr.status WHEN 'pending' THEN 1 WHEN 'rejected' THEN 2 WHEN 'approved' THEN 3 ELSE 4 END, vr.created_at DESC";
+// [แก้ไข] JOIN ตาราง vehicles เพื่อดึงข้อมูลยานพาหนะ
+$sql_all_requests = "SELECT 
+                        vr.id, vr.search_id, 
+                        u.title, u.firstname, u.lastname, u.work_department, 
+                        v.license_plate, v.province, v.vehicle_type, 
+                        vr.created_at, vr.status, vr.card_pickup_date
+                     FROM vehicle_requests vr
+                     JOIN users u ON vr.user_id = u.id
+                     JOIN vehicles v ON vr.vehicle_id = v.id
+                     ORDER BY 
+                        CASE vr.status
+                            WHEN 'pending' THEN 1
+                            WHEN 'rejected' THEN 2
+                            WHEN 'approved' THEN 3
+                            ELSE 4
+                        END, vr.created_at DESC";
 $result_all_requests = $conn->query($sql_all_requests);
 if ($result_all_requests->num_rows > 0) {
     while($row = $result_all_requests->fetch_assoc()) {
@@ -37,23 +52,29 @@ if ($result_all_requests->num_rows > 0) {
                      <thead class="bg-slate-50">
                         <tr>
                             <th data-sort-by="search_id">รหัสคำร้อง<i class="fa-solid fa-sort"></i></th>
-                            <th>ชื่อผู้ยื่น</th>
-                            <th>ทะเบียนรถ</th>
+                            <th data-sort-by="name">ชื่อผู้ยื่น<i class="fa-solid fa-sort"></i></th>
+                            <th data-sort-by="department">สังกัด<i class="fa-solid fa-sort"></i></th>
+                            <th data-sort-by="license">ทะเบียนรถ<i class="fa-solid fa-sort"></i></th>
+                            <th data-sort-by="type">ประเภทรถ<i class="fa-solid fa-sort"></i></th>
                             <th data-sort-by="date">วันที่ยื่น<i class="fa-solid fa-sort"></i></th>
+                            <th data-sort-by="pickup_date">วันที่นัดรับบัตร<i class="fa-solid fa-sort"></i></th>
                             <th data-sort-by="status">สถานะ<i class="fa-solid fa-sort"></i></th>
                             <th></th>
                         </tr>
                     </thead>
                     <tbody>
                         <?php if (empty($all_requests)): ?>
-                            <tr><td colspan="6" class="text-center text-slate-500 py-4">ไม่พบข้อมูลคำร้องในระบบ</td></tr>
+                            <tr><td colspan="9" class="text-center text-slate-500 py-4">ไม่พบข้อมูลคำร้องในระบบ</td></tr>
                         <?php else: ?>
                             <?php foreach ($all_requests as $req): ?>
                             <tr class="hover:bg-slate-50" data-request-id="<?php echo $req['id']; ?>" data-status="<?php echo $req['status']; ?>">
                                 <td class="font-semibold whitespace-nowrap"><?php echo htmlspecialchars($req['search_id']); ?></td>
                                 <td class="whitespace-nowrap"><?php echo htmlspecialchars($req['title'] . $req['firstname'] . ' ' . $req['lastname']); ?></td>
+                                <td class="whitespace-nowrap"><?php echo htmlspecialchars($req['work_department'] ?? '-'); ?></td>
                                 <td class="whitespace-nowrap"><?php echo htmlspecialchars($req['license_plate'] . ' ' . $req['province']); ?></td>
+                                <td class="whitespace-nowrap"><?php echo htmlspecialchars($req['vehicle_type']); ?></td>
                                 <td class="whitespace-nowrap"><?php echo format_thai_datetime($req['created_at']); ?></td>
+                                <td class="whitespace-nowrap font-semibold text-info"><?php echo format_thai_date($req['card_pickup_date']); ?></td>
                                 <td>
                                     <?php
                                         $status_badge = '';
@@ -65,16 +86,20 @@ if ($result_all_requests->num_rows > 0) {
                                         echo $status_badge;
                                     ?>
                                 </td>
-                                <td class="whitespace-nowrap"><button class="btn btn-xs btn-primary inspect-btn" data-id="<?php echo $req['id']; ?>"><span><i class="fa-solid fa-search mr-1"></i>ตรวจสอบ</span></button></td>
+                                <td class="whitespace-nowrap">
+                                    <button class="btn btn-xs btn-primary inspect-btn" data-id="<?php echo $req['id']; ?>">
+                                        <span><i class="fa-solid fa-search mr-1"></i>ตรวจสอบ</span>
+                                    </button>
+                                </td>
                             </tr>
                             <?php endforeach; ?>
                         <?php endif; ?>
-                        <tr id="no-results-row" class="hidden"><td colspan="6" class="text-center text-slate-500 py-4">ไม่พบข้อมูลคำร้องที่ค้นหา</td></tr>
+                        <tr id="no-results-row" class="hidden"><td colspan="9" class="text-center text-slate-500 py-4">ไม่พบข้อมูลคำร้องที่ค้นหา</td></tr>
                     </tbody>
                 </table>
             </div>
         </div>
     </div>
 </main>
-
 <?php require_once __DIR__ . '/../layouts/footer.php'; ?>
+

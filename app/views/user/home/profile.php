@@ -12,8 +12,8 @@ if ($result_dept->num_rows > 0) {
     }
 }
 
-
-$conn->close();
+// [แก้ไข] ไม่จำเป็นต้องปิดการเชื่อมต่อที่นี่แล้ว footer.php จะเป็นตัวจัดการ
+// $conn->close();
 
 require_once __DIR__ . '/../layouts/header.php';
 ?>
