@@ -43,7 +43,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         log_activity($conn, 'login_success');
 
         $response['success'] = true;
-        $response['redirect_url'] = '../../../views/user/home/home.php';
+        $response['redirect_url'] = '../../../views/user/home/dashboard.php'; // <- แก้ไข redirect ไปยัง dashboard.php
         $response['user'] = [
             'title' => $user['title'],
             'firstname' => $user['firstname'],
@@ -63,4 +63,3 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
 echo json_encode($response);
 ?>
-

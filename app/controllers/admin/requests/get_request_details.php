@@ -43,18 +43,20 @@ if (!$status) {
     exit;
 }
 
-// 5. เลือก Query ตามสถานะ
+// 5. [แก้ไข] เลือก Query ตามสถานะ และดึง u.photo_profile เสมอ
 if ($status === 'approved') {
-    // ถ้าอนุมัติแล้ว, ดึงข้อมูลจากตาราง snapshot (approved_user_data)
+    // ถ้าอนุมัติแล้ว, ดึงข้อมูลจากตาราง snapshot (approved_user_data) แต่ดึงรูปโปรไฟล์ล่าสุดจาก users
     $sql = "SELECT 
                 vr.*, 
                 aud.title AS user_title, aud.firstname AS user_firstname, aud.lastname AS user_lastname,
-                aud.phone_number, aud.national_id, aud.photo_profile, aud.user_type,
+                aud.phone_number, aud.national_id, u.photo_profile AS photo_profile, aud.user_type,
                 aud.work_department, aud.position, aud.official_id,
                 aud.dob, aud.address, aud.subdistrict, aud.district, aud.province as user_province, aud.zipcode,
-                a.title AS admin_title, a.firstname AS admin_firstname
+                a.title AS admin_title, a.firstname AS admin_firstname,
+                u.user_key
             FROM vehicle_requests vr
             JOIN approved_user_data aud ON vr.id = aud.request_id
+            JOIN users u ON aud.original_user_id = u.id
             LEFT JOIN admins a ON vr.approved_by_id = a.id
             WHERE vr.id = ?";
 } else {
@@ -62,10 +64,11 @@ if ($status === 'approved') {
     $sql = "SELECT 
                 vr.*, 
                 u.title AS user_title, u.firstname AS user_firstname, u.lastname AS user_lastname,
-                u.phone_number, u.national_id, u.photo_profile, u.user_type,
+                u.phone_number, u.national_id, u.photo_profile AS photo_profile, u.user_type,
                 u.work_department, u.position, u.official_id,
                 u.dob, u.address, u.subdistrict, u.district, u.province as user_province, u.zipcode,
-                a.title AS admin_title, a.firstname AS admin_firstname
+                a.title AS admin_title, a.firstname AS admin_firstname,
+                u.user_key
             FROM vehicle_requests vr
             JOIN users u ON vr.user_id = u.id
             LEFT JOIN admins a ON vr.approved_by_id = a.id

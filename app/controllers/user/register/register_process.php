@@ -98,15 +98,19 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     }
     $conn->set_charset("utf8");
 
-    // --- จัดการการอัปโหลดไฟล์รูปโปรไฟล์ ---
-    $photoUploadResult = uploadAndCompressImage($_FILES["photo_upload"], "../../../../public/uploads/user_photos/");
+    // --- กรองและเตรียมข้อมูล (ย้าย user_key มาสร้างก่อน) ---
+    $user_key = bin2hex(random_bytes(10));
+
+    // --- จัดการการอัปโหลดไฟล์รูปโปรไฟล์ตามโครงสร้างใหม่ ---
+    $targetDir = "../../../../public/uploads/{$user_key}/profile/";
+    $photoUploadResult = uploadAndCompressImage($_FILES["photo_upload"], $targetDir);
     if (isset($photoUploadResult['error'])) {
         handle_error("อัปโหลดรูปโปรไฟล์ไม่สำเร็จ: " . $photoUploadResult['error']);
     }
+    // [แก้ไข] บันทึกเฉพาะชื่อไฟล์ลงในฐานข้อมูล
     $photo_profile_filename = $photoUploadResult['filename'];
 
-    // --- กรองและเตรียมข้อมูล ---
-    $user_key = bin2hex(random_bytes(10));
+    
     $user_type = htmlspecialchars(strip_tags(trim($_POST['user_type'] ?? '')));
     
     $phone_number = preg_replace('/\D/', '', $_POST['form_phone'] ?? '');
@@ -201,7 +205,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $stmt->bind_param(
         "ssssssssssssssssss",
         $user_key, $user_type, $phone_number, $national_id, $title, $firstname, $lastname, $dob, $gender,
-        $address, $subdistrict, $district, $province, $zipcode, $photo_profile_filename,
+        $address, $subdistrict, $district, $province, $zipcode, $photo_profile_filename, // [แก้ไข] ใช้ $photo_profile_filename
         $work_department, $position, $official_id
     );
 
@@ -233,3 +237,4 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     exit();
 }
 ?>
+

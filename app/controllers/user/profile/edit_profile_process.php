@@ -25,7 +25,7 @@ $conn->set_charset("utf8");
 function handle_error($user_message) {
     $_SESSION['request_status'] = 'error';
     $_SESSION['request_message'] = $user_message;
-    header("Location: ../../../views/user/home/home.php#profile-section");
+    header("Location: ../../../views/user/home/profile.php");
     exit();
 }
 
@@ -96,21 +96,25 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $params = [];
     $types = "";
 
-    // 1. ดึง user_type ปัจจุบันจาก DB เพื่อความปลอดภัย
-    $user_type = '';
-    $stmt_utype = $conn->prepare("SELECT user_type FROM users WHERE id = ?");
-    $stmt_utype->bind_param("i", $user_id);
-    $stmt_utype->execute();
-    $result_utype = $stmt_utype->get_result();
-    if($row_utype = $result_utype->fetch_assoc()){
-        $user_type = $row_utype['user_type'];
+    // 1. ดึง user_type และ user_key ปัจจุบันจาก DB เพื่อความปลอดภัย
+    $user_info = [];
+    $stmt_uinfo = $conn->prepare("SELECT user_type, user_key FROM users WHERE id = ?");
+    $stmt_uinfo->bind_param("i", $user_id);
+    $stmt_uinfo->execute();
+    $result_uinfo = $stmt_uinfo->get_result();
+    if($row_uinfo = $result_uinfo->fetch_assoc()){
+        $user_info = $row_uinfo;
+    } else {
+        handle_error("ไม่พบข้อมูลผู้ใช้");
     }
-    $stmt_utype->close();
+    $stmt_uinfo->close();
+    $user_type = $user_info['user_type'];
+    $user_key = $user_info['user_key'];
 
 
     // 2. จัดการการอัปโหลดไฟล์ (ถ้ามี)
     if (isset($_FILES['photo_upload']) && $_FILES['photo_upload']['error'] == UPLOAD_ERR_OK) {
-        $targetDir = "../../../../public/uploads/user_photos/";
+        $targetDir = "../../../../public/uploads/{$user_key}/profile/";
         $uploadResult = uploadAndCompressImage($_FILES['photo_upload'], $targetDir);
 
         if (isset($uploadResult['error'])) {
@@ -224,6 +228,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 }
 
 $conn->close();
-header("Location: ../../../views/user/home/home.php#profile-section");
+header("Location: ../../../views/user/home/profile.php");
 exit();
 ?>
+

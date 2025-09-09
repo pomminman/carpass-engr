@@ -312,6 +312,11 @@ $conn_dept->close(); // ปิดการเชื่อมต่อหลั�
                             </div>
                             <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
                                 <div class="form-control w-full">
+                                     <div class="label"><span class="label-text">รหัสไปรษณีย์</span></div>
+                                     <input type="text" id="zipcode" name="zipcode" class="input input-sm input-bordered w-full" placeholder="พิมพ์เพื่อค้นหา..." required />
+                                     <p class="error-message hidden"></p>
+                                </div>
+                                <div class="form-control w-full">
                                      <div class="label"><span class="label-text">ตำบล/แขวง</span></div>
                                      <input type="text" id="subdistrict" name="subdistrict" class="input input-sm input-bordered w-full" placeholder="พิมพ์เพื่อค้นหา..." required />
                                      <p class="error-message hidden"></p>
@@ -324,11 +329,6 @@ $conn_dept->close(); // ปิดการเชื่อมต่อหลั�
                                 <div class="form-control w-full">
                                      <div class="label"><span class="label-text">จังหวัด</span></div>
                                      <input type="text" id="province" name="province" class="input input-sm input-bordered w-full" placeholder="พิมพ์เพื่อค้นหา..." required />
-                                     <p class="error-message hidden"></p>
-                                </div>
-                                <div class="form-control w-full">
-                                     <div class="label"><span class="label-text">รหัสไปรษณีย์</span></div>
-                                     <input type="text" id="zipcode" name="zipcode" class="input input-sm input-bordered w-full" placeholder="พิมพ์เพื่อค้นหา..." required />
                                      <p class="error-message hidden"></p>
                                 </div>
                             </div>
@@ -931,4 +931,3 @@ $conn_dept->close(); // ปิดการเชื่อมต่อหลั�
     </script>
 </body>
 </html>
-
