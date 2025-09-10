@@ -55,59 +55,59 @@ $stmt_vehicles->close();
 require_once __DIR__ . '/../layouts/header.php';
 ?>
 <!-- Main Content -->
-<main class="flex-grow container mx-auto max-w-4xl p-4" id="dashboard-section">
-    <!-- User Welcome -->
-    <div class="block sm:flex sm:items-baseline sm:gap-2">
-        <h1 class="text-xl sm:text-2xl font-bold mb-1">ยินดีต้อนรับ,</h1>
-        <h1 class="text-xl sm:text-2xl font-bold"><?php echo htmlspecialchars($title . ' ' . $firstname . ' ' . $lastname); ?></h1>
-    </div>
-    <div class="flex flex-wrap gap-2 mt-2 mb-6">
-        <div class="badge badge-lg badge-outline gap-2"><?php echo $user_type_icon; ?><?php echo htmlspecialchars($user_type_thai); ?></div>
-        <?php if ($user['user_type'] === 'army' && !empty($user['work_department'])): ?>
-        <div class="badge badge-lg badge-outline gap-2"><i class="fa-solid fa-sitemap text-slate-500"></i>สังกัด: <?php echo htmlspecialchars($user['work_department']); ?></div>
-        <?php endif; ?>
-    </div>
+<main class="flex-grow container mx-auto max-w-6xl p-0 sm:p-6 pb-24" id="dashboard-section">
+    <div class="bg-base-100 sm:shadow-xl sm:border sm:border-base-300/50 sm:rounded-2xl">
+        <div class="p-4 sm:p-6 md:p-8">
+            <!-- User Welcome -->
+            <div class="block sm:flex sm:items-baseline sm:gap-2">
+                <h1 class="text-xl sm:text-2xl font-bold mb-1">ยินดีต้อนรับ,</h1>
+                <h1 class="text-xl sm:text-2xl font-bold"><?php echo htmlspecialchars($title . ' ' . $firstname . ' ' . $lastname); ?></h1>
+            </div>
+            <div class="flex flex-wrap gap-2 mt-2 mb-6">
+                <div class="badge badge-lg badge-outline gap-2"><?php echo $user_type_icon; ?><?php echo htmlspecialchars($user_type_thai); ?></div>
+                <?php if ($user['user_type'] === 'army' && !empty($user['work_department'])): ?>
+                <div class="badge badge-lg badge-outline gap-2"><i class="fa-solid fa-sitemap text-slate-500"></i>สังกัด: <?php echo htmlspecialchars($user['work_department']); ?></div>
+                <?php endif; ?>
+            </div>
 
-    <!-- Stats -->
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <div class="card bg-base-100 shadow-lg cursor-pointer hover:shadow-xl transition-shadow duration-200 stat-filter" data-filter="all">
-            <div class="card-body p-3 sm:p-4">
-                <div class="flex items-center">
-                    <div class="p-2 bg-blue-100 rounded-full"><i class="fa-solid fa-file-alt text-md sm:text-lg text-blue-600"></i></div>
-                    <div class="ml-2 sm:ml-3"><p class="text-xs text-gray-500">ทั้งหมด</p><p class="text-lg sm:text-xl font-bold"><?php echo $stats['total']; ?></p></div>
+            <!-- Stats -->
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                <div class="card bg-base-100 shadow-lg cursor-pointer hover:shadow-xl transition-shadow duration-200 stat-filter" data-filter="all">
+                    <div class="card-body p-3 sm:p-4">
+                        <div class="flex items-center">
+                            <div class="p-2 bg-blue-100 rounded-full"><i class="fa-solid fa-file-alt text-md sm:text-lg text-blue-600"></i></div>
+                            <div class="ml-2 sm:ml-3"><p class="text-xs text-gray-500">ทั้งหมด</p><p class="text-lg sm:text-xl font-bold"><?php echo $stats['total']; ?></p></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card bg-base-100 shadow-lg cursor-pointer hover:shadow-xl transition-shadow duration-200 stat-filter" data-filter="approved">
+                    <div class="card-body p-3 sm:p-4">
+                        <div class="flex items-center">
+                            <div class="p-2 bg-green-100 rounded-full"><i class="fa-solid fa-check-circle text-md sm:text-lg text-green-600"></i></div>
+                            <div class="ml-2 sm:ml-3"><p class="text-xs text-gray-500">อนุมัติ</p><p class="text-lg sm:text-xl font-bold"><?php echo $stats['approved']; ?></p></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card bg-base-100 shadow-lg cursor-pointer hover:shadow-xl transition-shadow duration-200 stat-filter" data-filter="pending">
+                    <div class="card-body p-3 sm:p-4">
+                        <div class="flex items-center">
+                            <div class="p-2 bg-yellow-100 rounded-full"><i class="fa-solid fa-clock text-md sm:text-lg text-yellow-600"></i></div>
+                            <div class="ml-2 sm:ml-3"><p class="text-xs text-gray-500">รออนุมัติ</p><p class="text-lg sm:text-xl font-bold"><?php echo $stats['pending']; ?></p></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card bg-base-100 shadow-lg cursor-pointer hover:shadow-xl transition-shadow duration-200 stat-filter" data-filter="rejected">
+                    <div class="card-body p-3 sm:p-4">
+                        <div class="flex items-center">
+                            <div class="p-2 bg-red-100 rounded-full"><i class="fa-solid fa-circle-xmark text-md sm:text-lg text-red-600"></i></div>
+                            <div class="ml-2 sm:ml-3"><p class="text-xs text-gray-500">ไม่ผ่าน</p><p class="text-lg sm:text-xl font-bold"><?php echo $stats['rejected']; ?></p></div>
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div>
-        <div class="card bg-base-100 shadow-lg cursor-pointer hover:shadow-xl transition-shadow duration-200 stat-filter" data-filter="approved">
-            <div class="card-body p-3 sm:p-4">
-                <div class="flex items-center">
-                    <div class="p-2 bg-green-100 rounded-full"><i class="fa-solid fa-check-circle text-md sm:text-lg text-green-600"></i></div>
-                    <div class="ml-2 sm:ml-3"><p class="text-xs text-gray-500">อนุมัติ</p><p class="text-lg sm:text-xl font-bold"><?php echo $stats['approved']; ?></p></div>
-                </div>
-            </div>
-        </div>
-        <div class="card bg-base-100 shadow-lg cursor-pointer hover:shadow-xl transition-shadow duration-200 stat-filter" data-filter="pending">
-            <div class="card-body p-3 sm:p-4">
-                <div class="flex items-center">
-                    <div class="p-2 bg-yellow-100 rounded-full"><i class="fa-solid fa-clock text-md sm:text-lg text-yellow-600"></i></div>
-                    <div class="ml-2 sm:ml-3"><p class="text-xs text-gray-500">รออนุมัติ</p><p class="text-lg sm:text-xl font-bold"><?php echo $stats['pending']; ?></p></div>
-                </div>
-            </div>
-        </div>
-        <div class="card bg-base-100 shadow-lg cursor-pointer hover:shadow-xl transition-shadow duration-200 stat-filter" data-filter="rejected">
-            <div class="card-body p-3 sm:p-4">
-                <div class="flex items-center">
-                    <div class="p-2 bg-red-100 rounded-full"><i class="fa-solid fa-circle-xmark text-md sm:text-lg text-red-600"></i></div>
-                    <div class="ml-2 sm:ml-3"><p class="text-xs text-gray-500">ไม่ผ่าน</p><p class="text-lg sm:text-xl font-bold"><?php echo $stats['rejected']; ?></p></div>
-                </div>
-            </div>
-        </div>
-    </div>
 
-    <!-- Requests List -->
-    <div class="card bg-base-100 shadow-lg">
-        <div class="card-body">
-            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <!-- Requests List -->
+             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <h2 class="card-title text-base sm:text-xl flex items-center gap-2"><i class="fa-solid fa-car-side"></i> ภาพรวมยานพาหนะ/คำร้องของคุณ</h2>
                 <a href="add_vehicle.php" class="btn btn-primary btn-sm"><i class="fa-solid fa-plus"></i> เพิ่มยานพาหนะ/ยื่นคำร้อง</a>
             </div>
@@ -133,21 +133,38 @@ require_once __DIR__ . '/../layouts/header.php';
                             }
                         }
                         
-                        $status_text = ''; $status_class = ''; $card_bg_class = '';
+                        $status_text = ''; 
+                        $status_class = '';
+                        $border_class = 'border-transparent'; // Default border
+
                         if ($is_expired && $request['status'] === 'approved') {
                             $status_text = 'หมดอายุ'; 
-                            $status_class = 'badge-neutral'; 
-                            $card_bg_class = 'bg-slate-200 text-slate-800';
+                            $status_class = 'badge-neutral';
+                            $border_class = 'border-gray-400';
                         } else {
                             switch ($request['status']) {
-                                case 'approved': $status_text = 'อนุมัติแล้ว'; $status_class = 'badge-success'; $card_bg_class = 'bg-green-100 text-green-900'; break;
-                                case 'pending': $status_text = 'รออนุมัติ'; $status_class = 'badge-warning'; $card_bg_class = 'bg-yellow-100 text-yellow-900'; break;
-                                case 'rejected': $status_text = 'ไม่ผ่าน'; $status_class = 'badge-error'; $card_bg_class = 'bg-red-100 text-red-900'; break;
+                                case 'approved': 
+                                    $status_text = 'อนุมัติแล้ว'; 
+                                    $status_class = 'badge-success'; 
+                                    $border_class = 'border-green-500';
+                                    break;
+                                case 'pending': 
+                                    $status_text = 'รออนุมัติ'; 
+                                    $status_class = 'badge-warning'; 
+                                    $border_class = 'border-yellow-500';
+                                    break;
+                                case 'rejected': 
+                                    $status_text = 'ไม่ผ่าน'; 
+                                    $status_class = 'badge-error'; 
+                                    $border_class = 'border-red-500';
+                                    break;
                             }
                         }
+
                         $admin_name = ($request['admin_firstname'] && $request['admin_lastname']) ? $request['admin_firstname'] . ' ' . $request['admin_lastname'] : '-';
+                        $front_image_path = "/public/uploads/" . htmlspecialchars($user_key) . "/vehicle/" . htmlspecialchars($request['request_key']) . "/" . htmlspecialchars($request['photo_front']);
                     ?>
-                        <div class="card card-compact shadow-md <?php echo $card_bg_class; ?> cursor-pointer hover:shadow-xl transition-shadow duration-200 vehicle-card"
+                        <div class="card bg-base-100 shadow-md hover:shadow-xl transition-shadow duration-200 vehicle-card cursor-pointer overflow-hidden border-2 <?php echo $border_class; ?>"
                             onclick="openDetailModal(this)"
                             data-request-id="<?php echo htmlspecialchars($request['id']); ?>"
                             data-vehicle-id="<?php echo htmlspecialchars($request['vehicle_id']); ?>"
@@ -178,13 +195,22 @@ require_once __DIR__ . '/../layouts/header.php';
                             data-rejection-reason="<?php echo htmlspecialchars($request['rejection_reason'] ?? ''); ?>"
                             data-search-id="<?php echo htmlspecialchars($request['search_id'] ?? ''); ?>"
                             data-can-renew="<?php echo $can_renew ? 'true' : 'false'; ?>">
-                            <div class="card-body p-3 flex flex-col justify-between">
-                                <div>
-                                    <div class="font-bold text-sm flex items-center gap-2"><?php if ($request['vehicle_type'] == 'รถยนต์'): ?><i class="fa-solid fa-car"></i> รถยนต์<?php else: ?><i class="fa-solid fa-motorcycle"></i> รถจักรยานยนต์<?php endif; ?></div>
-                                    <div class="mt-1"><p class="text-lg font-bold leading-tight"><?php echo htmlspecialchars($request['license_plate']); ?></p><p class="text-xs text-gray-600"><?php echo htmlspecialchars($request['vehicle_province']); ?></p></div>
+                            
+                            <figure class="bg-base-200">
+                                <img src="<?php echo $front_image_path; ?>" alt="รูปถ่ายหน้ารถ" class="h-32 w-full object-cover" onerror="this.onerror=null;this.src='https://placehold.co/300x200/e2e8f0/475569?text=No+Image';">
+                            </figure>
+                            
+                            <div class="card-body p-3">
+                                <div class="font-bold text-sm flex items-center gap-2"><?php if ($request['vehicle_type'] == 'รถยนต์'): ?><i class="fa-solid fa-car"></i> รถยนต์<?php else: ?><i class="fa-solid fa-motorcycle"></i> รถจักรยานยนต์<?php endif; ?></div>
+                                <div class="mt-1">
+                                    <p class="text-lg font-bold leading-tight"><?php echo htmlspecialchars($request['license_plate']); ?></p>
+                                    <p class="text-xs text-gray-600"><?php echo htmlspecialchars($request['vehicle_province']); ?></p>
                                 </div>
                                 <div class="flex justify-between items-end mt-2">
-                                    <div><div class="text-xs">เลขที่บัตร</div><div class="font-semibold text-xs"><?php echo htmlspecialchars($request['card_number'] ?? '-'); ?></div></div>
+                                    <div>
+                                        <div class="text-xs">เลขที่บัตร</div>
+                                        <div class="font-semibold text-xs"><?php echo htmlspecialchars($request['card_number'] ?? '-'); ?></div>
+                                    </div>
                                     <div class="badge <?php echo $status_class; ?> text-white font-semibold"><?php echo $status_text; ?></div>
                                 </div>
                             </div>

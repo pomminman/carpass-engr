@@ -19,9 +19,22 @@ require_once __DIR__ . '/../layouts/header.php';
 ?>
 
 <!-- Main Content -->
-<main class="flex-grow container mx-auto max-w-4xl p-4">
+<main class="flex-grow container mx-auto max-w-6xl p-6 pb-24">
+
+    <!-- User Welcome -->
+    <div class="block sm:flex sm:items-baseline sm:gap-2">
+        <h1 class="text-xl sm:text-2xl font-bold mb-1">ยินดีต้อนรับ,</h1>
+        <h1 class="text-xl sm:text-2xl font-bold"><?php echo htmlspecialchars($title . ' ' . $firstname . ' ' . $lastname); ?></h1>
+    </div>
+    <div class="flex flex-wrap gap-2 mt-2 mb-6">
+        <div class="badge badge-lg badge-outline gap-2"><?php echo $user_type_icon; ?><?php echo htmlspecialchars($user_type_thai); ?></div>
+        <?php if ($user['user_type'] === 'army' && !empty($user['work_department'])): ?>
+        <div class="badge badge-lg badge-outline gap-2"><i class="fa-solid fa-sitemap text-slate-500"></i>สังกัด: <?php echo htmlspecialchars($user['work_department']); ?></div>
+        <?php endif; ?>
+    </div>
+
     <div id="profile-section" class="main-section">
-        <div class="card bg-base-100 shadow-lg">
+        <div class="card bg-base-100 shadow-xl border border-base-300/50">
             <div class="card-body">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
                      <h2 class="card-title text-xl flex items-center gap-2"><i class="fa-solid fa-user-pen"></i> ข้อมูลส่วนตัวของคุณ</h2>
@@ -149,4 +162,3 @@ require_once __DIR__ . '/../layouts/header.php';
 </main>
 
 <?php require_once __DIR__ . '/../layouts/footer.php'; ?>
-

@@ -56,19 +56,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         
         $user_key = $conn->query("SELECT user_key FROM users WHERE id = $user_id")->fetch_assoc()['user_key'];
         
-        // Update vehicles table
-        $license_plate = htmlspecialchars(strip_tags(trim($_POST['license_plate'])));
-        $province = htmlspecialchars(strip_tags(trim($_POST['license_province'])));
-        if ($license_plate !== $old_data['license_plate'] || $province !== $old_data['province']) {
-            $stmt_check_vehicle = $conn->prepare("SELECT id FROM vehicles WHERE license_plate = ? AND province = ? AND id != ?");
-            $stmt_check_vehicle->bind_param("ssi", $license_plate, $province, $vehicle_id);
-            $stmt_check_vehicle->execute();
-            if ($stmt_check_vehicle->get_result()->num_rows > 0) throw new Exception("ทะเบียนรถนี้มีอยู่ในระบบแล้ว");
-            $stmt_check_vehicle->close();
-        }
-
-        $stmt_update_vehicle = $conn->prepare("UPDATE vehicles SET vehicle_type = ?, brand = ?, model = ?, color = ?, license_plate = ?, province = ? WHERE id = ?");
-        $stmt_update_vehicle->bind_param("ssssssi", $_POST['vehicle_type'], $_POST['vehicle_brand'], $_POST['vehicle_model'], $_POST['vehicle_color'], $license_plate, $province, $vehicle_id);
+        // Update vehicles table - ONLY editable fields
+        $stmt_update_vehicle = $conn->prepare("UPDATE vehicles SET brand = ?, model = ?, color = ? WHERE id = ?");
+        $stmt_update_vehicle->bind_param("sssi", $_POST['vehicle_brand'], $_POST['vehicle_model'], $_POST['vehicle_color'], $vehicle_id);
         if (!$stmt_update_vehicle->execute()) throw new Exception("Error updating vehicle: " . $stmt_update_vehicle->error);
         $stmt_update_vehicle->close();
 
@@ -126,4 +116,3 @@ $conn->close();
 header("Location: ../../../views/user/home/dashboard.php");
 exit();
 ?>
-

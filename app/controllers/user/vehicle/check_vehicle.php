@@ -11,7 +11,7 @@ if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
 
 require_once '../../../models/db_config.php';
 
-// รับข้อมูลที่ส่งมา
+// รับข้อมูลที่ส่งมาเป็น JSON
 $data = json_decode(file_get_contents('php://input'), true);
 $license_plate = $data['license_plate'] ?? '';
 $province = $data['province'] ?? '';
@@ -29,8 +29,8 @@ if ($conn->connect_error) {
 }
 $conn->set_charset("utf8");
 
-// [แก้ไข] สร้าง SQL Query ใหม่ให้สอดคล้องกับโครงสร้างตารางใหม่
-// ตรวจสอบว่ารถทะเบียนนี้ ได้ยื่นคำร้องใน "รอบปัจจุบัน" ที่มีสถานะ "รออนุมัติ" หรือ "อนุมัติแล้ว" หรือไม่
+// สร้าง SQL Query เพื่อตรวจสอบว่ารถทะเบียนนี้
+// ได้ยื่นคำร้องใน "รอบปัจจุบัน" ที่มีสถานะ "รออนุมัติ" หรือ "อนุมัติแล้ว" หรือไม่
 $sql = "
     SELECT vr.id 
     FROM vehicle_requests vr

@@ -91,12 +91,23 @@ function calculate_pickup_date($start_date) {
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $user_id = $_SESSION['user_id'];
-    $stmt_key = $conn->prepare("SELECT user_key FROM users WHERE id = ?");
-    $stmt_key->bind_param("i", $user_id);
-    $stmt_key->execute();
-    $user_key = $stmt_key->get_result()->fetch_assoc()['user_key'];
-    $stmt_key->close();
-    if (empty($user_key)) handle_error("ไม่พบข้อมูลผู้ใช้");
+    
+    // ดึงข้อมูล user_key และ user_type
+    $stmt_user_info = $conn->prepare("SELECT user_key, user_type FROM users WHERE id = ?");
+    $stmt_user_info->bind_param("i", $user_id);
+    $stmt_user_info->execute();
+    $user_data = $stmt_user_info->get_result()->fetch_assoc();
+    $stmt_user_info->close();
+
+    if (empty($user_data)) {
+        handle_error("ไม่พบข้อมูลผู้ใช้");
+    }
+
+    $user_key = $user_data['user_key'];
+    $user_type = $user_data['user_type'];
+
+    // กำหนดประเภทบัตรตามประเภทผู้ใช้
+    $card_type = ($user_type === 'army') ? 'internal' : 'external';
 
     $conn->begin_transaction();
     try {
@@ -119,13 +130,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             }
             $stmt_check_req->close();
         } else {
-            $vehicle_type = htmlspecialchars(strip_tags(trim($_POST['vehicle_type'])));
+            $vehicle_type_from_form = htmlspecialchars(strip_tags(trim($_POST['vehicle_type'])));
             $brand = htmlspecialchars(strip_tags(trim($_POST['vehicle_brand'])));
             $model = htmlspecialchars(strip_tags(trim($_POST['vehicle_model'])));
             $color = htmlspecialchars(strip_tags(trim($_POST['vehicle_color'])));
             $sql_insert_vehicle = "INSERT INTO vehicles (user_id, license_plate, province, vehicle_type, brand, model, color) VALUES (?, ?, ?, ?, ?, ?, ?)";
             $stmt_insert_vehicle = $conn->prepare($sql_insert_vehicle);
-            $stmt_insert_vehicle->bind_param("issssss", $user_id, $license_plate, $province, $vehicle_type, $brand, $model, $color);
+            $stmt_insert_vehicle->bind_param("issssss", $user_id, $license_plate, $province, $vehicle_type_from_form, $brand, $model, $color);
             if (!$stmt_insert_vehicle->execute()) throw new Exception("ไม่สามารถบันทึกข้อมูลยานพาหนะได้: " . $stmt_insert_vehicle->error);
             $vehicle_id = $stmt_insert_vehicle->insert_id;
             $stmt_insert_vehicle->close();
@@ -176,9 +187,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $qr_file_path = $qr_dir . $request_key . '.png';
         QRcode::png($qr_content, $qr_file_path, QR_ECLEVEL_L, 4, 0);
 
-        $sql_insert_req = "INSERT INTO vehicle_requests (user_id, vehicle_id, period_id, request_key, search_id, tax_expiry_date, owner_type, other_owner_name, other_owner_relation, photo_reg_copy, photo_tax_sticker, photo_front, photo_rear, card_pickup_date, card_expiry) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        $sql_insert_req = "INSERT INTO vehicle_requests (user_id, vehicle_id, period_id, request_key, search_id, tax_expiry_date, owner_type, other_owner_name, other_owner_relation, photo_reg_copy, photo_tax_sticker, photo_front, photo_rear, card_pickup_date, card_expiry, card_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         $stmt_insert_req = $conn->prepare($sql_insert_req);
-        $stmt_insert_req->bind_param("iiissssssssssss", $user_id, $vehicle_id, $period_id, $request_key, $search_id, $tax_expiry_date, $owner_type, $other_owner_name, $other_owner_relation, $photo_reg_copy, $photo_tax_sticker, $photo_front, $photo_rear, $card_pickup_date, $card_expiry_date);
+        $stmt_insert_req->bind_param("iiisssssssssssss", $user_id, $vehicle_id, $period_id, $request_key, $search_id, $tax_expiry_date, $owner_type, $other_owner_name, $other_owner_relation, $photo_reg_copy, $photo_tax_sticker, $photo_front, $photo_rear, $card_pickup_date, $card_expiry_date, $card_type);
         
         if (!$stmt_insert_req->execute()) throw new Exception("ไม่สามารถบันทึกข้อมูลคำร้องได้: " . $stmt_insert_req->error);
         
@@ -202,4 +213,3 @@ $conn->close();
 header("Location: ../../../views/user/home/add_vehicle.php");
 exit();
 ?>
-

@@ -71,7 +71,7 @@ $conn_dept->close(); // ปิดการเชื่อมต่อหลั�
 <body class="flex flex-col min-h-screen">
     <div id="alert-container" class="toast toast-top toast-center sm:toast-end z-50"></div>
     
-    <header class="w-full navbar bg-base-100 shadow-md">
+    <header class="w-full navbar bg-base-100 shadow-md z-30 sticky top-0">
         <div class="container mx-auto">
             <div class="flex-1 px-2 mx-2">
                 <a class="text-base font-bold flex items-center gap-2">
@@ -84,8 +84,8 @@ $conn_dept->close(); // ปิดการเชื่อมต่อหลั�
             </div>
         </div>
     </header>
-    <main class="flex-grow p-4">
-        <div class="card bg-base-100 shadow-2xl border border-base-300/50 sm:rounded-2xl max-w-4xl mx-auto">
+    <main class="flex-grow p-6 pb-24">
+        <div class="card bg-base-100 shadow-2xl border border-base-300/50 sm:rounded-2xl mx-auto">
             <div class="card-body p-6 md:p-8">
                 <div class="flex flex-col sm:flex-row items-center justify-between gap-3 mb-4">
                     <h2 class="card-title">สมัครใช้งานระบบ</h2>
@@ -365,9 +365,9 @@ $conn_dept->close(); // ปิดการเชื่อมต่อหลั�
         </div>
     </main>
 
-    <footer class="text-center text-base-content/70 p-4">
-        <p class="text-xs">Developed by กยข.กช.</p>
-        <p class="text-xs">ร.ท.พรหมินทร์ อินทมาตย์ (ผู้พัฒนาระบบ)</p>
+    <!-- Footer -->
+    <footer class="fixed bottom-0 left-0 right-0 bg-base-200 text-base-content shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] p-1 text-center z-40">
+        <p class="text-[10px] sm:text-xs whitespace-nowrap">Developed by ร.ท.พรหมินทร์ อินทมาตย์ (ผู้พัฒนาระบบ/กยข.กช.)</p>
     </footer>
 
     <dialog id="resetConfirmModal" class="modal modal-middle">
