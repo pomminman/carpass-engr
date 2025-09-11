@@ -11,23 +11,22 @@ require_once '../layouts/header.php';
 ?>
 
 <!-- Main Content -->
-<main class="flex-grow container mx-auto max-w-6xl p-6 pb-24">
+<main class="flex-grow container mx-auto max-w-6xl p-0 sm:p-6 pb-24">
+    <div class="bg-base-100 sm:shadow-xl sm:border sm:border-base-300/50 sm:rounded-2xl">
+        <div class="p-4 sm:p-6 md:p-8">
+            <!-- User Welcome -->
+            <div class="block sm:flex sm:items-baseline sm:gap-2">
+                <h1 class="text-xl sm:text-2xl font-bold mb-1">ยินดีต้อนรับ,</h1>
+                <h1 class="text-xl sm:text-2xl font-bold"><?php echo htmlspecialchars($title . ' ' . $firstname . ' ' . $lastname); ?></h1>
+            </div>
+            <div class="flex flex-wrap gap-2 mt-2 mb-6">
+                <div class="badge badge-lg badge-outline gap-2"><?php echo $user_type_icon; ?><?php echo htmlspecialchars($user_type_thai); ?></div>
+                <?php if ($user['user_type'] === 'army' && !empty($user['work_department'])): ?>
+                <div class="badge badge-lg badge-outline gap-2"><i class="fa-solid fa-sitemap text-slate-500"></i>สังกัด: <?php echo htmlspecialchars($user['work_department']); ?></div>
+                <?php endif; ?>
+            </div>
 
-    <!-- User Welcome -->
-    <div class="block sm:flex sm:items-baseline sm:gap-2">
-        <h1 class="text-xl sm:text-2xl font-bold mb-1">ยินดีต้อนรับ,</h1>
-        <h1 class="text-xl sm:text-2xl font-bold"><?php echo htmlspecialchars($title . ' ' . $firstname . ' ' . $lastname); ?></h1>
-    </div>
-    <div class="flex flex-wrap gap-2 mt-2 mb-6">
-        <div class="badge badge-lg badge-outline gap-2"><?php echo $user_type_icon; ?><?php echo htmlspecialchars($user_type_thai); ?></div>
-        <?php if ($user['user_type'] === 'army' && !empty($user['work_department'])): ?>
-        <div class="badge badge-lg badge-outline gap-2"><i class="fa-solid fa-sitemap text-slate-500"></i>สังกัด: <?php echo htmlspecialchars($user['work_department']); ?></div>
-        <?php endif; ?>
-    </div>
-
-    <div class="card bg-base-100 shadow-xl border border-base-300/50">
-        <div class="card-body">
-            <h2 class="card-title text-xl flex items-center gap-2"><i class="fa-solid fa-address-book"></i> ติดต่อสอบถาม</h2>
+            <h2 class="card-title text-xl flex items-center gap-2"><i class="fa-solid fa-address-book text-primary"></i> ติดต่อสอบถาม</h2>
             <div class="divider"></div>
             <div class="space-y-4 text-sm">
                 <div>
@@ -53,7 +52,6 @@ require_once '../layouts/header.php';
             </div>
         </div>
     </div>
-
 </main>
 
 <?php
