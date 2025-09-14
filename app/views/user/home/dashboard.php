@@ -68,8 +68,8 @@ require_once __DIR__ . '/../layouts/header.php';
 <!-- Welcome Header -->
 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
     <div>
-        <h1 class="text-2xl font-bold">ภาพรวมยานพาหนะ</h1>
-        <p class="text-base-content/70">จัดการและติดตามสถานะคำร้องขอบัตรผ่านของคุณ</p>
+        <h1 class="text-xl sm:text-2xl font-bold">ภาพรวมยานพาหนะ</h1>
+        <p class="text-sm sm:text-base text-base-content/70">จัดการและติดตามสถานะคำร้องขอบัตรผ่านของคุณ</p>
     </div>
     <a href="add_vehicle.php" class="btn btn-primary btn-sm mt-2 sm:mt-0">
         <i class="fa-solid fa-plus"></i> เพิ่มยานพาหนะ / ยื่นคำร้อง
@@ -87,7 +87,10 @@ require_once __DIR__ . '/../layouts/header.php';
         <div>
             <h2 class="card-title"><?php echo htmlspecialchars($title . ' ' . $firstname . ' ' . $lastname); ?></h2>
             <div class="flex flex-wrap gap-2 mt-1">
-                <div class="badge badge-outline gap-2"><?php echo $user_type_icon; ?><?php echo htmlspecialchars($user_type_thai); ?></div>
+                <div class="badge badge-outline gap-2 h-auto whitespace-normal">
+                    <?php echo $user_type_icon; ?>
+                    <span class="text-left text-[10px] sm:text-xs lg:text-sm"><?php echo htmlspecialchars($user_type_thai); ?></span>
+                </div>
                 <?php if ($user['user_type'] === 'army' && !empty($user['work_department'])): ?>
                 <div class="badge badge-outline gap-2"><i class="fa-solid fa-sitemap"></i><?php echo htmlspecialchars($user['work_department']); ?></div>
                 <?php endif; ?>
@@ -207,7 +210,7 @@ require_once __DIR__ . '/../layouts/header.php';
                 <div class="card-body p-4">
                     <div class="flex justify-between items-start">
                         <div>
-                            <p class="font-bold text-lg leading-tight"><?= htmlspecialchars($request['license_plate']) ?></p>
+                            <p class="font-bold text-base sm:text-lg leading-tight truncate"><?= htmlspecialchars($request['license_plate']) ?></p>
                             <p class="text-xs text-base-content/60"><?= htmlspecialchars($request['vehicle_province']) ?></p>
                         </div>
                         <div class="badge <?= $status_class ?> text-white font-semibold text-xs"><?= $status_text ?></div>
@@ -230,4 +233,7 @@ require_once __DIR__ . '/../layouts/header.php';
 <?php
 require_once __DIR__ . '/../layouts/footer.php';
 ?>
+
+
+
 

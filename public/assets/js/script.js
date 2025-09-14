@@ -272,6 +272,15 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
             });
 
+            if (zoomModalEl) {
+                zoomModalEl.addEventListener('click', (e) => {
+                    const imageContainer = zoomModalEl.querySelector('#zoomed_image_container');
+                    if (imageContainer && !imageContainer.contains(e.target)) {
+                        zoomModalEl.close();
+                    }
+                });
+            }
+
             const editForm = detailsModalEl.querySelector('#editVehicleForm');
             if(editForm) {
                 editForm.addEventListener('submit', () => loadingModalEl.showModal());

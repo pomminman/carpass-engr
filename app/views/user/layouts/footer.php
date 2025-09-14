@@ -50,15 +50,15 @@ if (isset($conn) && $conn instanceof mysqli) {
     
     <!-- [MODIFIED] Image Zoom Modal - Redesigned for fullscreen effect -->
     <dialog id="image_zoom_modal" class="modal">
-        <div class="modal-box w-11/12 max-w-none p-0 bg-transparent shadow-none flex justify-center items-center h-full">
-            <div class="relative h-full w-full flex items-center justify-center">
+        <div class="modal-box w-screen h-screen max-w-none max-h-none p-4 bg-transparent shadow-none flex justify-center items-center">
+            <div class="relative inline-block">
                 <img id="zoomed_image" src="" alt="ขยายรูปภาพ" class="rounded-lg max-h-[95vh] max-w-[95vw] object-contain">
-                <form method="dialog" class="absolute top-2 right-2">
-                    <button class="btn btn-circle btn-sm bg-black/50 hover:bg-black/75 text-white border-none z-10">✕</button>
+                <form method="dialog" class="absolute top-2 right-2 z-10">
+                    <button class="btn btn-circle btn-sm bg-black/50 hover:bg-black/75 text-white border-none">✕</button>
                 </form>
             </div>
         </div>
-        <form method="dialog" class="modal-backdrop"><button>close</button></form>
+        <form method="dialog" class="modal-backdrop bg-black/70"><button>close</button></form>
     </dialog>
 
     <!-- Request Details Modal -->
@@ -182,4 +182,5 @@ if (isset($conn) && $conn instanceof mysqli) {
 
 </body>
 </html>
+
 
