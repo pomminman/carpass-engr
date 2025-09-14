@@ -1,60 +1,67 @@
 <?php
-// app/views/user/home/contact.php (หน้าติดต่อ)
-
-// 1. ตรวจสอบสิทธิ์และดึงข้อมูลผู้ใช้
+// app/views/user/home/contact.php
 require_once '../shared/auth_check.php';
-// [แก้ไข] ลบบรรทัดนี้ออกเพื่อป้องกันการปิดการเชื่อมต่อซ้ำซ้อน
-// $conn->close();
-
-// 2. เรียกใช้ Header
 require_once '../layouts/header.php';
 ?>
 
-<!-- Main Content -->
-<main class="flex-grow container mx-auto max-w-6xl p-0 sm:p-6 pb-24">
-    <div class="bg-base-100 sm:shadow-xl sm:border sm:border-base-300/50 sm:rounded-2xl">
-        <div class="p-4 sm:p-6 md:p-8">
-            <!-- User Welcome -->
-            <div class="block sm:flex sm:items-baseline sm:gap-2">
-                <h1 class="text-xl sm:text-2xl font-bold mb-1">ยินดีต้อนรับ,</h1>
-                <h1 class="text-xl sm:text-2xl font-bold"><?php echo htmlspecialchars($title . ' ' . $firstname . ' ' . $lastname); ?></h1>
-            </div>
-            <div class="flex flex-wrap gap-2 mt-2 mb-6">
-                <div class="badge badge-lg badge-outline gap-2"><?php echo $user_type_icon; ?><?php echo htmlspecialchars($user_type_thai); ?></div>
-                <?php if ($user['user_type'] === 'army' && !empty($user['work_department'])): ?>
-                <div class="badge badge-lg badge-outline gap-2"><i class="fa-solid fa-sitemap text-slate-500"></i>สังกัด: <?php echo htmlspecialchars($user['work_department']); ?></div>
-                <?php endif; ?>
-            </div>
+<!-- Main Content for Contact Page -->
+<div id="contact-section" class="space-y-6">
+    <!-- Header -->
+    <div>
+        <h1 class="text-xl sm:text-2xl font-bold">ติดต่อสอบถาม</h1>
+        <p class="text-sm sm:text-base text-base-content/70">ช่องทางการติดต่อสำหรับข้อสงสัยหรือปัญหาการใช้งาน</p>
+    </div>
 
-            <h2 class="card-title text-xl flex items-center gap-2"><i class="fa-solid fa-address-book text-primary"></i> ติดต่อสอบถาม</h2>
-            <div class="divider"></div>
-            <div class="space-y-4 text-sm">
-                <div>
-                    <p class="font-semibold">แผนกการข่าวและรักษาความปลอดภัย</p>
-                    <p>กองยุทธการและการข่าว กรมการทหารช่าง</p>
-                    <p>ค่ายภาณุรังษี ต.โค้กหม้อ อ.เมือง จ.ราชบุรี 70000</p>
+    <!-- Main Card -->
+    <div class="card bg-base-100 shadow">
+        <div class="card-body">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <!-- Left Column: Contact Info -->
+                <div class="space-y-6">
+                    <div>
+                        <h3 class="font-semibold text-lg flex items-center gap-2"><i class="fa-solid fa-building text-primary"></i> สถานที่ติดต่อ</h3>
+                        <div class="mt-2 pl-8 text-base-content/90 text-sm sm:text-base">
+                            <p>แผนกการข่าวและรักษาความปลอดภัย</p>
+                            <p>กองยุทธการและการข่าว กรมการทหารช่าง</p>
+                            <p>ค่ายภาณุรังษี ต.โคกหม้อ อ.เมือง จ.ราชบุรี 70000</p>
+                        </div>
+                    </div>
+                    <div class="divider"></div>
+                     <div>
+                        <h3 class="font-semibold text-lg flex items-center gap-2"><i class="fa-solid fa-clock text-primary"></i> วันและเวลาทำการ</h3>
+                        <div class="mt-2 pl-8 text-base-content/90 text-sm sm:text-base">
+                            <p>จันทร์ - ศุกร์ (เว้นวันหยุดราชการ)</p>
+                            <p>เวลา 08:30 - 16:30 น.</p>
+                        </div>
+                    </div>
                 </div>
-                <div class="divider my-2"></div>
-                <div>
-                    <p class="font-semibold">พบปัญหาการใช้งานระบบ ติดต่อ:</p>
-                    <p>ร.ท. พรหมินทร์  อินทมาตย์ (ผู้พัฒนาระบบ)</p>
-                    <p><i class="fa-solid fa-envelope w-4 text-slate-500"></i> E-mail : oid.engrdept@gmail.com</p>
-                </div>
-                <div class="divider my-2"></div>
-                <div>
-                    <p><i class="fa-solid fa-clock w-4 text-slate-500"></i> <span class="font-semibold">วันเวลาทำการ :</span> จันทร์-ศุกร์ 08.30-16.30 น. (เว้นวันหยุดราชการ)</p>
-                </div>
-                <div>
-                    <a href="#" class="btn btn-sm btn-success btn-outline no-underline">
-                    <i class="fab fa-line text-lg"></i> Line Official: บัตรผ่านยานพาหนะ กช.
-                    </a>
+                <!-- Right Column: Channels -->
+                <div class="space-y-6">
+                    <div>
+                        <h3 class="font-semibold text-lg flex items-center gap-2"><i class="fa-solid fa-headset text-primary"></i> ช่องทางติดต่อ</h3>
+                        <div class="mt-4 space-y-4">
+                            <div class="card card-compact bg-base-200">
+                                <div class="card-body">
+                                    <p class="font-semibold text-sm sm:text-base">พบปัญหาการใช้งานระบบ:</p>
+                                    <p class="text-sm">ร.ท. พรหมินทร์ อินทมาตย์ (ผู้พัฒนาระบบ)</p>
+                                    <p class="text-sm break-words"><i class="fa-solid fa-envelope w-4 text-base-content/60"></i> oid.engrdept@gmail.com</p>
+                                </div>
+                            </div>
+                             <div class="card card-compact bg-base-200">
+                                <div class="card-body">
+                                    <p class="font-semibold text-sm sm:text-base">สอบถามเรื่องเอกสารและติดตามสถานะ:</p>
+                                    <a href="https://line.me/ti/p/~YOUR_LINE_ID" target="_blank" class="btn btn-sm btn-success no-underline w-full">
+                                        <i class="fab fa-line text-lg"></i> Line Official: บัตรผ่านยานพาหนะ กช.
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-</main>
+</div>
 
-<?php
-// 3. เรียกใช้ Footer
-require_once '../layouts/footer.php';
-?>
+<?php require_once '../layouts/footer.php'; ?>
+
