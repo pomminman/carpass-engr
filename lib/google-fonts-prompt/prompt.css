@@ -1,0 +1,86 @@
+/*
+ * Prompt Font Family
+ * Generated for local hosting
+ */
+
+/* Thin 100 */
+@font-face {
+  font-family: 'Prompt';
+  font-style: normal;
+  font-weight: 100;
+  font-display: swap;
+  src: url('prompt-100.ttf') format('truetype');
+}
+
+/* ExtraLight 200 */
+@font-face {
+  font-family: 'Prompt';
+  font-style: normal;
+  font-weight: 200;
+  font-display: swap;
+  src: url('prompt-200.ttf') format('truetype');
+}
+
+/* Light 300 */
+@font-face {
+  font-family: 'Prompt';
+  font-style: normal;
+  font-weight: 300;
+  font-display: swap;
+  src: url('prompt-300.ttf') format('truetype');
+}
+
+/* Regular 400 */
+@font-face {
+  font-family: 'Prompt';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('prompt-regular.ttf') format('truetype');
+}
+
+/* Medium 500 */
+@font-face {
+  font-family: 'Prompt';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('prompt-500.ttf') format('truetype');
+}
+
+/* SemiBold 600 */
+@font-face {
+  font-family: 'Prompt';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('prompt-600.ttf') format('truetype');
+}
+
+/* Bold 700 */
+@font-face {
+  font-family: 'Prompt';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('prompt-700.ttf') format('truetype');
+}
+
+/* ExtraBold 800 */
+@font-face {
+  font-family: 'Prompt';
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+  src: url('prompt-800.ttf') format('truetype');
+}
+
+/* Black 900 */
+@font-face {
+  font-family: 'Prompt';
+  font-style: normal;
+  font-weight: 900;
+  font-display: swap;
+  src: url('prompt-900.ttf') format('truetype');
+}
+
