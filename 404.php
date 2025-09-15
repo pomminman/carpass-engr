@@ -12,9 +12,14 @@
     <meta name="apple-mobile-web-app-title" content="carpass engrdept" />
     <link rel="manifest" href="/public/assets/favicon/site.webmanifest" />
 
-    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css" rel="stylesheet" type="text/css" />
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Local CSS -->
+    <link rel="stylesheet" href="/lib/daisyui@4.12.10/dist/full.min.css" type="text/css" />
+    <link rel="stylesheet" href="/lib/google-fonts-prompt/prompt.css">
+    <link rel="stylesheet" href="/lib/fontawesome-free-7.0.1-web/css/all.min.css">
+
+    <!-- Local JS -->
+    <script src="/lib/tailwindcss/tailwindcss.js"></script>
+    
     <style>
         body {
             font-family: 'Prompt', sans-serif;

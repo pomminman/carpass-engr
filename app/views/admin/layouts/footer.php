@@ -174,10 +174,10 @@ if (isset($conn) && $conn instanceof mysqli) {
     <div id="alert-container" class="toast toast-top toast-center z-50"></div>
     
     <!-- Scripts -->
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-    <script src="https://earthchie.github.io/jquery.Thailand.js/jquery.Thailand.js/dependencies/JQL.min.js"></script>
-    <script src="https://earthchie.github.io/jquery.Thailand.js/jquery.Thailand.js/dependencies/typeahead.bundle.js"></script>
-    <script src="https://earthchie.github.io/jquery.Thailand.js/jquery.Thailand.js/dist/jquery.Thailand.min.js"></script>
+    <script src="/lib/jquery/jquery-3.7.1.min.js"></script>
+    <script src="/lib/jquery.Thailand/dependencies/JQL.min.js"></script>
+    <script src="/lib/jquery.Thailand/dependencies/typeahead.bundle.js"></script>
+    <script src="/lib/jquery.Thailand/dist/jquery.Thailand.min.js"></script>
     <script src="/public/assets/js/script.js?v=<?php echo time(); ?>"></script>
 
 </body>

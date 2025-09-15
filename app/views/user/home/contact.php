@@ -50,7 +50,7 @@ require_once '../layouts/header.php';
                              <div class="card card-compact bg-base-200 border">
                                 <div class="card-body p-3">
                                     <p class="font-semibold text-sm">สอบถามเรื่องเอกสารและติดตามสถานะ:</p>
-                                    <a href="https://line.me/ti/p/~YOUR_LINE_ID" target="_blank" class="btn btn-xs btn-success no-underline w-full mt-1">
+                                    <a href="https://line.me/ti/p/~YOUR_LINE_ID" target="_blank" class="btn btn-success no-underline w-full mt-1">
                                         <i class="fab fa-line text-base"></i> Line Official: บัตรผ่านยานพาหนะ กช.
                                     </a>
                                 </div>

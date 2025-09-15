@@ -17,16 +17,14 @@
     <meta name="apple-mobile-web-app-title" content="carpass engrdept" />
     <link rel="manifest" href="/public/assets/favicon/site.webmanifest" />
 
-    <!-- CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css" rel="stylesheet" type="text/css" />
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://earthchie.github.io/jquery.Thailand.js/jquery.Thailand.js/dist/jquery.Thailand.min.css">
-    
-    <!-- Fonts and Icons -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" xintegrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <!-- Local CSS -->
+    <link rel="stylesheet" href="/lib/daisyui@4.12.10/dist/full.min.css" type="text/css" />
+    <link rel="stylesheet" href="/lib/jquery.Thailand/dist/jquery.Thailand.min.css">
+    <link rel="stylesheet" href="/lib/google-fonts-prompt/prompt.css">
+    <link rel="stylesheet" href="/lib/fontawesome-free-7.0.1-web/css/all.min.css">
+
+    <!-- Local JS -->
+    <script src="/lib/tailwindcss/tailwindcss.js"></script>
 
     <!-- Custom Styles -->
     <style>
@@ -49,10 +47,15 @@
 
         .break-words { word-wrap: break-word; overflow-wrap: break-word; }
         
+        /* [NEW] Fix for FOUC (Flash of Unstyled Content) on sidebar */
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .drawer-content { animation: fadeIn 0.3s ease-in-out; }
+        
         @media (min-width: 1024px) {
             .drawer.lg\:drawer-open .drawer-content { height: 100vh; overflow-y: auto; }
             .drawer.lg\:drawer-open .drawer-side { position: sticky; top: 0; height: 100vh; }
         }
+
     </style>
 </head>
 <body class="bg-base-200" data-flash-message="<?php echo isset($_SESSION['request_message']) ? htmlspecialchars($_SESSION['request_message']) : ''; ?>" data-flash-status="<?php echo isset($_SESSION['request_status']) ? htmlspecialchars($_SESSION['request_status']) : ''; ?>">
@@ -78,3 +81,4 @@
                 </div>
             </div>
             <main class="w-full max-w-full px-4 md:px-4 lg:px-6 py-4 md:py-6">
+

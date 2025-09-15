@@ -24,7 +24,7 @@ if (isset($conn) && $conn instanceof mysqli) {
                 </div>
 
                 <!-- Navigation Menu -->
-                <ul class="menu text-sm flex-grow space-y-1">
+                <ul class="menu flex-grow space-y-1">
                     <li><a href="dashboard.php" class="<?php echo ($current_page == 'dashboard.php') ? 'active' : ''; ?> hover:bg-base-200"><i class="fa-solid fa-chart-pie w-6"></i> ภาพรวม</a></li>
                     <li><a href="add_vehicle.php" class="<?php echo ($current_page == 'add_vehicle.php') ? 'active' : ''; ?> hover:bg-base-200"><i class="fa-solid fa-file-circle-plus w-6"></i> เพิ่มยานพาหนะ</a></li>
                     <li><a href="costs.php" class="<?php echo ($current_page == 'costs.php') ? 'active' : ''; ?> hover:bg-base-200"><i class="fa-solid fa-hand-holding-dollar w-6"></i> ค่าธรรมเนียม</a></li>
@@ -34,7 +34,7 @@ if (isset($conn) && $conn instanceof mysqli) {
                 <!-- Sidebar Footer -->
                 <div class="mt-auto">
                     <div class="divider my-2 px-2"></div>
-                    <ul class="menu text-sm space-y-1">
+                    <ul class="menu space-y-1">
                         <li><a href="profile.php" class="<?php echo ($current_page == 'profile.php') ? 'active' : ''; ?> hover:bg-base-200"><i class="fa-solid fa-user-pen w-6"></i> ข้อมูลส่วนตัว</a></li>
                         <li><a href="../../../controllers/user/logout/logout.php" class="text-error hover:bg-error/10"><i class="fa-solid fa-right-from-bracket w-6"></i> ออกจากระบบ</a></li>
                     </ul>
@@ -48,6 +48,19 @@ if (isset($conn) && $conn instanceof mysqli) {
 
     <!-- ========= MODALS (Centralized) ========= -->
     
+    <!-- [CORRECTED] Image Zoom Modal - To match admin's fullscreen behavior -->
+    <dialog id="image_zoom_modal" class="modal">
+        <div class="modal-box w-full max-w-none p-4 bg-transparent shadow-none flex justify-center items-center">
+            <div class="relative">
+                <img id="zoomed_image" src="" alt="ขยายรูปภาพ" class="rounded-lg max-h-[90vh] max-w-[90vw] object-contain">
+                <form method="dialog">
+                    <button class="btn btn-circle btn-sm absolute -top-3 -right-3 bg-black/50 hover:bg-black/75 text-white border-none z-10">✕</button>
+                </form>
+            </div>
+        </div>
+        <form method="dialog" class="modal-backdrop"><button>close</button></form>
+    </dialog>
+
     <!-- Request Details Modal -->
     <dialog id="request_details_modal" class="modal">
         <div class="modal-box w-11/12 max-w-4xl">
@@ -84,10 +97,10 @@ if (isset($conn) && $conn instanceof mysqli) {
                          <div class="p-4 bg-base-200 rounded-box">
                              <h4 class="font-semibold text-sm mb-2 text-center">รูปถ่ายหลักฐาน</h4>
                              <div class="grid grid-cols-2 gap-2 text-xs">
-                                <div class="text-center"><p class="font-semibold mb-1">ทะเบียนรถ</p><div class="flex justify-center bg-base-100 p-2 rounded-lg border h-24"><img id="modal-photo-reg" src="" class="max-w-full max-h-full object-contain"></div></div>
-                                <div class="text-center"><p class="font-semibold mb-1">ป้ายภาษี</p><div class="flex justify-center bg-base-100 p-2 rounded-lg border h-24"><img id="modal-photo-tax" src="" class="max-w-full max-h-full object-contain"></div></div>
-                                <div class="text-center"><p class="font-semibold mb-1">ด้านหน้า</p><div class="flex justify-center bg-base-100 p-2 rounded-lg border h-24"><img id="modal-photo-front" src="" class="max-w-full max-h-full object-contain"></div></div>
-                                <div class="text-center"><p class="font-semibold mb-1">ด้านหลัง</p><div class="flex justify-center bg-base-100 p-2 rounded-lg border h-24"><img id="modal-photo-rear" src="" class="max-w-full max-h-full object-contain"></div></div>
+                                <div class="text-center"><p class="font-semibold mb-1">ทะเบียนรถ</p><div class="flex justify-center bg-base-100 p-2 rounded-lg border h-24"><img id="modal-photo-reg" src="" class="max-w-full max-h-full object-contain cursor-zoom-in"></div></div>
+                                <div class="text-center"><p class="font-semibold mb-1">ป้ายภาษี</p><div class="flex justify-center bg-base-100 p-2 rounded-lg border h-24"><img id="modal-photo-tax" src="" class="max-w-full max-h-full object-contain cursor-zoom-in"></div></div>
+                                <div class="text-center"><p class="font-semibold mb-1">ด้านหน้า</p><div class="flex justify-center bg-base-100 p-2 rounded-lg border h-24"><img id="modal-photo-front" src="" class="max-w-full max-h-full object-contain cursor-zoom-in"></div></div>
+                                <div class="text-center"><p class="font-semibold mb-1">ด้านหลัง</p><div class="flex justify-center bg-base-100 p-2 rounded-lg border h-24"><img id="modal-photo-rear" src="" class="max-w-full max-h-full object-contain cursor-zoom-in"></div></div>
                             </div>
                          </div>
                         <div id="modal-qr-code-container" class="hidden text-center p-4 bg-base-200 rounded-box">
@@ -161,12 +174,11 @@ if (isset($conn) && $conn instanceof mysqli) {
     <div id="alert-container" class="toast toast-top toast-center z-50"></div>
     
     <!-- Scripts -->
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-    <script src="https://earthchie.github.io/jquery.Thailand.js/jquery.Thailand.js/dependencies/JQL.min.js"></script>
-    <script src="https://earthchie.github.io/jquery.Thailand.js/jquery.Thailand.js/dependencies/typeahead.bundle.js"></script>
-    <script src="https://earthchie.github.io/jquery.Thailand.js/jquery.Thailand.js/dist/jquery.Thailand.min.js"></script>
+    <script src="/lib/jquery/jquery-3.7.1.min.js"></script>
+    <script src="/lib/jquery.Thailand/dependencies/JQL.min.js"></script>
+    <script src="/lib/jquery.Thailand/dependencies/typeahead.bundle.js"></script>
+    <script src="/lib/jquery.Thailand/dist/jquery.Thailand.min.js"></script>
     <script src="/public/assets/js/script.js?v=<?php echo time(); ?>"></script>
 
 </body>
 </html>
-

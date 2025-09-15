@@ -84,7 +84,7 @@ require_once __DIR__ . '/../layouts/header.php';
                         </div>
                         <div class="form-control w-full">
                             <div class="label py-1"><span class="label-text font-medium text-xs">เลขทะเบียนรถ</span></div>
-                            <input type="text" id="check-license-plate" placeholder="เช่น 1กข1234" class="input input-bordered w-full" required />
+                            <input type="text" id="check-license-plate" placeholder="เช่น 1กข1234" class="input input-bordered w-full" required oninput="this.value = this.value.replace(/[^ก-๙0-9]/g, '')" />
                             <p class="error-message hidden text-error text-xs mt-1"></p>
                         </div>
                         <div class="form-control w-full">
@@ -121,11 +121,10 @@ require_once __DIR__ . '/../layouts/header.php';
                           </div>
                           <div class="stat p-3">
                             <div class="stat-title text-xs">เลขทะเบียน</div>
-                            <div id="display-license-plate" class="stat-value text-base text-primary"><?php echo htmlspecialchars($renewal_data['license_plate'] ?? ''); ?></div>
-                          </div>
-                          <div class="stat p-3">
-                            <div class="stat-title text-xs">จังหวัด</div>
-                            <div id="display-license-province" class="stat-value text-base text-neutral"><?php echo htmlspecialchars($renewal_data['province'] ?? ''); ?></div>
+                            <div class="stat-value text-base text-neutral">
+                                <span id="display-license-plate"><?php echo htmlspecialchars($renewal_data['license_plate'] ?? ''); ?></span>
+                                <span id="display-license-province"><?php echo htmlspecialchars($renewal_data['province'] ?? ''); ?></span>
+                            </div>
                           </div>
                         </div>
                         <input type="hidden" name="vehicle_type" value="<?php echo htmlspecialchars($renewal_data['vehicle_type'] ?? ''); ?>" required />
@@ -133,14 +132,14 @@ require_once __DIR__ . '/../layouts/header.php';
                         <input type="hidden" name="license_province" value="<?php echo htmlspecialchars($renewal_data['province'] ?? ''); ?>" required />
                         <div class="grid grid-cols-1 lg:grid-cols-5 gap-2">
                             <div class="form-control w-full"><div class="label py-1"><span class="label-text font-medium text-xs">ยี่ห้อรถ</span></div><select name="vehicle_brand" class="select select-bordered" required><option disabled selected value="">เลือกยี่ห้อ</option><?php foreach ($car_brands as $brand): ?><option value="<?php echo htmlspecialchars($brand); ?>" <?php echo (isset($renewal_data['brand']) && $renewal_data['brand'] == $brand) ? 'selected' : ''; ?>><?php echo htmlspecialchars($brand); ?></option><?php endforeach; ?></select><p class="error-message hidden text-error text-xs mt-1"></p></div>
-                            <div class="form-control w-full"><div class="label py-1"><span class="label-text font-medium text-xs">รุ่นรถ (ภาษาอังกฤษ)</span></div><input type="text" name="vehicle_model" placeholder="เช่น COROLLA" class="input input-bordered w-full" value="<?php echo htmlspecialchars($renewal_data['model'] ?? ''); ?>" required /><p class="error-message hidden text-error text-xs mt-1"></p></div>
-                            <div class="form-control w-full"><div class="label py-1"><span class="label-text font-medium text-xs">สีรถ</span></div><input type="text" name="vehicle_color" placeholder="เช่น ดำ" class="input input-bordered w-full" value="<?php echo htmlspecialchars($renewal_data['color'] ?? ''); ?>" required /><p class="error-message hidden text-error text-xs mt-1"></p></div>
+                            <div class="form-control w-full"><div class="label py-1"><span class="label-text font-medium text-xs">รุ่นรถ (ภาษาอังกฤษ)</span></div><input type="text" name="vehicle_model" placeholder="เช่น COROLLA" class="input input-bordered w-full" value="<?php echo htmlspecialchars($renewal_data['model'] ?? ''); ?>" required oninput="this.value = this.value.replace(/[^a-zA-Z0-9\s!@#$%^&*()_+\-=\[\]{};':&quot;\\|,.<>\/?~`]/g, '')" /><p class="error-message hidden text-error text-xs mt-1"></p></div>
+                            <div class="form-control w-full"><div class="label py-1"><span class="label-text font-medium text-xs">สีรถ</span></div><input type="text" name="vehicle_color" placeholder="เช่น ดำ" class="input input-bordered w-full" value="<?php echo htmlspecialchars($renewal_data['color'] ?? ''); ?>" required oninput="this.value = this.value.replace(/[^ก-๙\s!@#$%^&*()_+\-=\[\]{};':&quot;\\|,.<>\/?~`]/g, '')" /><p class="error-message hidden text-error text-xs mt-1"></p></div>
                             <div class="form-control w-full lg:col-span-2"><div class="label py-1"><span class="label-text font-medium text-xs">วันสิ้นอายุภาษีรถ</span></div><div class="grid grid-cols-3 gap-2"><select name="tax_day" class="select select-bordered" required></select><select name="tax_month" class="select select-bordered" required></select><select name="tax_year" class="select select-bordered" required></select></div><p class="error-message hidden text-error text-xs mt-1"></p></div>
                         </div>
                     </div>
                 </div>
                  <!-- Owner Info -->
-                <div class="card bg-base-100 shadow mt-4"><div class="card-body p-4"><h4 class="card-title text-sm font-semibold">ข้อมูลความเป็นเจ้าของ</h4><div class="form-control w-full max-w-xs"><div class="label py-1"><span class="label-text font-medium text-xs">เป็นรถของใคร?</span></div><select name="owner_type" class="select select-bordered" required><option disabled selected value="">กรุณาเลือก</option><option value="self" <?php echo (isset($renewal_data['owner_type']) && $renewal_data['owner_type'] == 'self') ? 'selected' : ''; ?>>รถชื่อตนเอง</option><option value="other" <?php echo (isset($renewal_data['owner_type']) && $renewal_data['owner_type'] == 'other') ? 'selected' : ''; ?>>รถคนอื่น</option></select><p class="error-message hidden text-error text-xs mt-1"></p></div><div id="other-owner-details" class="hidden mt-4"><div role="alert" class="alert alert-warning alert-soft text-sm mb-4 justify-start text-left"><i class="fa-solid fa-triangle-exclamation"></i><span><b>คำเตือน:</b> หากยานพาหนะเกิดปัญหาใดๆ ผู้ยื่นคำร้องจะต้องเป็นผู้รับผิดชอบ</span></div><div class="grid grid-cols-1 md:grid-cols-2 gap-2"><div class="form-control w-full"><div class="label py-1"><span class="label-text font-medium text-xs">คำนำหน้า-ชื่อ-สกุล เจ้าของรถ</span></div><input type="text" name="other_owner_name" placeholder="เช่น นายสมชาย ใจดี" class="input input-bordered w-full" value="<?php echo htmlspecialchars($renewal_data['other_owner_name'] ?? ''); ?>" /><p class="error-message hidden text-error text-xs mt-1"></p></div><div class="form-control w-full"><div class="label py-1"><span class="label-text font-medium text-xs">เกี่ยวข้องเป็น</span></div><input type="text" name="other_owner_relation" placeholder="เช่น บิดา, มารดา, เพื่อน" class="input input-bordered w-full" value="<?php echo htmlspecialchars($renewal_data['other_owner_relation'] ?? ''); ?>" /><p class="error-message hidden text-error text-xs mt-1"></p></div></div></div></div></div>
+                <div class="card bg-base-100 shadow mt-4"><div class="card-body p-4"><h4 class="card-title text-sm font-semibold">ข้อมูลความเป็นเจ้าของ</h4><div class="form-control w-full max-w-xs"><div class="label py-1"><span class="label-text font-medium text-xs">เป็นรถของใคร?</span></div><select name="owner_type" class="select select-bordered" required><option disabled selected value="">กรุณาเลือก</option><option value="self" <?php echo (isset($renewal_data['owner_type']) && $renewal_data['owner_type'] == 'self') ? 'selected' : ''; ?>>รถชื่อตนเอง</option><option value="other" <?php echo (isset($renewal_data['owner_type']) && $renewal_data['owner_type'] == 'other') ? 'selected' : ''; ?>>รถคนอื่น</option></select><p class="error-message hidden text-error text-xs mt-1"></p></div><div id="other-owner-details" class="hidden mt-4"><div role="alert" class="alert alert-warning alert-soft text-sm mb-4 justify-start text-left"><i class="fa-solid fa-triangle-exclamation"></i><span><b>คำเตือน:</b> หากยานพาหนะเกิดปัญหาใดๆ ผู้ยื่นคำร้องจะต้องเป็นผู้รับผิดชอบ</span></div><div class="grid grid-cols-1 md:grid-cols-2 gap-2"><div class="form-control w-full"><div class="label py-1"><span class="label-text font-medium text-xs">คำนำหน้า-ชื่อ-สกุล เจ้าของรถ</span></div><input type="text" name="other_owner_name" placeholder="เช่น นายสมชาย ใจดี" class="input input-bordered w-full" value="<?php echo htmlspecialchars($renewal_data['other_owner_name'] ?? ''); ?>" oninput="this.value = this.value.replace(/[^ก-๙\s!@#$%^&*()_+\-=\[\]{};':&quot;\\|,.<>\/?~`]/g, '')" /><p class="error-message hidden text-error text-xs mt-1"></p></div><div class="form-control w-full"><div class="label py-1"><span class="label-text font-medium text-xs">เกี่ยวข้องเป็น</span></div><input type="text" name="other_owner_relation" placeholder="เช่น บิดา, มารดา, เพื่อน" class="input input-bordered w-full" value="<?php echo htmlspecialchars($renewal_data['other_owner_relation'] ?? ''); ?>" oninput="this.value = this.value.replace(/[^ก-๙\s!@#$%^&*()_+\-=\[\]{};':&quot;\\|,.<>\/?~`]/g, '')" /><p class="error-message hidden text-error text-xs mt-1"></p></div></div></div></div></div>
                 <!-- Evidence -->
                 <div class="card bg-base-100 shadow mt-4"><div class="card-body p-4"><h4 class="card-title text-sm font-semibold">หลักฐานรูปถ่าย</h4><div role="alert" class="alert alert-info alert-soft my-4 text-sm justify-start text-left"><i class="fa-solid fa-circle-info"></i><span>โปรดตรวจสอบความคมชัดของรูปถ่าย (.jpg, .png) และขนาดไฟล์ต้องไม่เกิน 5 MB</span></div><div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                     <div class="form-control w-full"><label class="block font-medium mb-1 text-center text-xs">สำเนาทะเบียนรถ</label><div class="flex justify-center bg-base-200 p-2 rounded-box border overflow-hidden h-32"><img id="reg-copy-preview" src="/public/assets/images/registration.jpg" alt="ตัวอย่าง" class="w-full h-full object-contain"></div><input type="file" id="reg_copy_upload" name="reg_copy_upload" class="file-input file-input-bordered w-full mt-2" accept=".jpg, .jpeg, .png" required><p class="error-message hidden text-error text-xs mt-1"></p></div>
@@ -170,6 +169,59 @@ require_once __DIR__ . '/../layouts/header.php';
   </div>
    <form method="dialog" class="modal-backdrop"><button>close</button></form>
 </dialog>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const plateInput = document.getElementById('check-license-plate');
+    if (!plateInput) return;
+
+    const checkBtn = document.getElementById('check-vehicle-btn');
+    if (!checkBtn) return;
+
+    // Helper function to show error
+    const showError = (element, message) => {
+        const parent = element.closest('.form-control');
+        const errorEl = parent?.querySelector('.error-message');
+        if (errorEl) {
+            errorEl.textContent = message;
+            errorEl.classList.remove('hidden');
+        }
+        element.classList.add('input-error');
+    };
+
+    // Helper function to clear error
+    const clearError = (element) => {
+        const parent = element.closest('.form-control');
+        const errorEl = parent?.querySelector('.error-message');
+        if (errorEl) {
+            errorEl.textContent = '';
+            errorEl.classList.add('hidden');
+        }
+        element.classList.remove('input-error');
+    };
+
+    // Add a new validation listener that runs before the existing one
+    checkBtn.addEventListener('click', function(event) {
+        clearError(plateInput); // Clear previous errors first
+
+        const plateValue = plateInput.value.trim();
+        if (plateValue === '') {
+            // Let the original required validation handle this
+            return;
+        }
+
+        const hasThai = /[ก-๙]/.test(plateValue);
+        const hasNumber = /[0-9]/.test(plateValue);
+
+        if (!hasThai || !hasNumber) {
+            showError(plateInput, 'ทะเบียนรถต้องมีทั้งตัวอักษรภาษาไทยและตัวเลข');
+            // Stop the event, preventing the original click handler in script.js from running
+            event.stopImmediatePropagation(); 
+        }
+
+    }, true); // Use capture phase to ensure this listener runs first
+});
+</script>
 
 <?php require_once __DIR__ . '/../layouts/footer.php'; ?>
 

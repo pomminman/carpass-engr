@@ -9,10 +9,24 @@ require_once __DIR__ . '/../shared/auth_check.php';
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ระบบจัดการคำร้อง</title>
-    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css" rel="stylesheet" type="text/css" />
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+
+    <!-- Favicons -->
+    <link rel="icon" type="image/png" href="/public/assets/favicon/favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="/public/assets/favicon/favicon.svg" />
+    <link rel="shortcut icon" href="/public/assets/favicon/favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/public/assets/favicon/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-title" content="carpass engrdept" />
+    <link rel="manifest" href="/public/assets/favicon/site.webmanifest" />
+
+    <!-- Local CSS -->
+    <link rel="stylesheet" href="/lib/daisyui@4.12.10/dist/full.min.css" type="text/css" />
+    <link rel="stylesheet" href="/lib/jquery.Thailand/dist/jquery.Thailand.min.css">
+    <link rel="stylesheet" href="/lib/google-fonts-prompt/prompt.css">
+    <link rel="stylesheet" href="/lib/fontawesome-free-7.0.1-web/css/all.min.css">
+
+    <!-- Local JS -->
+    <script src="/lib/tailwindcss/tailwindcss.js"></script>
+
     <style>
         body { font-family: 'Prompt', sans-serif; background-color: #f0f2f5; }
         .menu a.active { background-color: #eef2ff; color: #4338ca; }

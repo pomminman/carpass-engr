@@ -38,13 +38,15 @@ $conn_dept->close(); // ปิดการเชื่อมต่อหลั�
     <meta name="apple-mobile-web-app-title" content="carpass engrdept" />
     <link rel="manifest" href="/public/assets/favicon/site.webmanifest" />
 
-    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css" rel="stylesheet" type="text/css" />
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://earthchie.github.io/jquery.Thailand.js/jquery.Thailand.js/dist/jquery.Thailand.min.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" xintegrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <!-- Local CSS -->
+    <link rel="stylesheet" href="/lib/daisyui@4.12.10/dist/full.min.css" type="text/css" />
+    <link rel="stylesheet" href="/lib/jquery.Thailand/dist/jquery.Thailand.min.css">
+    <link rel="stylesheet" href="/lib/google-fonts-prompt/prompt.css">
+    <link rel="stylesheet" href="/lib/fontawesome-free-7.0.1-web/css/all.min.css">
+
+    <!-- Local JS -->
+    <script src="/lib/tailwindcss/tailwindcss.js"></script>
+
     <style>
         body { font-family: 'Prompt', sans-serif; background-color: #f0f2f5; }
         .error-message { color: #ef4444; font-size: 0.75rem; margin-top: 0.25rem; }
@@ -403,10 +405,12 @@ $conn_dept->close(); // ปิดการเชื่อมต่อหลั�
             <p class="py-4">ระบบกำลังบันทึกข้อมูลการสมัครของท่าน<br>กรุณาอย่าปิดหรือรีเฟรชหน้านี้</p>
         </div>
     </dialog>
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-    <script type="text/javascript" src="https://earthchie.github.io/jquery.Thailand.js/jquery.Thailand.js/dependencies/JQL.min.js"></script>
-    <script type="text/javascript" src="https://earthchie.github.io/jquery.Thailand.js/jquery.Thailand.js/dependencies/typeahead.bundle.js"></script>
-    <script type="text/javascript" src="https://earthchie.github.io/jquery.Thailand.js/jquery.Thailand.js/dist/jquery.Thailand.min.js"></script>
+
+    <script src="/lib/jquery/jquery-3.7.1.min.js"></script>
+    <script src="/lib/jquery.Thailand/dependencies/JQL.min.js"></script>
+    <script src="/lib/jquery.Thailand/dependencies/typeahead.bundle.js"></script>
+    <script src="/lib/jquery.Thailand/dist/jquery.Thailand.min.js"></script>
+
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             // --- ส่วนประกาศตัวแปร ---

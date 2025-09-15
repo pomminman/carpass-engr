@@ -71,7 +71,7 @@ require_once __DIR__ . '/../layouts/header.php';
         <h1 class="text-xl sm:text-2xl font-bold">ภาพรวมยานพาหนะ</h1>
         <p class="text-sm sm:text-base text-base-content/70">จัดการและติดตามสถานะคำร้องขอบัตรผ่านของคุณ</p>
     </div>
-    <a href="add_vehicle.php" class="btn btn-primary btn-sm mt-2 sm:mt-0">
+    <a href="add_vehicle.php" class="btn btn-primary mt-2 sm:mt-0">
         <i class="fa-solid fa-plus"></i> เพิ่มยานพาหนะ / ยื่นคำร้อง
     </a>
 </div>
@@ -121,7 +121,7 @@ require_once __DIR__ . '/../layouts/header.php';
     </div>
     <!-- Search -->
     <div class="form-control">
-        <label class="input input-sm input-bordered flex items-center gap-2">
+        <label class="input input-bordered flex items-center gap-2">
             <input type="text" id="search-input" class="grow" placeholder="ค้นหาทะเบียน, รุ่นรถ..." />
             <i class="fa-solid fa-magnifying-glass opacity-70"></i>
         </label>
