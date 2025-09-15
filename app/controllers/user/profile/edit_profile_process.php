@@ -154,48 +154,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     // 4. เพิ่มข้อมูลการทำงานลงใน Array สำหรับอัปเดต (ถ้าเป็น 'army')
     if ($user_type === 'army') {
-        
-        $work_department_choice = htmlspecialchars(strip_tags(trim($_POST['work_department'])));
-        $work_department_other = htmlspecialchars(strip_tags(trim($_POST['work_department_other'])));
-        $final_department = '';
-
-        if ($work_department_choice === 'other') {
-            if (empty($work_department_other)) {
-                handle_error("กรุณาระบุชื่อสังกัดใหม่");
-            }
-            $final_department = $work_department_other;
-            
-            $sql_check_dept = "SELECT id FROM departments WHERE name = ?";
-            $stmt_check_dept = $conn->prepare($sql_check_dept);
-            $stmt_check_dept->bind_param("s", $final_department);
-            $stmt_check_dept->execute();
-            $stmt_check_dept->store_result();
-
-            if ($stmt_check_dept->num_rows == 0) {
-                // [ใหม่] ค้นหา display_order สูงสุด (ที่ไม่ใช่ 999 ของ "อื่นๆ")
-                $sql_max_order = "SELECT MAX(display_order) as max_order FROM departments WHERE display_order < 999";
-                $result_max_order = $conn->query($sql_max_order);
-                $max_order_row = $result_max_order->fetch_assoc();
-                $next_display_order = ($max_order_row['max_order'] ?? 1) + 1;
-
-                // [แก้ไข] เพิ่ม display_order เข้าไปในคำสั่ง INSERT
-                $sql_insert_dept = "INSERT INTO departments (name, display_order) VALUES (?, ?)";
-                $stmt_insert_dept = $conn->prepare($sql_insert_dept);
-                $stmt_insert_dept->bind_param("si", $final_department, $next_display_order);
-                $stmt_insert_dept->execute();
-                $stmt_insert_dept->close();
-            }
-            $stmt_check_dept->close();
-        } else {
-            $final_department = $work_department_choice;
-        }
-
+        // ไม่มีการอัปเดต work_department อีกต่อไป
         $position = htmlspecialchars(strip_tags(trim($_POST['position'])));
         $official_id = preg_replace('/\D/', '', $_POST['official_id']);
 
-        array_push($update_fields, "work_department = ?", "position = ?", "official_id = ?");
-        array_push($params, $final_department, $position, $official_id);
-        $types .= "sss";
+        array_push($update_fields, "position = ?", "official_id = ?");
+        array_push($params, $position, $official_id);
+        $types .= "ss";
     }
 
     // 5. สร้างและ Execute SQL Query
@@ -231,4 +196,3 @@ $conn->close();
 header("Location: ../../../views/user/home/profile.php");
 exit();
 ?>
-

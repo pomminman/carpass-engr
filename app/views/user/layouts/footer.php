@@ -11,35 +11,35 @@ if (isset($conn) && $conn instanceof mysqli) {
         <!-- Sidebar Section -->
         <aside class="drawer-side z-40 lg:z-auto">
             <label for="my-drawer-2" aria-label="close sidebar" class="drawer-overlay"></label> 
-            <div class="bg-base-100 w-64 min-h-full flex flex-col p-4">
+            <div class="bg-base-100 w-52 min-h-full flex flex-col py-4 shadow-lg">
                 <!-- Sidebar Header -->
                 <div class="mb-4">
-                    <a href="dashboard.php" class="text-xl font-bold flex items-center gap-3 p-2">
-                        <img src="/public/assets/images/CARPASS%20logo.png" alt="Logo" class="h-14 w-14">
+                    <a href="dashboard.php" class="text-xl font-bold flex items-center gap-2 pl-4">
+                        <img src="/public/assets/images/CARPASS%20logo.png" alt="Logo" class="h-12 w-12">
                         <div>
-                            <div class="font-bold text-base">บัตรผ่านยานพาหนะ</div>
+                            <div class="font-bold text-sm">บัตรผ่านยานพาหนะ</div>
                             <div class="text-xs text-base-content/70">ค่ายภาณุรังษี</div>
                         </div>
                     </a>
                 </div>
 
                 <!-- Navigation Menu -->
-                <ul class="menu text-base flex-grow space-y-1">
-                    <li><a href="dashboard.php" class="<?php echo ($current_page == 'dashboard.php') ? 'active' : ''; ?>"><i class="fa-solid fa-chart-pie w-6"></i> ภาพรวม</a></li>
-                    <li><a href="add_vehicle.php" class="<?php echo ($current_page == 'add_vehicle.php') ? 'active' : ''; ?>"><i class="fa-solid fa-file-circle-plus w-6"></i> เพิ่มยานพาหนะ</a></li>
-                    <li><a href="costs.php" class="<?php echo ($current_page == 'costs.php') ? 'active' : ''; ?>"><i class="fa-solid fa-hand-holding-dollar w-6"></i> ค่าใช้จ่าย</a></li>
-                    <li><a href="contact.php" class="<?php echo ($current_page == 'contact.php') ? 'active' : ''; ?>"><i class="fa-solid fa-address-book w-6"></i> ติดต่อ</a></li>
+                <ul class="menu text-sm flex-grow space-y-1">
+                    <li><a href="dashboard.php" class="<?php echo ($current_page == 'dashboard.php') ? 'active' : ''; ?> hover:bg-base-200"><i class="fa-solid fa-chart-pie w-6"></i> ภาพรวม</a></li>
+                    <li><a href="add_vehicle.php" class="<?php echo ($current_page == 'add_vehicle.php') ? 'active' : ''; ?> hover:bg-base-200"><i class="fa-solid fa-file-circle-plus w-6"></i> เพิ่มยานพาหนะ</a></li>
+                    <li><a href="costs.php" class="<?php echo ($current_page == 'costs.php') ? 'active' : ''; ?> hover:bg-base-200"><i class="fa-solid fa-hand-holding-dollar w-6"></i> ค่าธรรมเนียม</a></li>
+                    <li><a href="contact.php" class="<?php echo ($current_page == 'contact.php') ? 'active' : ''; ?> hover:bg-base-200"><i class="fa-solid fa-address-book w-6"></i> ติดต่อ</a></li>
                 </ul>
 
                 <!-- Sidebar Footer -->
                 <div class="mt-auto">
-                    <div class="divider my-2"></div>
-                    <ul class="menu text-base space-y-1">
-                        <li><a href="profile.php" class="<?php echo ($current_page == 'profile.php') ? 'active' : ''; ?>"><i class="fa-solid fa-user-pen w-6"></i> ข้อมูลส่วนตัว</a></li>
+                    <div class="divider my-2 px-2"></div>
+                    <ul class="menu text-sm space-y-1">
+                        <li><a href="profile.php" class="<?php echo ($current_page == 'profile.php') ? 'active' : ''; ?> hover:bg-base-200"><i class="fa-solid fa-user-pen w-6"></i> ข้อมูลส่วนตัว</a></li>
                         <li><a href="../../../controllers/user/logout/logout.php" class="text-error hover:bg-error/10"><i class="fa-solid fa-right-from-bracket w-6"></i> ออกจากระบบ</a></li>
                     </ul>
                     <footer class="text-center p-4 text-base-content/50">
-                        <p class="text-xs">Developed by<br>ร.ท.พรหมินทร์ อินทมาตย์</p>
+                        <p class="text-[10px]">Developed by กยข.กช. <br>ร.ท.พรหมินทร์ อินทมาตย์ (ผู้พัฒนาระบบ)</p>
                     </footer>
                 </div>
             </div>
@@ -48,19 +48,6 @@ if (isset($conn) && $conn instanceof mysqli) {
 
     <!-- ========= MODALS (Centralized) ========= -->
     
-    <!-- [MODIFIED] Image Zoom Modal - Redesigned for fullscreen effect -->
-    <dialog id="image_zoom_modal" class="modal">
-        <div class="modal-box w-screen h-screen max-w-none max-h-none p-4 bg-transparent shadow-none flex justify-center items-center">
-            <div class="relative inline-block">
-                <img id="zoomed_image" src="" alt="ขยายรูปภาพ" class="rounded-lg max-h-[95vh] max-w-[95vw] object-contain">
-                <form method="dialog" class="absolute top-2 right-2 z-10">
-                    <button class="btn btn-circle btn-sm bg-black/50 hover:bg-black/75 text-white border-none">✕</button>
-                </form>
-            </div>
-        </div>
-        <form method="dialog" class="modal-backdrop bg-black/70"><button>close</button></form>
-    </dialog>
-
     <!-- Request Details Modal -->
     <dialog id="request_details_modal" class="modal">
         <div class="modal-box w-11/12 max-w-4xl">
@@ -97,10 +84,10 @@ if (isset($conn) && $conn instanceof mysqli) {
                          <div class="p-4 bg-base-200 rounded-box">
                              <h4 class="font-semibold text-sm mb-2 text-center">รูปถ่ายหลักฐาน</h4>
                              <div class="grid grid-cols-2 gap-2 text-xs">
-                                <div class="text-center"><p class="font-semibold mb-1">ทะเบียนรถ</p><div class="flex justify-center bg-base-100 p-2 rounded-lg border h-24"><img id="modal-photo-reg" src="" class="max-w-full max-h-full object-contain cursor-zoom-in"></div></div>
-                                <div class="text-center"><p class="font-semibold mb-1">ป้ายภาษี</p><div class="flex justify-center bg-base-100 p-2 rounded-lg border h-24"><img id="modal-photo-tax" src="" class="max-w-full max-h-full object-contain cursor-zoom-in"></div></div>
-                                <div class="text-center"><p class="font-semibold mb-1">ด้านหน้า</p><div class="flex justify-center bg-base-100 p-2 rounded-lg border h-24"><img id="modal-photo-front" src="" class="max-w-full max-h-full object-contain cursor-zoom-in"></div></div>
-                                <div class="text-center"><p class="font-semibold mb-1">ด้านหลัง</p><div class="flex justify-center bg-base-100 p-2 rounded-lg border h-24"><img id="modal-photo-rear" src="" class="max-w-full max-h-full object-contain cursor-zoom-in"></div></div>
+                                <div class="text-center"><p class="font-semibold mb-1">ทะเบียนรถ</p><div class="flex justify-center bg-base-100 p-2 rounded-lg border h-24"><img id="modal-photo-reg" src="" class="max-w-full max-h-full object-contain"></div></div>
+                                <div class="text-center"><p class="font-semibold mb-1">ป้ายภาษี</p><div class="flex justify-center bg-base-100 p-2 rounded-lg border h-24"><img id="modal-photo-tax" src="" class="max-w-full max-h-full object-contain"></div></div>
+                                <div class="text-center"><p class="font-semibold mb-1">ด้านหน้า</p><div class="flex justify-center bg-base-100 p-2 rounded-lg border h-24"><img id="modal-photo-front" src="" class="max-w-full max-h-full object-contain"></div></div>
+                                <div class="text-center"><p class="font-semibold mb-1">ด้านหลัง</p><div class="flex justify-center bg-base-100 p-2 rounded-lg border h-24"><img id="modal-photo-rear" src="" class="max-w-full max-h-full object-contain"></div></div>
                             </div>
                          </div>
                         <div id="modal-qr-code-container" class="hidden text-center p-4 bg-base-200 rounded-box">
@@ -182,5 +169,4 @@ if (isset($conn) && $conn instanceof mysqli) {
 
 </body>
 </html>
-
 

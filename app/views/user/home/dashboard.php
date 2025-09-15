@@ -66,7 +66,7 @@ require_once __DIR__ . '/../layouts/header.php';
 ?>
 
 <!-- Welcome Header -->
-<div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
+<div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4">
     <div>
         <h1 class="text-xl sm:text-2xl font-bold">ภาพรวมยานพาหนะ</h1>
         <p class="text-sm sm:text-base text-base-content/70">จัดการและติดตามสถานะคำร้องขอบัตรผ่านของคุณ</p>
@@ -77,22 +77,22 @@ require_once __DIR__ . '/../layouts/header.php';
 </div>
 
 <!-- User Info -->
-<div class="card bg-base-100 shadow-md mb-6">
-    <div class="card-body p-4 flex-row items-center gap-4">
+<div class="card bg-base-100 shadow-md mb-4">
+    <div class="card-body p-3 flex-row items-center gap-4">
         <div class="avatar">
-            <div class="w-16 rounded-full ring ring-primary ring-offset-base-100 ring-offset-2">
+            <div class="w-14 rounded-full ring ring-primary ring-offset-base-100 ring-offset-2">
                 <img src="<?php echo htmlspecialchars($user_photo_path); ?>" />
             </div>
         </div>
         <div>
-            <h2 class="card-title"><?php echo htmlspecialchars($title . ' ' . $firstname . ' ' . $lastname); ?></h2>
+            <h2 class="card-title text-base"><?php echo htmlspecialchars($title . ' ' . $firstname . ' ' . $lastname); ?></h2>
             <div class="flex flex-wrap gap-2 mt-1">
                 <div class="badge badge-outline gap-2 h-auto whitespace-normal">
                     <?php echo $user_type_icon; ?>
-                    <span class="text-left text-[10px] sm:text-xs lg:text-sm"><?php echo htmlspecialchars($user_type_thai); ?></span>
+                    <span class="text-left text-[10px] sm:text-xs"><?php echo htmlspecialchars($user_type_thai); ?></span>
                 </div>
                 <?php if ($user['user_type'] === 'army' && !empty($user['work_department'])): ?>
-                <div class="badge badge-outline gap-2"><i class="fa-solid fa-sitemap"></i><?php echo htmlspecialchars($user['work_department']); ?></div>
+                <div class="badge badge-outline gap-2 text-[10px] sm:text-xs"><i class="fa-solid fa-sitemap"></i><?php echo htmlspecialchars($user['work_department']); ?></div>
                 <?php endif; ?>
             </div>
         </div>
@@ -100,28 +100,28 @@ require_once __DIR__ . '/../layouts/header.php';
 </div>
 
 <!-- Stats and Search -->
-<div class="flex flex-col md:flex-row gap-4 mb-6">
+<div class="flex flex-col md:flex-row gap-2 mb-4">
     <!-- Stats Cards -->
     <div class="grid grid-cols-2 sm:grid-cols-5 gap-2 flex-grow">
         <div class="card bg-base-100 shadow-sm cursor-pointer hover:shadow-lg transition-shadow stat-filter" data-filter="all">
-            <div class="card-body p-3 items-center text-center"><div class="text-2xl font-bold"><?php echo $stats['all']; ?></div><div class="text-xs text-base-content/70">ทั้งหมด</div></div>
+            <div class="card-body p-2 items-center text-center"><div class="text-xl font-bold"><?php echo $stats['all']; ?></div><div class="text-xs text-base-content/70">ทั้งหมด</div></div>
         </div>
         <div class="card bg-base-100 shadow-sm cursor-pointer hover:shadow-lg transition-shadow stat-filter" data-filter="approved">
-            <div class="card-body p-3 items-center text-center"><div class="text-2xl font-bold text-success"><?php echo $stats['approved']; ?></div><div class="text-xs text-base-content/70">อนุมัติ</div></div>
+            <div class="card-body p-2 items-center text-center"><div class="text-xl font-bold text-success"><?php echo $stats['approved']; ?></div><div class="text-xs text-base-content/70">อนุมัติ</div></div>
         </div>
         <div class="card bg-base-100 shadow-sm cursor-pointer hover:shadow-lg transition-shadow stat-filter" data-filter="pending">
-            <div class="card-body p-3 items-center text-center"><div class="text-2xl font-bold text-warning"><?php echo $stats['pending']; ?></div><div class="text-xs text-base-content/70">รออนุมัติ</div></div>
+            <div class="card-body p-2 items-center text-center"><div class="text-xl font-bold text-warning"><?php echo $stats['pending']; ?></div><div class="text-xs text-base-content/70">รออนุมัติ</div></div>
         </div>
         <div class="card bg-base-100 shadow-sm cursor-pointer hover:shadow-lg transition-shadow stat-filter" data-filter="rejected">
-            <div class="card-body p-3 items-center text-center"><div class="text-2xl font-bold text-error"><?php echo $stats['rejected']; ?></div><div class="text-xs text-base-content/70">ไม่ผ่าน</div></div>
+            <div class="card-body p-2 items-center text-center"><div class="text-xl font-bold text-error"><?php echo $stats['rejected']; ?></div><div class="text-xs text-base-content/70">ไม่ผ่าน</div></div>
         </div>
         <div class="card bg-base-100 shadow-sm cursor-pointer hover:shadow-lg transition-shadow stat-filter" data-filter="expired">
-            <div class="card-body p-3 items-center text-center"><div class="text-2xl font-bold text-base-content/50"><?php echo $stats['expired']; ?></div><div class="text-xs text-base-content/70">หมดอายุ</div></div>
+            <div class="card-body p-2 items-center text-center"><div class="text-xl font-bold text-base-content/50"><?php echo $stats['expired']; ?></div><div class="text-xs text-base-content/70">หมดอายุ</div></div>
         </div>
     </div>
     <!-- Search -->
     <div class="form-control">
-        <label class="input input-bordered flex items-center gap-2">
+        <label class="input input-sm input-bordered flex items-center gap-2">
             <input type="text" id="search-input" class="grow" placeholder="ค้นหาทะเบียน, รุ่นรถ..." />
             <i class="fa-solid fa-magnifying-glass opacity-70"></i>
         </label>
@@ -129,7 +129,7 @@ require_once __DIR__ . '/../layouts/header.php';
 </div>
 
 <!-- Vehicle Grid -->
-<div id="vehicle-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+<div id="vehicle-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
     <?php if (empty($vehicle_requests)): ?>
         <div class="col-span-full text-center p-8 text-base-content/60">
             <i class="fa-solid fa-folder-open fa-3x mb-4"></i>
@@ -204,19 +204,19 @@ require_once __DIR__ . '/../layouts/header.php';
                 data-can-renew="<?= $can_renew ? 'true' : 'false' ?>">
                 
                 <figure class="bg-base-200">
-                    <img src="<?= $front_image_path ?>" alt="รูปถ่ายหน้ารถ" class="h-40 w-full object-cover" onerror="this.onerror=null;this.src='https://placehold.co/300x200/e2e8f0/475569?text=No+Image';">
+                    <img src="<?= $front_image_path ?>" alt="รูปถ่ายหน้ารถ" class="h-32 w-full object-cover" onerror="this.onerror=null;this.src='https://placehold.co/300x200/e2e8f0/475569?text=No+Image';">
                 </figure>
                 
-                <div class="card-body p-4">
+                <div class="card-body p-3">
                     <div class="flex justify-between items-start">
                         <div>
-                            <p class="font-bold text-base sm:text-lg leading-tight truncate"><?= htmlspecialchars($request['license_plate']) ?></p>
+                            <p class="font-bold text-base leading-tight truncate"><?= htmlspecialchars($request['license_plate']) ?></p>
                             <p class="text-xs text-base-content/60"><?= htmlspecialchars($request['vehicle_province']) ?></p>
                         </div>
                         <div class="badge <?= $status_class ?> text-white font-semibold text-xs"><?= $status_text ?></div>
                     </div>
                     <p class="text-sm mt-1 truncate"><?= htmlspecialchars($request['brand']) ?> / <?= htmlspecialchars($request['model']) ?></p>
-                    <div class="text-xs text-base-content/60 mt-2 space-y-1">
+                    <div class="text-xs text-base-content/60 mt-2 space-y-0.5">
                         <p>รหัสคำร้อง: <span class="font-medium"><?= htmlspecialchars($request['search_id'] ?? '-') ?></span></p>
                         <p>เลขที่บัตร: <span class="font-medium"><?= htmlspecialchars($request['card_number'] ?? '-') ?></span></p>
                     </div>
@@ -233,7 +233,3 @@ require_once __DIR__ . '/../layouts/header.php';
 <?php
 require_once __DIR__ . '/../layouts/footer.php';
 ?>
-
-
-
-
