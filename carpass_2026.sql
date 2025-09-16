@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Sep 09, 2025 at 07:11 PM
+-- Generation Time: Sep 16, 2025 at 08:37 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -332,6 +332,7 @@ CREATE TABLE `users` (
   `province` varchar(255) NOT NULL COMMENT 'จังหวัด',
   `zipcode` varchar(5) NOT NULL COMMENT 'รหัสไปรษณีย์',
   `photo_profile` varchar(255) NOT NULL COMMENT 'ชื่อไฟล์รูปถ่ายหน้าตรง',
+  `photo_profile_thumb` varchar(255) DEFAULT NULL COMMENT 'ชื่อไฟล์รูปถ่ายหน้าตรง (thumbnail)',
   `work_department` varchar(255) DEFAULT NULL COMMENT 'หน่วยต้นสังกัด (สำหรับข้าราชการ)',
   `position` varchar(255) DEFAULT NULL COMMENT 'ตำแหน่ง (สำหรับข้าราชการ)',
   `official_id` varchar(10) DEFAULT NULL COMMENT 'เลขบัตรข้าราชการ (สำหรับข้าราชการ)',

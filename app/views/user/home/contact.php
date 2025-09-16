@@ -50,6 +50,10 @@ require_once '../layouts/header.php';
                              <div class="card card-compact bg-base-200 border">
                                 <div class="card-body p-4">
                                     <p class="font-semibold text-base">สอบถามเรื่องเอกสารและติดตามสถานะ:</p>
+                                    <p class="text-sm mt-2 break-words">
+                                        <i class="fa-solid fa-phone w-4 text-base-content/60"></i>
+                                        <a href="tel:032337014" class="link link-hover">032-337-014</a> ต่อ 5-3132 (กยข.กช.)
+                                    </p>
                                     <a href="https://line.me/ti/p/~YOUR_LINE_ID" target="_blank" class="btn btn-success no-underline w-full mt-2">
                                         <span class="text-white"><i class="fab fa-line text-xl"></i> Line: บัตรผ่านยานพาหนะ กช.</span>
                                     </a>

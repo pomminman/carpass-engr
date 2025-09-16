@@ -138,9 +138,72 @@ if (isset($_SESSION['logout_message'])) {
       </div>
     </dialog>
 
-    <a href="https://line.me/ti/p/~YOUR_LINE_ID" target="_blank" class="fixed bottom-4 right-4 z-50 bg-green-500 w-12 h-12 rounded-full flex items-center justify-center shadow-lg hover:bg-green-600 transition-colors duration-300">
-        <i class="fa-brands fa-line text-white text-2xl"></i>
-    </a>
+    <!-- Contact Button -->
+    <button onclick="contactModal.showModal()" class="fixed bottom-4 right-4 z-50 bg-blue-600 w-12 h-12 rounded-full flex items-center justify-center shadow-lg hover:bg-blue-700 transition-colors duration-300">
+        <i class="fa-solid fa-headset text-white text-2xl"></i>
+    </button>
+
+    <!-- Contact Modal -->
+    <dialog id="contactModal" class="modal">
+        <div class="modal-box">
+            <form method="dialog">
+                <button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
+            </form>
+            <h3 class="font-bold text-lg mb-3"><i class="fa-solid fa-headset mr-2"></i>ติดต่อสอบถาม</h3>
+            <div class="space-y-3 text-sm">
+                
+                <!-- Card for Location and Hours -->
+                <div class="card bg-base-200 border">
+                    <div class="card-body p-3">
+                        <div class="space-y-2">
+                             <div>
+                                <h4 class="font-semibold flex items-center gap-2"><i class="fa-solid fa-building text-primary w-4"></i> สถานที่ติดต่อ</h4>
+                                <div class="pl-7 text-base-content/90">
+                                    <p>แผนกการข่าวและรักษาความปลอดภัย</p>
+                                    <p>กองยุทธการและการข่าว กรมการทหารช่าง (กยข.กช.)</p>
+                                    <p>ค่ายภาณุรังษี ต.โคกหม้อ อ.เมือง จ.ราชบุรี 70000</p>
+                                </div>
+                            </div>
+                            <div>
+                                <h4 class="font-semibold flex items-center gap-2"><i class="fa-solid fa-clock text-primary w-4"></i> วันและเวลาทำการ</h4>
+                                <div class="pl-7 text-base-content/90">
+                                    <p>จันทร์ - ศุกร์ (เว้นวันหยุดราชการ), 08:30 - 16:30 น.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card for Contact Channels -->
+                <div class="card bg-base-200 border">
+                    <div class="card-body p-3 space-y-2">
+                        <div>
+                            <p class="font-semibold">สอบถามเรื่องเอกสารและติดตามสถานะ:</p>
+                            <div class="pl-2">
+                                <p>
+                                    <i class="fa-solid fa-phone w-4 text-base-content/60"></i>
+                                    <a href="tel:032337014" class="link link-hover">032-337-014</a> ต่อ 5-3132 (กยข.กช.)
+                                </p>
+                                <a href="https://line.me/ti/p/~YOUR_LINE_ID" target="_blank" class="btn btn-xs btn-success no-underline mt-1">
+                                    <span class="text-white"><i class="fab fa-line"></i> Line: บัตรผ่านยานพาหนะ กรมการทหารช่าง</span>
+                                </a>
+                            </div>
+                        </div>
+                        <div>
+                            <p class="font-semibold">พบปัญหาการใช้งานระบบ:</p>
+                            <div class="pl-2">
+                                <p>ร.ท. พรหมินทร์ อินทมาตย์ (ผู้พัฒนาระบบ)</p>
+                                <p><i class="fa-solid fa-envelope w-4 text-base-content/60"></i> oid.engrdept@gmail.com</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+        <form method="dialog" class="modal-backdrop"><button>close</button></form>
+    </dialog>
+
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
@@ -324,4 +387,7 @@ if (isset($_SESSION['logout_message'])) {
     </script>
 </body>
 </html>
+
+
+
 
