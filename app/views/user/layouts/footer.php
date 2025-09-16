@@ -178,7 +178,7 @@ if (isset($conn) && $conn instanceof mysqli) {
     <script src="/lib/jquery.Thailand/dependencies/JQL.min.js"></script>
     <script src="/lib/jquery.Thailand/dependencies/typeahead.bundle.js"></script>
     <script src="/lib/jquery.Thailand/dist/jquery.Thailand.min.js"></script>
-    <script src="/public/assets/js/script.js?v=<?php echo time(); ?>"></script>
+    <script src="/public/assets/js/user_script.js?v=<?php echo time(); ?>"></script>
 
 </body>
 </html>
