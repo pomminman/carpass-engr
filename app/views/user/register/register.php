@@ -86,7 +86,7 @@ $conn_dept->close(); // ปิดการเชื่อมต่อหลั�
             </div>
         </div>
     </header>
-    <main class="flex-grow p-6 pb-24">
+    <main class="flex-grow p-6 pb-24 max-w-4xl mx-auto w-full">
         <div class="card bg-base-100 shadow-2xl border border-base-300/50 sm:rounded-2xl mx-auto">
             <div class="card-body p-6 md:p-8">
                 <div class="flex flex-col sm:flex-row items-center justify-between gap-3 mb-4">

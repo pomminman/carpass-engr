@@ -53,8 +53,8 @@ if (isset($conn) && $conn instanceof mysqli) {
     <script src="/lib/jquery.Thailand/dependencies/JQL.min.js"></script>
     <script src="/lib/jquery.Thailand/dependencies/typeahead.bundle.js"></script>
     <script src="/lib/jquery.Thailand/dist/jquery.Thailand.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/photoswipe/5.4.3/photoswipe.umd.min.js"></script>
     <script src="/public/assets/js/user_script.js"></script>
 
 </body>
 </html>
+

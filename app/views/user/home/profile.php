@@ -66,7 +66,7 @@ require_once __DIR__ . '/../layouts/header.php';
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
                     <!-- Profile Picture Column -->
                     <div class="lg:col-span-1 flex flex-col items-center">
-                        <div class="form-control w-full max-w-[200px]">
+                        <div class="form-control w-full max-w-[300px]">
                             <label class="block font-medium mb-1 text-center text-sm">รูปถ่ายหน้าตรง</label>
                             <div id="profile-photo-container" class="flex justify-center bg-base-200 p-2 rounded-box border overflow-hidden w-full aspect-square">
                                 <img id="profile-photo-preview" src="<?php echo $user_photo_path; ?>" alt="รูปโปรไฟล์" class="w-full h-full object-cover" onerror="this.onerror=null;this.src='https://placehold.co/300x300/e2e8f0/475569?text=Profile';">
@@ -167,75 +167,6 @@ require_once __DIR__ . '/../layouts/header.php';
         </div>
     </form>
 </div>
-
-<!-- [UPDATED] Script to handle form mode class switching and jquery.Thailand.js -->
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-    const form = document.getElementById('profileForm');
-    const editBtn = document.getElementById('edit-profile-btn');
-    const cancelBtn = document.getElementById('cancel-edit-btn');
-    const saveBtn = document.getElementById('save-profile-btn');
-
-    const viewModeElements = form.querySelectorAll('.view-mode-element');
-    const editModeElements = form.querySelectorAll('.edit-mode-element');
-
-    // Initialize jquery.Thailand.js
-    $.Thailand({
-        $zipcode: $('#profile-zipcode'),
-        $district: $('#profile-subdistrict'), 
-        $amphoe: $('#profile-district'),
-        $province: $('#profile-province'),
-    });
-
-    const setEditMode = (isEditing) => {
-        if (isEditing) {
-            form.classList.remove('form-view-mode');
-            form.classList.add('form-edit-mode');
-            viewModeElements.forEach(el => el.classList.add('hidden'));
-            editModeElements.forEach(el => el.classList.remove('hidden'));
-        } else {
-            form.classList.remove('form-edit-mode');
-            form.classList.add('form-view-mode');
-            viewModeElements.forEach(el => el.classList.remove('hidden'));
-            editModeElements.forEach(el => el.classList.add('hidden'));
-        }
-
-        editBtn.classList.toggle('hidden', isEditing);
-        saveBtn.classList.toggle('hidden', !isEditing);
-        cancelBtn.classList.toggle('hidden', !isEditing);
-
-        const allFields = form.querySelectorAll('input:not([type=hidden]), select');
-        const nonEditable = ['national_id_display', 'work_department_display'];
-        
-        allFields.forEach(field => {
-            const fieldName = field.getAttribute('name');
-            if (nonEditable.includes(fieldName)) {
-                field.disabled = true;
-            } else if (!field.classList.contains('view-mode-element')) {
-                field.disabled = !isEditing;
-            }
-        });
-        
-        // [NEW] Specifically handle the jquery.Thailand.js fields
-        $('#profile-zipcode, #profile-subdistrict, #profile-district, #profile-province').each(function() {
-            // The typeahead plugin might create a separate visible input. We target both.
-            $(this).prop('disabled', !isEditing).parent().find('.tt-input').prop('disabled', !isEditing);
-        });
-
-        document.getElementById('profile-title').dispatchEvent(new Event('change'));
-    };
-    
-    setEditMode(false);
-
-    editBtn.addEventListener('click', () => {
-        setEditMode(true);
-    });
-
-    cancelBtn.addEventListener('click', () => {
-        location.reload();
-    });
-});
-</script>
 
 <?php require_once __DIR__ . '/../layouts/footer.php'; ?>
 

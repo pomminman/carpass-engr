@@ -1,11 +1,16 @@
 document.addEventListener('DOMContentLoaded', function () {
     
     /**
-     * Main application object.
+     * Main application object for all user-facing functionalities.
      */
     const App = {
+        
+        //======================================================================
+        // INITIALIZATION
+        //======================================================================
+
         /**
-         * Initializes all functionalities.
+         * Initializes all necessary components based on the current page.
          */
         init: function() {
             this.initGlobalHelpers();
@@ -15,112 +20,169 @@ document.addEventListener('DOMContentLoaded', function () {
             if (document.getElementById('add-vehicle-section')) {
                 this.initAddVehiclePage();
             }
-             if (document.getElementById('profile-section')) {
+            if (document.getElementById('profile-section')) {
                 this.initProfilePage();
             }
         },
 
         /**
-         * Initializes global helper functions and listeners.
+         * Initializes global functionalities like flash messages.
          */
         initGlobalHelpers: function() {
-            window.showAlert = (message, type = 'success') => {
-                const container = document.getElementById('alert-container');
-                if (!container) return;
-                
-                const icons = {
-                    success: 'fa-solid fa-circle-check',
-                    error: 'fa-solid fa-circle-xmark',
-                    info: 'fa-solid fa-circle-info',
-                    warning: 'fa-solid fa-triangle-exclamation',
-                };
-                
-                const alertEl = document.createElement('div');
-                alertEl.className = `alert alert-${type} alert-soft shadow-lg`;
-                alertEl.innerHTML = `<div class="flex items-center"><i class="${icons[type]}"></i><span class="ml-2 text-xs sm:text-sm">${message}</span></div>`;
-                container.appendChild(alertEl);
-
-                setTimeout(() => {
-                    alertEl.style.transition = 'opacity 0.3s ease';
-                    alertEl.style.opacity = '0';
-                    setTimeout(() => alertEl.remove(), 300);
-                }, 3000);
-            };
-
-            // Automatically show flash messages from PHP sessions
             const flashMessage = document.body.dataset.flashMessage;
             const flashStatus = document.body.dataset.flashStatus;
             if (flashMessage && flashStatus) {
-                showAlert(flashMessage, flashStatus);
+                this.showAlert(flashMessage, flashStatus);
+            }
+        },
+        
+        //======================================================================
+        // SHARED HELPER & VALIDATION METHODS
+        //======================================================================
+
+        showAlert: function(message, type = 'success') {
+            const container = document.getElementById('alert-container');
+            if (!container) return;
+            const icons = { success: 'fa-solid fa-circle-check', error: 'fa-solid fa-circle-xmark', info: 'fa-solid fa-circle-info', warning: 'fa-solid fa-triangle-exclamation' };
+            const alertEl = document.createElement('div');
+            alertEl.className = `alert alert-${type} alert-soft shadow-lg`;
+            alertEl.innerHTML = `<div class="flex items-center"><i class="${icons[type]}"></i><span class="ml-2 text-xs sm:text-sm">${message}</span></div>`;
+            container.appendChild(alertEl);
+            setTimeout(() => {
+                alertEl.style.transition = 'opacity 0.3s ease';
+                alertEl.style.opacity = '0';
+                setTimeout(() => alertEl.remove(), 300);
+            }, 3000);
+        },
+
+        formatThaiDate: function(dateString) {
+            if (!dateString || dateString.startsWith('0000-00-00')) return '-';
+            try {
+                const date = new Date(dateString);
+                const thaiMonths = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."];
+                return `${date.getDate()} ${thaiMonths[date.getMonth()]} ${date.getFullYear() + 543}`;
+            } catch (e) { return '-'; }
+        },
+
+        formatThaiDateTime: function(dateTimeString) {
+            if (!dateTimeString || dateTimeString.startsWith('0000-00-00')) return '-';
+            try {
+                const date = new Date(dateTimeString);
+                const thaiDate = this.formatThaiDate(dateTimeString);
+                const time = date.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+                return `${thaiDate}, ${time} น.`;
+            } catch (e) { return '-'; }
+        },
+        
+        setupImagePreview: function(inputId, previewId) {
+            const input = document.getElementById(inputId);
+            const preview = document.getElementById(previewId);
+            if(input && preview){
+                input.addEventListener('change', function(event) {
+                    const file = event.target.files[0];
+                    if (file) {
+                        preview.src = URL.createObjectURL(file);
+                    }
+                });
             }
         },
 
-        /**
-         * Initializes functionalities for the dashboard page.
-         */
+        showError: function(element, message) {
+            const parent = element.closest('.form-control');
+            const errorEl = parent?.querySelector('.error-message');
+            if (errorEl) {
+                errorEl.textContent = message;
+                errorEl.classList.remove('hidden');
+            }
+            if (element.type === 'file') element.classList.add('file-input-error');
+            else if (element.tagName === 'SELECT') element.classList.add('select-error');
+            else element.classList.add('input-error');
+        },
+
+        clearError: function(element) {
+            const parent = element.closest('.form-control');
+            const errorEl = parent?.querySelector('.error-message');
+            if (errorEl) {
+                errorEl.textContent = '';
+                errorEl.classList.add('hidden');
+            }
+            element.classList.remove('input-error', 'select-error', 'file-input-error');
+        },
+        
+        validateField: function(field) {
+            let isValid = true;
+            const value = field.value.trim();
+            this.clearError(field);
+            
+            if (field.hasAttribute('required')) {
+                if (field.type === 'checkbox') {
+                    if (!field.checked) {
+                        this.showError(field, 'กรุณายอมรับเงื่อนไข');
+                        isValid = false;
+                    }
+                } else if (field.type === 'file') {
+                    if (field.files.length === 0) {
+                        this.showError(field, 'กรุณาแนบไฟล์');
+                        isValid = false;
+                    } else if (field.files[0].size > 5 * 1024 * 1024) {
+                        this.showError(field, 'ขนาดไฟล์ต้องไม่เกิน 5 MB');
+                        isValid = false;
+                    }
+                } else if (value === '') {
+                    this.showError(field, 'กรุณากรอกข้อมูล');
+                    isValid = false;
+                }
+            }
+
+            if (isValid && field.id === 'check-license-plate' && value !== '') {
+                if (!(/[ก-๙]/.test(value) && /[0-9]/.test(value))) {
+                    this.showError(field, 'ต้องมีทั้งตัวอักษรไทยและตัวเลข');
+                    isValid = false;
+                }
+            }
+            return isValid;
+        },
+
+        //======================================================================
+        // PAGE-SPECIFIC INITIALIZERS
+        //======================================================================
+
         initDashboard: function() {
             const detailsModalEl = document.getElementById('request_details_modal');
             if (!detailsModalEl) return;
-            const deleteModalEl = document.getElementById('delete_confirm_modal');
-            const loadingModalEl = document.getElementById('loading_modal');
-            const vehicleCards = document.querySelectorAll('.vehicle-card');
-            const statFilters = document.querySelectorAll('.stat-filter');
-            const noResultsMessage = document.getElementById('no-results-message');
-            const searchInput = document.getElementById('search-input');
-            
-            let currentCardData = null;
 
-            const formatThaiDate = (dateString) => {
-                if (!dateString || dateString === '0000-00-00 00:00:00' || dateString === '0000-00-00') return '-';
-                try {
-                    const date = new Date(dateString);
-                    const thaiMonths = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."];
-                    return `${date.getDate()} ${thaiMonths[date.getMonth()]} ${date.getFullYear() + 543}`;
-                } catch (e) { return '-'; }
+            const elements = {
+                deleteModal: document.getElementById('delete_confirm_modal'),
+                loadingModal: document.getElementById('loading_modal'),
+                vehicleCards: document.querySelectorAll('.vehicle-card'),
+                statFilters: document.querySelectorAll('.stat-filter'),
+                searchInput: document.getElementById('search-input'),
+                vehicleGrid: document.getElementById('vehicle-grid'),
+                noResultsMessage: document.getElementById('no-results-message'),
+                editForm: detailsModalEl.querySelector('#editVehicleForm'),
             };
 
-            const formatThaiDateTime = (dateTimeString) => {
-                if (!dateTimeString || dateTimeString === '0000-00-00 00:00:00') return '-';
-                try {
-                    const date = new Date(dateTimeString);
-                    const thaiDate = formatThaiDate(dateTimeString);
-                    const time = date.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
-                    return `${thaiDate}, ${time} น.`;
-                } catch (e) { return '-'; }
+            let currentCardData = null;
+
+            const createInfoRow = (label, value) => {
+                if (value === null || value === undefined || value === '-') return '';
+                return `<div class="flex justify-between items-start gap-2"><span class="text-base-content/70 flex-shrink-0">${label}:</span><span class="font-semibold text-right break-words">${value}</span></div>`;
             };
 
             const populateDateSelects = (daySelect, monthSelect, yearSelect, selectedDate) => {
-                daySelect.innerHTML = ''; monthSelect.innerHTML = ''; yearSelect.innerHTML = '';
+                daySelect.innerHTML = '<option value="">วัน</option>';
+                monthSelect.innerHTML = '<option value="">เดือน</option>';
+                yearSelect.innerHTML = '<option value="">ปี</option>';
                 for (let i = 1; i <= 31; i++) daySelect.add(new Option(i, i));
-                const months = ["มกราคม","กุมภาพันธ์","มีนาคม","เมษายน","พฤษภาคม","มิถุนายน","กรกฎาคม","สิงหาคม","กันยายน","ตุลาคม","พฤศจิกายน","ธันวาคม"];
+                const months = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"];
                 months.forEach((m, i) => monthSelect.add(new Option(m, i + 1)));
                 const currentYearBE = new Date().getFullYear() + 543;
                 for (let i = currentYearBE; i <= currentYearBE + 10; i++) yearSelect.add(new Option(i, i));
                 if (selectedDate) {
-                    daySelect.value = selectedDate.getDate();
-                    monthSelect.value = selectedDate.getMonth() + 1;
-                    yearSelect.value = selectedDate.getFullYear() + 543;
-                }
-            };
-            
-            const createInfoRow = (label, value) => {
-                if (!value || value === '-') return '';
-                return `<div class="flex justify-between items-start gap-4">
-                            <span class="text-base-content/70 flex-shrink-0">${label}:</span>
-                            <span class="font-semibold text-right break-words">${value}</span>
-                        </div>`;
-            };
-
-            const setupImagePreview = (inputId, previewId) => {
-                const input = document.getElementById(inputId);
-                const preview = document.getElementById(previewId);
-                if(input && preview){
-                    input.addEventListener('change', function(event) {
-                        const file = event.target.files[0];
-                        if (file) {
-                            preview.src = URL.createObjectURL(file);
-                        }
-                    });
+                    const d = new Date(selectedDate);
+                    daySelect.value = d.getDate();
+                    monthSelect.value = d.getMonth() + 1;
+                    yearSelect.value = d.getFullYear() + 543;
                 }
             };
             
@@ -129,110 +191,80 @@ document.addEventListener('DOMContentLoaded', function () {
                     currentCardData = card.dataset;
                     const data = currentCardData;
                     const basePath = `/public/uploads/${data.userKey}/vehicle/${data.requestKey}/`;
-                    const qrPath = `/public/qr/${data.requestKey}.png`;
 
-                    // Main Info
-                    detailsModalEl.querySelector('#modal-status-badge').className = `badge badge-lg ${data.statusClass}`;
-                    detailsModalEl.querySelector('#modal-status-badge').innerHTML = `<i class="${data.statusIcon} mr-2"></i> ${data.statusText}`;
-                    detailsModalEl.querySelector('#modal-license-plate').textContent = `${data.licensePlate} ${data.province}`;
-                    detailsModalEl.querySelector('#modal-brand-model').textContent = `${data.brand} / ${data.model}`;
+                    const queryAndSet = (selector, content, isHtml = false) => {
+                        const el = detailsModalEl.querySelector(selector);
+                        if (el) isHtml ? el.innerHTML = content : el.textContent = content;
+                    };
                     
-                    // Rejection Box
-                    const rejectionBox = detailsModalEl.querySelector('#modal-rejection-reason-box');
-                    rejectionBox.classList.toggle('hidden', !(data.statusKey === 'rejected' && data.rejectionReason));
-                    if (data.statusKey === 'rejected' && data.rejectionReason) {
-                        detailsModalEl.querySelector('#modal-rejection-reason-text').textContent = data.rejectionReason;
+                    const cardStatusContainer = detailsModalEl.querySelector('#modal-card-status');
+                    if (cardStatusContainer) {
+                        cardStatusContainer.innerHTML = `
+                            <div class="p-2 rounded-lg inline-flex items-center justify-center gap-2 text-sm font-semibold ${data.statusBadgeBg}">
+                                <i class="${data.statusIcon}"></i>
+                                <span>${data.statusText}</span>
+                            </div>
+                        `;
                     }
-                    
-                    // Vehicle & Owner Info
-                    const vehicleInfoList = detailsModalEl.querySelector('#modal-vehicle-info-list');
-                    vehicleInfoList.innerHTML = createInfoRow('ประเภท', data.vehicleType) +
-                                            createInfoRow('สี', data.color) +
-                                            createInfoRow('วันสิ้นอายุภาษี', formatThaiDate(data.taxExpiry));
 
-                    const ownerInfoList = detailsModalEl.querySelector('#modal-owner-info-list');
+                    queryAndSet('#modal-license-plate', `${data.licensePlate} ${data.province}`);
+                    queryAndSet('#modal-brand-model', `${data.brand} / ${data.model}`);
+                    
+                    detailsModalEl.querySelector('#modal-rejection-reason-box').classList.toggle('hidden', !(data.statusKey === 'rejected' && data.rejectionReason));
+                    queryAndSet('#modal-rejection-reason-text', data.rejectionReason || '');
+
                     let ownerHtml = createInfoRow('ความเป็นเจ้าของ', data.ownerType === 'self' ? 'รถชื่อตนเอง' : 'รถคนอื่น');
                     if (data.ownerType === 'other') {
                         ownerHtml += createInfoRow('ชื่อเจ้าของ', data.otherOwnerName || '-');
                         ownerHtml += createInfoRow('เกี่ยวข้องเป็น', data.otherOwnerRelation || '-');
                     }
-                    ownerInfoList.innerHTML = ownerHtml;
+
+                    queryAndSet('#modal-vehicle-info-list', createInfoRow('ประเภท', data.vehicleType) + createInfoRow('สี', data.color), true);
+                    queryAndSet('#modal-owner-info-list', ownerHtml, true);
                     
-                    // Request & Card Info
-                    const cardInfoList = detailsModalEl.querySelector('#modal-card-info-list');
-                    const cardTypeThai = data.cardType === 'internal' ? 'ภายใน' : (data.cardType === 'external' ? 'ภายนอก' : '-');
-                    let cardHtml = createInfoRow('รหัสคำร้อง', data.searchId);
-                    if (data.cardType) cardHtml += createInfoRow('ประเภทบัตร', cardTypeThai);
-                    cardHtml += createInfoRow('วันยื่นคำร้อง', formatThaiDateTime(data.createdAt));
-                    if (data.createdAt.substring(0, 19) !== data.updatedAt.substring(0, 19)) {
-                        cardHtml += createInfoRow('แก้ไขล่าสุด', formatThaiDateTime(data.updatedAt));
-                    }
+                    let cardInfoHtml = createInfoRow('รหัสคำร้อง', data.searchId);
+                    cardInfoHtml += createInfoRow('วันยื่นคำร้อง', this.formatThaiDateTime(data.createdAt));
+
                     if (data.statusKey === 'approved' || data.statusKey === 'expired') {
-                        cardHtml += createInfoRow('เลขที่บัตร', data.cardNumber);
-                        cardHtml += createInfoRow('ผู้อนุมัติ', data.approvedBy);
-                        cardHtml += createInfoRow('วันอนุมัติ', formatThaiDateTime(data.approvedAt));
-                        cardHtml += createInfoRow('วันหมดอายุ', formatThaiDate(data.cardExpiry));
+                        cardInfoHtml += createInfoRow('วันอนุมัติ', this.formatThaiDateTime(data.approvedAt));
+                        cardInfoHtml += createInfoRow('วันหมดอายุ', this.formatThaiDate(data.cardExpiry));
                     }
-                    cardInfoList.innerHTML = cardHtml;
+                     queryAndSet('#modal-card-info-list', cardInfoHtml, true);
                     
-                    // QR Code
-                    const qrContainer = detailsModalEl.querySelector('#modal-qr-code-container');
-                    const isQrVisible = data.statusKey === 'approved' || data.statusKey === 'expired';
-                    if (qrContainer) {
-                        qrContainer.classList.toggle('hidden', !isQrVisible);
-                        if(isQrVisible) {
-                             qrContainer.querySelector('img').src = qrPath;
-                        }
+                    const cardNumberBox = detailsModalEl.querySelector('#modal-card-number-box');
+                    const isCardNumberVisible = data.statusKey === 'approved' || data.statusKey === 'expired';
+                    cardNumberBox.classList.toggle('hidden', !isCardNumberVisible);
+                    if(isCardNumberVisible) {
+                         cardNumberBox.querySelector('span').textContent = data.cardNumber || '-';
+                         cardNumberBox.className = `card text-center p-2 ${data.statusKey === 'approved' ? 'bg-success text-success-content' : 'bg-base-300'}`;
                     }
 
-                    // Evidence Images
-                    const populateImage = (id, fileName) => {
-                        const imgEl = detailsModalEl.querySelector(`#${id}`);
-                        if (imgEl) {
-                            const fullPath = basePath + fileName;
-                            imgEl.src = fullPath;
-                            const parentLink = imgEl.parentElement;
-                            if (parentLink && parentLink.tagName === 'A') {
-                                parentLink.href = fullPath;
-                                parentLink.dataset.pswpSrc = fullPath;
-                            }
-                        }
-                    };
-                    populateImage('modal-photo-reg', data.photoReg);
-                    populateImage('modal-photo-tax', data.photoTax);
-                    populateImage('modal-photo-front', data.photoFront);
-                    populateImage('modal-photo-rear', data.photoRear);
+                    queryAndSet('#modal-evidence-gallery', `
+                        <div class="text-center"><p class="font-semibold mb-1 text-xs">ทะเบียนรถ</p><div class="flex justify-center bg-base-100 p-2 rounded-lg border h-24"><img src="${basePath + data.photoReg}" class="max-w-full max-h-full object-contain" alt="สำเนาทะเบียนรถ"></div></div>
+                        <div class="text-center"><p class="font-semibold mb-1 text-xs">ป้ายภาษี</p><div class="flex justify-center bg-base-100 p-2 rounded-lg border h-24"><img src="${basePath + data.photoTax}" class="max-w-full max-h-full object-contain" alt="ป้ายภาษี"></div></div>
+                        <div class="text-center"><p class="font-semibold mb-1 text-xs">ด้านหน้า</p><div class="flex justify-center bg-base-100 p-2 rounded-lg border h-24"><img src="${basePath + data.photoFront}" class="max-w-full max-h-full object-contain" alt="รูปถ่ายด้านหน้า"></div></div>
+                        <div class="text-center"><p class="font-semibold mb-1 text-xs">ด้านหลัง</p><div class="flex justify-center bg-base-100 p-2 rounded-lg border h-24"><img src="${basePath + data.photoRear}" class="max-w-full max-h-full object-contain" alt="รูปถ่ายด้านหลัง"></div></div>
+                    `, true);
 
-                    // Action Buttons
-                    const actionContainer = detailsModalEl.querySelector('#modal-action-buttons');
-                    actionContainer.innerHTML = '';
-                    actionContainer.innerHTML += '<div class="flex-grow"></div>';
-                    if (data.canRenew === 'true') {
-                        actionContainer.innerHTML += `<a href="add_vehicle.php?renew_id=${data.vehicleId}" class="btn btn-sm btn-success"><i class="fa-solid fa-calendar-check"></i>ต่ออายุบัตร</a>`;
-                    }
-                    if (data.statusKey === 'pending' || data.statusKey === 'rejected') {
-                        actionContainer.innerHTML += `<button id="modal-edit-btn" class="btn btn-sm btn-warning"><i class="fa-solid fa-pencil"></i>แก้ไข</button>`;
-                    }
-                    if (data.statusKey !== 'approved') {
-                        actionContainer.innerHTML += `<button id="modal-delete-btn" class="btn btn-sm btn-error"><i class="fa-solid fa-trash-can"></i>ลบ</button>`;
-                    }
-                    actionContainer.innerHTML += `<form method="dialog"><button class="btn btn-sm btn-ghost">ปิด</button></form>`;
+                    let buttonsHtml = '';
+                    if (data.canRenew === 'true') buttonsHtml += `<a href="add_vehicle.php?renew_id=${data.vehicleId}" class="btn btn-sm btn-success"><i class="fa-solid fa-calendar-check"></i>ต่ออายุบัตร</a>`;
+                    if (data.statusKey === 'pending' || data.statusKey === 'rejected') buttonsHtml += `<button id="modal-edit-btn" class="btn btn-sm btn-warning"><i class="fa-solid fa-pencil"></i>แก้ไข</button>`;
+                    if (data.statusKey !== 'approved') buttonsHtml += `<button id="modal-delete-btn" class="btn btn-sm btn-error"><i class="fa-solid fa-trash-can"></i>ลบ</button>`;
+                    queryAndSet('#modal-action-buttons', `<div class="flex-grow"></div>${buttonsHtml}`, true);
 
-                    // Show Modal
                     detailsModalEl.querySelector('#modal-content-wrapper').classList.remove('hidden');
                     detailsModalEl.querySelector('#modal-edit-form-wrapper').classList.add('hidden');
-                    
                     detailsModalEl.showModal();
 
                 } catch (error) {
                     console.error("Error opening details modal:", error);
-                    showAlert('เกิดข้อผิดพลาดในการแสดงข้อมูล', 'error');
+                    this.showAlert('เกิดข้อผิดพลาดในการแสดงข้อมูล', 'error');
                 }
             };
 
             const switchToEditMode = () => {
                 const data = currentCardData;
-                const editForm = detailsModalEl.querySelector('#editVehicleForm');
+                const editForm = elements.editForm;
                 const basePath = `/public/uploads/${data.userKey}/vehicle/${data.requestKey}/`;
                 
                 editForm.querySelector('#edit-request-id').value = data.requestId;
@@ -241,12 +273,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 editForm.querySelector('#edit-vehicle-color').value = data.color;
                 
                 const taxDate = data.taxExpiry ? new Date(data.taxExpiry) : null;
-                populateDateSelects(
-                    editForm.querySelector('#edit-tax-day'),
-                    editForm.querySelector('#edit-tax-month'),
-                    editForm.querySelector('#edit-tax-year'),
-                    taxDate
-                );
+                populateDateSelects(editForm.querySelector('#edit-tax-day'), editForm.querySelector('#edit-tax-month'), editForm.querySelector('#edit-tax-year'), taxDate);
                 
                 const ownerSelect = editForm.querySelector('#edit-owner-type');
                 ownerSelect.value = data.ownerType;
@@ -256,7 +283,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
                 ownerSelect.dispatchEvent(new Event('change'));
 
-                // Set initial images for preview
                 editForm.querySelector('#edit-reg-copy-preview').src = basePath + data.photoReg;
                 editForm.querySelector('#edit-tax-sticker-preview').src = basePath + data.photoTax;
                 editForm.querySelector('#edit-front-view-preview').src = basePath + data.photoFront;
@@ -268,50 +294,35 @@ document.addEventListener('DOMContentLoaded', function () {
 
             const filterAndSearchCards = () => {
                 const filterKey = document.querySelector('.stat-filter.active')?.dataset.filter || 'all';
-                const searchTerm = searchInput.value.toLowerCase().trim();
+                const searchTerm = elements.searchInput.value.toLowerCase().trim();
                 let visibleCount = 0;
 
-                vehicleCards.forEach(card => {
-                    const cardStatus = card.dataset.statusKey;
-                    const cardText = card.textContent.toLowerCase();
-                    const isStatusVisible = (filterKey === 'all' || cardStatus === filterKey);
-                    const isSearchVisible = (searchTerm === '' || cardText.includes(searchTerm));
-                    const isVisible = isStatusVisible && isSearchVisible;
-                    
+                elements.vehicleCards.forEach(card => {
+                    const isVisible = (filterKey === 'all' || card.dataset.statusKey === filterKey) && (searchTerm === '' || (card.textContent || '').toLowerCase().includes(searchTerm));
                     card.style.display = isVisible ? 'flex' : 'none';
                     if (isVisible) visibleCount++;
                 });
 
-                if (noResultsMessage) {
-                    noResultsMessage.style.display = visibleCount === 0 ? 'block' : 'none';
+                if (elements.noResultsMessage) {
+                    elements.noResultsMessage.style.display = (visibleCount === 0 && elements.vehicleCards.length > 0) ? 'block' : 'none';
                 }
             };
-
-            // --- Event Listeners ---
-            vehicleCards.forEach(card => card.addEventListener('click', () => openDetailsModal(card)));
             
-            statFilters.forEach(filter => {
-                filter.addEventListener('click', () => {
-                    statFilters.forEach(f => f.classList.remove('active', 'ring-2', 'ring-primary', 'ring-offset-base-100', 'ring-offset-2'));
-                    filter.classList.add('active', 'ring-2', 'ring-primary', 'ring-offset-base-100', 'ring-offset-2');
-                    filterAndSearchCards();
-                });
-            });
+            elements.vehicleCards.forEach(card => card.addEventListener('click', () => openDetailsModal(card)));
+            elements.statFilters.forEach(filter => filter.addEventListener('click', () => {
+                elements.statFilters.forEach(f => f.classList.remove('active', 'ring-2', 'ring-primary'));
+                filter.classList.add('active', 'ring-2', 'ring-primary');
+                filterAndSearchCards();
+            }));
             
-            if (searchInput) {
-                searchInput.addEventListener('input', filterAndSearchCards);
-            }
-
-            const defaultFilter = document.querySelector('.stat-filter[data-filter="all"]');
-            if (defaultFilter) defaultFilter.click();
+            elements.searchInput.addEventListener('input', filterAndSearchCards);
+            document.querySelector('.stat-filter[data-filter="all"]')?.click();
 
             detailsModalEl.addEventListener('click', (e) => {
-                if (e.target.id === 'modal-edit-btn') {
-                    switchToEditMode();
-                }
-                if (e.target.id === 'modal-delete-btn') {
-                    deleteModalEl.querySelector('#delete-request-id').value = currentCardData.requestId;
-                    deleteModalEl.showModal();
+                if (e.target.id === 'modal-edit-btn') switchToEditMode();
+                if (e.target.id === 'modal-delete-btn' && elements.deleteModal) {
+                    elements.deleteModal.querySelector('#delete-request-id').value = currentCardData.requestId;
+                    elements.deleteModal.showModal();
                 }
                 if (e.target.id === 'cancel-edit-btn') {
                     detailsModalEl.querySelector('#modal-edit-form-wrapper').classList.add('hidden');
@@ -319,373 +330,278 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
             });
 
-            const editForm = detailsModalEl.querySelector('#editVehicleForm');
-            if(editForm) {
-                editForm.addEventListener('submit', () => loadingModalEl.showModal());
-                
-                const editOwnerSelect = editForm.querySelector('#edit-owner-type');
-                if (editOwnerSelect) {
-                    editOwnerSelect.addEventListener('change', e => {
-                        const otherDetails = editForm.querySelector('#edit-other-owner-details');
-                        otherDetails.classList.toggle('hidden', e.target.value !== 'other');
-                        otherDetails.querySelectorAll('input').forEach(input => {
-                             e.target.value === 'other' ? input.setAttribute('required', '') : input.removeAttribute('required');
-                        });
-                    });
+            elements.editForm.addEventListener('submit', (e) => {
+                let isAllValid = Array.from(elements.editForm.querySelectorAll('[required]')).every(field => field.offsetParent === null || this.validateField(field, elements.editForm));
+                if (!isAllValid) {
+                    e.preventDefault();
+                    this.showAlert('กรุณากรอกข้อมูลให้ครบถ้วนและถูกต้อง', 'error');
+                } else {
+                    if (elements.loadingModal) elements.loadingModal.showModal();
                 }
-            }
+            });
+
+            elements.editForm.querySelectorAll('input, select').forEach(field => {
+                const eventType = (field.tagName === 'SELECT' || field.type === 'file') ? 'change' : 'input';
+                field.addEventListener(eventType, () => this.validateField(field, elements.editForm));
+            });
+
+            elements.editForm.querySelector('#edit-owner-type').addEventListener('change', e => {
+                const otherDetails = elements.editForm.querySelector('#edit-other-owner-details');
+                otherDetails.classList.toggle('hidden', e.target.value !== 'other');
+                otherDetails.querySelectorAll('input').forEach(input => {
+                     e.target.value === 'other' ? input.setAttribute('required', '') : input.removeAttribute('required');
+                });
+            });
             
-            const deleteForm = deleteModalEl.querySelector('#deleteRequestForm');
-            if(deleteForm) {
-                deleteForm.addEventListener('submit', () => {
-                    deleteModalEl.close();
-                    loadingModalEl.showModal();
+            if (elements.deleteModal) {
+                elements.deleteModal.querySelector('#deleteRequestForm').addEventListener('submit', () => {
+                    elements.deleteModal.close();
+                    if (elements.loadingModal) elements.loadingModal.showModal();
                 });
             }
 
-            // Setup image previews for the edit form
-            setupImagePreview('edit-reg-copy-upload', 'edit-reg-copy-preview');
-            setupImagePreview('edit-tax-sticker-upload', 'edit-tax-sticker-preview');
-            setupImagePreview('edit-front-view-upload', 'edit-front-view-preview');
-            setupImagePreview('edit-rear-view-upload', 'edit-rear-view-preview');
+            ['edit-reg-copy-upload', 'edit-tax-sticker-upload', 'edit-front-view-upload', 'edit-rear-view-upload'].forEach((id, index) => {
+                this.setupImagePreview(id, ['edit-reg-copy-preview', 'edit-tax-sticker-preview', 'edit-front-view-preview', 'edit-rear-view-preview'][index]);
+            });
         },
 
         initAddVehiclePage: function() {
             const form = document.getElementById('addVehicleForm');
             if (!form) return;
 
-            // --- Elements ---
-            const checkSection = document.getElementById('vehicle-check-section');
-            const detailsSection = document.getElementById('vehicle-details-section');
-            const checkBtn = document.getElementById('check-vehicle-btn');
-            const submitBtn = document.getElementById('submit-request-btn');
-            const resetBtn = document.getElementById('reset-form-btn');
-            const resetConfirmModal = document.getElementById('resetConfirmModal');
-            const confirmResetBtn = document.getElementById('confirm-reset-btn');
-            const loadingModal = document.getElementById('loading_modal');
-
-            // --- Functions ---
-            const showError = (element, message) => {
-                const parent = element.closest('.form-control');
-                const errorEl = parent?.querySelector('.error-message');
-                if (errorEl) {
-                    errorEl.textContent = message;
-                    errorEl.classList.remove('hidden');
-                }
-                element.classList.add('input-error', 'select-error');
+            const elements = {
+                checkSection: document.getElementById('vehicle-check-section'),
+                detailsSection: document.getElementById('vehicle-details-section'),
+                checkBtn: document.getElementById('check-vehicle-btn'),
+                submitBtn: document.getElementById('submit-request-btn'),
+                backBtn: document.getElementById('back-to-step1-btn'),
+                step1Indicator: document.getElementById('step1-indicator'),
+                step2Indicator: document.getElementById('step2-indicator'),
+                loadingModal: document.getElementById('loading_modal'),
             };
 
-            const clearError = (element) => {
-                const parent = element.closest('.form-control');
-                const errorEl = parent?.querySelector('.error-message');
-                if (errorEl) {
-                    errorEl.textContent = '';
-                    errorEl.classList.add('hidden');
-                }
-                element.classList.remove('input-error', 'select-error');
-            };
-            
-            const validateField = (field) => {
-                let isValid = true;
-                clearError(field);
+            const setStep = (stepNumber) => {
+                const activeClasses = ['bg-primary', 'text-primary-content', 'border-primary'];
+                const inactiveClasses = ['bg-base-200', 'text-base-content/60', 'border-base-300'];
 
-                if (field.hasAttribute('required') && (field.type !== 'file' && field.type !== 'checkbox') && !field.value.trim()) {
-                    showError(field, 'กรุณากรอกข้อมูล');
-                    isValid = false;
+                // Explicitly remove all state classes first
+                elements.step1Indicator.classList.remove(...activeClasses, ...inactiveClasses);
+                elements.step2Indicator.classList.remove(...activeClasses, ...inactiveClasses);
+
+                // Apply the correct classes for the current step
+                if (stepNumber === 1) {
+                    elements.step1Indicator.classList.add(...activeClasses);
+                    elements.step2Indicator.classList.add(...inactiveClasses);
+                } else { // stepNumber === 2
+                    elements.step1Indicator.classList.add(...inactiveClasses);
+                    elements.step2Indicator.classList.add(...activeClasses);
                 }
                 
-                if (field.type === 'file' && field.hasAttribute('required')) {
-                    if (field.files.length === 0) {
-                        showError(field, 'กรุณาแนบไฟล์');
-                        isValid = false;
-                    } else {
-                        const file = field.files[0];
-                        const maxSize = 5 * 1024 * 1024; // 5 MB
-                        if (file.size > maxSize) {
-                            showError(field, 'ขนาดไฟล์ต้องไม่เกิน 5 MB');
-                            isValid = false;
-                        }
-                    }
-                }
-
-                if (field.type === 'checkbox' && field.hasAttribute('required') && !field.checked) {
-                    const errorEl = field.closest('.form-control').querySelector('.error-message');
-                    if (errorEl) {
-                        errorEl.textContent = 'กรุณายอมรับเงื่อนไข';
-                        errorEl.classList.remove('hidden');
-                    }
-                    isValid = false;
-                }
-
-                return isValid;
+                elements.checkSection.classList.toggle('hidden', stepNumber !== 1);
+                elements.detailsSection.classList.toggle('hidden', stepNumber !== 2);
             };
 
-            const populateDateSelects = (daySelect, monthSelect, yearSelect, selectedDate) => {
-                daySelect.innerHTML = '<option value="">วัน</option>';
-                monthSelect.innerHTML = '<option value="">เดือน</option>';
-                yearSelect.innerHTML = '<option value="">ปี (พ.ศ.)</option>';
-                for (let i = 1; i <= 31; i++) daySelect.add(new Option(i, i));
-                const months = ["มกราคม","กุมภาพันธ์","มีนาคม","เมษายน","พฤษภาคม","มิถุนายน","กรกฎาคม","สิงหาคม","กันยายน","ตุลาคม","พฤศจิกายน","ธันวาคม"];
-                months.forEach((m, i) => monthSelect.add(new Option(m, i + 1)));
-                const currentYearBE = new Date().getFullYear() + 543;
-                for (let i = currentYearBE; i <= currentYearBE + 10; i++) yearSelect.add(new Option(i, i));
-                 if (selectedDate) {
-                    const d = new Date(selectedDate);
-                    daySelect.value = d.getDate();
-                    monthSelect.value = d.getMonth() + 1;
-                    yearSelect.value = d.getFullYear() + 543;
-                }
-            };
-            
-            const setupImagePreview = (inputId, previewId) => {
-                const input = document.getElementById(inputId);
-                const preview = document.getElementById(previewId);
-                if(input && preview){
-                    input.addEventListener('change', function(event) {
-                        const file = event.target.files[0];
-                        if (file) {
-                            preview.src = URL.createObjectURL(file);
-                        }
-                    });
-                }
-            };
+            elements.checkBtn.addEventListener('click', async () => {
+                const fieldsToCheck = [ document.getElementById('check-vehicle-type'), document.getElementById('check-license-plate'), document.getElementById('check-license-province') ];
+                if (!fieldsToCheck.map(f => this.validateField(f)).every(v => v)) return;
 
-            // --- Event Listeners ---
-            checkBtn.addEventListener('click', async () => {
-                const type = document.getElementById('check-vehicle-type');
-                const plate = document.getElementById('check-license-plate');
-                const province = document.getElementById('check-license-province');
-                
-                let isFormValid = true;
-                [type, plate, province].forEach(field => {
-                    if (!validateField(field)) {
-                        isFormValid = false;
-                    }
-                });
-                
-                if (!isFormValid) return;
-
-                loadingModal.showModal();
+                elements.loadingModal.showModal();
                 try {
                     const response = await fetch('../../../controllers/user/vehicle/check_vehicle.php', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            license_plate: plate.value,
-                            province: province.value,
-                        }),
+                        body: JSON.stringify({ license_plate: fieldsToCheck[1].value, province: fieldsToCheck[2].value }),
                     });
                     const result = await response.json();
-                    loadingModal.close();
+                    elements.loadingModal.close();
 
                     if (result.exists) {
-                        showAlert('ยานพาหนะนี้มีคำร้องอยู่ในระบบแล้ว', 'error');
+                        this.showAlert('ยานพาหนะนี้มีคำร้องอยู่ในระบบสำหรับรอบปัจจุบันแล้ว', 'error');
                     } else {
-                        checkSection.classList.add('hidden');
-                        detailsSection.classList.remove('hidden');
-                        document.getElementById('display-vehicle-type').textContent = type.value;
-                        document.getElementById('display-license-plate').textContent = plate.value;
-                        document.getElementById('display-license-province').textContent = province.value;
-                        form.querySelector('input[name="vehicle_type"]').value = type.value;
-                        form.querySelector('input[name="license_plate"]').value = plate.value;
-                        form.querySelector('input[name="license_province"]').value = province.value;
+                        setStep(2);
+                        document.getElementById('display-vehicle-type').textContent = fieldsToCheck[0].value;
+                        document.getElementById('display-license-plate').textContent = fieldsToCheck[1].value;
+                        document.getElementById('display-license-province').textContent = fieldsToCheck[2].value;
+                        form.querySelector('input[name="vehicle_type"]').value = fieldsToCheck[0].value;
+                        form.querySelector('input[name="license_plate"]').value = fieldsToCheck[1].value;
+                        form.querySelector('input[name="license_province"]').value = fieldsToCheck[2].value;
                     }
                 } catch (error) {
-                    loadingModal.close();
-                    showAlert('เกิดข้อผิดพลาดในการเชื่อมต่อ', 'error');
+                    elements.loadingModal.close();
+                    this.showAlert('เกิดข้อผิดพลาดในการเชื่อมต่อ', 'error');
                 }
             });
 
-            submitBtn.addEventListener('click', () => {
+            elements.submitBtn.addEventListener('click', () => {
                 let isAllValid = true;
                 form.querySelectorAll('[required]').forEach(field => {
-                     if (field.offsetParent !== null && !validateField(field)) { 
-                        isAllValid = false;
-                    }
+                     if (field.offsetParent !== null && !this.validateField(field)) isAllValid = false;
                 });
 
+                const dateFields = [form.querySelector('select[name="tax_day"]'), form.querySelector('select[name="tax_month"]'), form.querySelector('select[name="tax_year"]')];
+                if(dateFields[0].offsetParent !== null) {
+                    dateFields.forEach(field => {
+                        if (!field.value) {
+                            isAllValid = false;
+                            this.showError(field, 'กรุณาเลือก');
+                        } else {
+                            this.clearError(field);
+                        }
+                    });
+                }
+
                 if (isAllValid) {
-                    loadingModal.showModal();
+                    elements.loadingModal.showModal();
                     form.submit();
                 } else {
-                    showAlert('กรุณากรอกข้อมูลให้ครบถ้วนและถูกต้อง', 'error');
+                    this.showAlert('กรุณากรอกข้อมูลให้ครบถ้วนและถูกต้อง', 'error');
                 }
             });
 
-            resetBtn.addEventListener('click', () => resetConfirmModal.showModal());
+            elements.backBtn.addEventListener('click', () => setStep(1));
             
-            confirmResetBtn.addEventListener('click', () => {
-                 checkSection.classList.remove('hidden');
-                 detailsSection.classList.add('hidden');
-                 form.reset();
-                 form.querySelectorAll('.error-message').forEach(el => el.classList.add('hidden'));
-                 form.querySelectorAll('.input-error, .select-error').forEach(el => el.classList.remove('input-error', 'select-error'));
-                 document.getElementById('reg-copy-preview').src = "/public/assets/images/registration.jpg";
-                 document.getElementById('tax-sticker-preview').src = "/public/assets/images/tax_sticker.jpg";
-                 document.getElementById('front-view-preview').src = "/public/assets/images/front_view.png";
-                 document.getElementById('rear-view-preview').src = "/public/assets/images/rear_view.png";
-                 resetConfirmModal.close();
-            });
-
-            // --- Initial Setup ---
-            const taxDay = form.querySelector('select[name="tax_day"]');
-            const taxMonth = form.querySelector('select[name="tax_month"]');
-            const taxYear = form.querySelector('select[name="tax_year"]');
-            const taxExpiryDate = form.dataset.renewalTaxDate || null;
-            populateDateSelects(taxDay, taxMonth, taxYear, taxExpiryDate);
+            const taxDayEl = form.querySelector('select[name="tax_day"]'), taxMonthEl = form.querySelector('select[name="tax_month"]'), taxYearEl = form.querySelector('select[name="tax_year"]');
+            const populateDateSelects = (dayEl, monthEl, yearEl, selectedDate) => {
+                dayEl.innerHTML = '<option value="">วัน</option>'; monthEl.innerHTML = '<option value="">เดือน</option>'; yearEl.innerHTML = '<option value="">ปี (พ.ศ.)</option>';
+                for (let i = 1; i <= 31; i++) dayEl.add(new Option(i, i));
+                const months = ["มกราคม","กุมภาพันธ์","มีนาคม","เมษายน","พฤษภาคม","มิถุนายน","กรกฎาคม","สิงหาคม","กันยายน","ตุลาคม","พฤศจิกายน","ธันวาคม"];
+                months.forEach((m, i) => monthEl.add(new Option(m, i + 1)));
+                const currentYearBE = new Date().getFullYear() + 543;
+                for (let i = currentYearBE; i <= currentYearBE + 10; i++) yearEl.add(new Option(i, i));
+                if (selectedDate) {
+                    const d = new Date(selectedDate);
+                    dayEl.value = d.getDate(); monthEl.value = d.getMonth() + 1; yearEl.value = d.getFullYear() + 543;
+                }
+            };
+            populateDateSelects(taxDayEl, taxMonthEl, taxYearEl, form.dataset.renewalTaxDate || null);
             
-            setupImagePreview('reg_copy_upload', 'reg-copy-preview');
-            setupImagePreview('tax_sticker_upload', 'tax-sticker-preview');
-            setupImagePreview('front_view_upload', 'front-view-preview');
-            setupImagePreview('rear_view_upload', 'rear-view-preview');
+            this.setupImagePreview('reg_copy_upload', 'reg-copy-preview');
+            this.setupImagePreview('tax_sticker_upload', 'tax-sticker-preview');
+            this.setupImagePreview('front_view_upload', 'front-view-preview');
+            this.setupImagePreview('rear_view_upload', 'rear-view-preview');
             
             const ownerSelect = form.querySelector('select[name="owner_type"]');
-            ownerSelect.addEventListener('change', function() {
+            ownerSelect.addEventListener('change', () => {
                 const otherDetails = document.getElementById('other-owner-details');
-                const isOther = this.value === 'other';
+                const isOther = ownerSelect.value === 'other';
                 otherDetails.classList.toggle('hidden', !isOther);
                 otherDetails.querySelectorAll('input').forEach(input => {
                     isOther ? input.setAttribute('required', '') : input.removeAttribute('required');
+                    if(!isOther) this.clearError(input);
                 });
             });
+            if(ownerSelect.value) ownerSelect.dispatchEvent(new Event('change'));
+
+            form.querySelectorAll('[required]').forEach(field => {
+                const eventType = (field.tagName === 'SELECT' || field.type === 'checkbox' || field.type === 'file') ? 'change' : 'input';
+                field.addEventListener(eventType, () => this.validateField(field));
+            });
             
-             detailsSection.querySelectorAll('[required]').forEach(field => {
-                const eventType = (field.tagName === 'SELECT' || field.type === 'file' || field.type === 'checkbox') ? 'change' : 'input';
-                field.addEventListener(eventType, () => validateField(field));
-            });
-             checkSection.querySelectorAll('[required]').forEach(field => {
-                const eventType = (field.tagName === 'SELECT') ? 'change' : 'input';
-                field.addEventListener(eventType, () => validateField(field));
-            });
+            if (form.dataset.isRenewal === 'true') setStep(2);
+            else setStep(1);
         },
         
         initProfilePage: function() {
             const form = document.getElementById('profileForm');
-            if(!form) return;
+            if (!form) return;
 
-            const editBtn = document.getElementById('edit-profile-btn');
-            const saveBtn = document.getElementById('save-profile-btn');
-            const cancelBtn = document.getElementById('cancel-edit-btn');
-            
-            const photoUpload = document.getElementById('profile-photo-upload');
-            const photoGuidance = document.getElementById('photo-guidance');
-            const photoContainer = document.getElementById('profile-photo-container');
+            const elements = {
+                editBtn: document.getElementById('edit-profile-btn'),
+                saveBtn: document.getElementById('save-profile-btn'),
+                cancelBtn: document.getElementById('cancel-edit-btn'),
+                photoUpload: document.getElementById('profile-photo-upload'),
+                photoGuidance: document.getElementById('photo-guidance'),
+                photoContainer: document.getElementById('profile-photo-container'),
+                titleSelect: document.getElementById('profile-title'),
+                titleOtherInput: document.getElementById('profile-title-other'),
+                phoneInput: form.querySelector('input[name="phone"]'),
+                nidInput: document.getElementById('profile-national-id')
+            };
 
             const setEditMode = (isEditing) => {
-                editBtn.classList.toggle('hidden', isEditing);
-                saveBtn.classList.toggle('hidden', !isEditing);
-                cancelBtn.classList.toggle('hidden', !isEditing);
+                elements.editBtn.classList.toggle('hidden', isEditing);
+                elements.saveBtn.classList.toggle('hidden', !isEditing);
+                elements.cancelBtn.classList.toggle('hidden', !isEditing);
+                
+                form.classList.toggle('form-view-mode', !isEditing);
+                form.classList.toggle('form-edit-mode', isEditing);
+                
+                form.querySelectorAll('.view-mode-element').forEach(el => el.classList.toggle('hidden', isEditing));
+                form.querySelectorAll('.edit-mode-element').forEach(el => el.classList.toggle('hidden', !isEditing));
 
-                photoUpload.classList.toggle('hidden', !isEditing);
-                photoGuidance.classList.toggle('hidden', !isEditing);
-                photoContainer.classList.toggle('cursor-pointer', isEditing);
+                elements.photoUpload.classList.toggle('hidden', !isEditing);
+                elements.photoGuidance.classList.toggle('hidden', !isEditing);
+                elements.photoContainer.classList.toggle('cursor-pointer', isEditing);
 
-                const allFields = form.querySelectorAll('input:not([type=hidden]), select');
                 const nonEditable = ['national_id_display', 'work_department_display'];
-
-                allFields.forEach(field => {
-                    const fieldName = field.getAttribute('name');
-                    
-                    if (nonEditable.includes(fieldName)) {
-                        field.disabled = true;
-                    } else {
+                form.querySelectorAll('input:not([type=hidden]), select').forEach(field => {
+                    if (!nonEditable.includes(field.name)) {
                         field.disabled = !isEditing;
                     }
                 });
                 
-                document.getElementById('profile-title').dispatchEvent(new Event('change'));
-
-                $.Thailand.each($('#profile-zipcode, #profile-subdistrict, #profile-district, #profile-province'), function (i, e) {
-                    $(e).prop('disabled', !isEditing);
+                $('#profile-zipcode, #profile-subdistrict, #profile-district, #profile-province').each(function() {
+                     $(this).prop('disabled', !isEditing).parent().find('.tt-input').prop('disabled', !isEditing);
                 });
+
+                elements.titleSelect.dispatchEvent(new Event('change'));
             };
-            
-            editBtn.addEventListener('click', () => setEditMode(true));
-            
-            cancelBtn.addEventListener('click', () => {
-                location.reload(); 
-            });
-            
-            saveBtn.addEventListener('click', () => {
-                form.submit();
-            });
 
-            photoContainer.addEventListener('click', () => {
-                if (!saveBtn.classList.contains('hidden')) {
-                     photoUpload.click();
-                }
-            });
+            elements.editBtn.addEventListener('click', () => setEditMode(true));
+            elements.cancelBtn.addEventListener('click', () => location.reload());
+            elements.saveBtn.addEventListener('click', () => form.submit());
             
-            photoUpload.addEventListener('change', (event) => {
-                const file = event.target.files[0];
-                if (file) {
-                    const reader = new FileReader();
-                    reader.onload = (e) => {
-                        document.getElementById('profile-photo-preview').src = e.target.result;
-                    };
-                    reader.readAsDataURL(file);
+            elements.photoContainer.addEventListener('click', () => {
+                if (form.classList.contains('form-edit-mode')) {
+                    elements.photoUpload.click();
                 }
             });
 
-            const setupOtherOption = (selectId, otherInputId) => {
-                const select = document.getElementById(selectId);
-                const otherInput = document.getElementById(otherInputId);
-                if (select && otherInput) {
-                    select.addEventListener('change', function() {
-                        const isOther = this.value === 'other';
-                        const isEditing = !this.disabled;
-                        otherInput.classList.toggle('hidden', !isOther);
-                        otherInput.disabled = !isEditing || !isOther;
-                        
-                        if (isOther && isEditing) {
-                            otherInput.setAttribute('required', '');
-                        } else {
-                            otherInput.removeAttribute('required');
-                        }
-                    });
-                }
-            };
-            setupOtherOption('profile-title', 'profile-title-other');
+            this.setupImagePreview('profile-photo-upload', 'profile-photo-preview');
 
+            elements.titleSelect.addEventListener('change', function() {
+                const isOther = this.value === 'other';
+                elements.titleOtherInput.classList.toggle('hidden', !isOther);
+                elements.titleOtherInput.disabled = this.disabled || !isOther;
+                if (isOther && !this.disabled) {
+                    elements.titleOtherInput.setAttribute('required', '');
+                } else {
+                    elements.titleOtherInput.removeAttribute('required');
+                }
+            });
+            
             $.Thailand({
                 $zipcode: $('#profile-zipcode'),
                 $district: $('#profile-subdistrict'), 
                 $amphoe: $('#profile-district'),
                 $province: $('#profile-province'),
             });
-            
-            const phoneInput = form.querySelector('input[name="phone"]');
-            const formatPhone = () => {
-                 const numbers = phoneInput.value.replace(/\D/g, '');
-                 let result = '';
-                 if (numbers.length > 3) result += numbers.substring(0,3) + '-';
-                 if (numbers.length > 6) result += numbers.substring(3,6) + '-';
-                 result += numbers.substring(6,10);
-                 phoneInput.value = result;
-            };
-            phoneInput.addEventListener('input', formatPhone);
-            formatPhone();
 
-            const nidInput = document.getElementById('profile-national-id');
-            const formatNid = () => {
-                const numbers = nidInput.value.replace(/\D/g, '');
+            const formatInput = (input, patterns) => {
+                const numbers = input.value.replace(/\D/g, '');
                 let result = '';
-                if(numbers.length > 1) result += numbers.substring(0,1) + '-';
-                if(numbers.length > 5) result += numbers.substring(1,5) + '-';
-                if(numbers.length > 10) result += numbers.substring(5,10) + '-';
-                if(numbers.length > 12) result += numbers.substring(10,12) + '-';
-                result += numbers.substring(12,13);
-                nidInput.value = result;
+                let patternIndex = 0;
+                let numbersIndex = 0;
+                while (patternIndex < patterns.length && numbersIndex < numbers.length) {
+                    if (patterns[patternIndex] === '-') {
+                        result += '-';
+                        patternIndex++;
+                    } else {
+                        result += numbers[numbersIndex];
+                        patternIndex++;
+                        numbersIndex++;
+                    }
+                }
+                input.value = result;
             };
-            nidInput.addEventListener('input', formatNid);
-            formatNid();
+
+            elements.phoneInput.addEventListener('input', () => formatInput(elements.phoneInput, 'xxx-xxx-xxxx'));
+            elements.nidInput.addEventListener('input', () => formatInput(elements.nidInput, 'x-xxxx-xxxxx-xx-x'));
+
+            setEditMode(false);
         }
     };
 
-    // Run the app
     App.init();
 });
-
-
-
 

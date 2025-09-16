@@ -33,7 +33,6 @@ function rrmdir($dir) {
 function handle_error($user_message, $log_message = '') {
     $_SESSION['request_status'] = 'error';
     $_SESSION['request_message'] = $user_message;
-    // Log the detailed error if provided
     if (!empty($log_message)) {
         error_log($log_message);
     }
@@ -58,7 +57,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $conn->begin_transaction();
     try {
         // Fetch request details to verify ownership, status, and get keys for folder deletion
-        $sql_select = "SELECT vr.user_id, u.user_key, vr.request_key, vr.status 
+        $sql_select = "SELECT vr.user_id, vr.vehicle_id, u.user_key, vr.request_key, vr.status 
                        FROM vehicle_requests vr
                        JOIN users u ON vr.user_id = u.id
                        WHERE vr.id = ?";
@@ -73,15 +72,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
         $request_data = $result->fetch_assoc();
         $stmt_select->close();
+        $vehicle_id_to_check = $request_data['vehicle_id'];
 
         // Security Check: Verify the user owns this request
         if ($request_data['user_id'] != $user_id) {
             throw new Exception("คุณไม่มีสิทธิ์ลบคำร้องนี้");
         }
 
-        // Business Logic Check: Do not allow deletion of approved requests
-        if ($request_data['status'] === 'approved') {
-            throw new Exception("ไม่สามารถลบคำร้องที่ได้รับการอนุมัติแล้วได้");
+        // Business Logic Check: Only allow deletion of 'pending' or 'rejected' requests
+        if (!in_array($request_data['status'], ['pending', 'rejected'])) {
+            throw new Exception("ไม่สามารถลบคำร้องที่อยู่นอกเหนือสถานะ 'รออนุมัติ' หรือ 'ไม่ผ่าน' ได้");
         }
 
         // Proceed with deletion
@@ -98,19 +98,37 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             unlink($qr_code_path);
         }
 
-        // 2. Delete the database record
-        $sql_delete = "DELETE FROM vehicle_requests WHERE id = ?";
-        $stmt_delete = $conn->prepare($sql_delete);
-        $stmt_delete->bind_param("i", $request_id);
+        // 2. Delete the database record from vehicle_requests
+        $sql_delete_req = "DELETE FROM vehicle_requests WHERE id = ?";
+        $stmt_delete_req = $conn->prepare($sql_delete_req);
+        $stmt_delete_req->bind_param("i", $request_id);
         
-        if (!$stmt_delete->execute()) {
+        if (!$stmt_delete_req->execute()) {
             throw new Exception("เกิดข้อผิดพลาดในการลบข้อมูลคำร้องจากฐานข้อมูล");
         }
-
-        $stmt_delete->close();
+        $stmt_delete_req->close();
+        
+        // 3. Check if the vehicle is associated with any other requests
+        $sql_check_vehicle = "SELECT COUNT(*) as count FROM vehicle_requests WHERE vehicle_id = ?";
+        $stmt_check_vehicle = $conn->prepare($sql_check_vehicle);
+        $stmt_check_vehicle->bind_param("i", $vehicle_id_to_check);
+        $stmt_check_vehicle->execute();
+        $result_check = $stmt_check_vehicle->get_result()->fetch_assoc();
+        $stmt_check_vehicle->close();
+        
+        // 4. If no other requests are associated, delete the vehicle record
+        if ($result_check['count'] == 0) {
+            $sql_delete_vehicle = "DELETE FROM vehicles WHERE id = ?";
+            $stmt_delete_vehicle = $conn->prepare($sql_delete_vehicle);
+            $stmt_delete_vehicle->bind_param("i", $vehicle_id_to_check);
+            if (!$stmt_delete_vehicle->execute()) {
+                 throw new Exception("เกิดข้อผิดพลาดในการลบข้อมูลยานพาหนะ");
+            }
+            $stmt_delete_vehicle->close();
+        }
         
         // Log the successful deletion
-        log_activity($conn, 'delete_vehicle_request', ['request_id' => $request_id]);
+        log_activity($conn, 'delete_vehicle_request', ['request_id' => $request_id, 'vehicle_id_deleted' => ($result_check['count'] == 0)]);
         
         $conn->commit();
 
@@ -131,3 +149,4 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     header("Location: ../../../views/user/home/dashboard.php");
     exit();
 }
+

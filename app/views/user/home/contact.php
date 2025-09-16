@@ -19,8 +19,8 @@ require_once '../layouts/header.php';
                 <!-- Left Column: Contact Info -->
                 <div class="space-y-4">
                     <div>
-                        <h3 class="font-semibold text-base flex items-center gap-2"><i class="fa-solid fa-building text-primary"></i> สถานที่ติดต่อ</h3>
-                        <div class="mt-2 pl-7 text-base-content/90 text-sm">
+                        <h3 class="font-semibold text-lg flex items-center gap-3"><i class="fa-solid fa-building text-primary"></i> สถานที่ติดต่อ</h3>
+                        <div class="mt-2 pl-8 text-base-content/90 text-base space-y-1">
                             <p>แผนกการข่าวและรักษาความปลอดภัย</p>
                             <p>กองยุทธการและการข่าว กรมการทหารช่าง</p>
                             <p>ค่ายภาณุรังษี ต.โคกหม้อ อ.เมือง จ.ราชบุรี 70000</p>
@@ -28,8 +28,8 @@ require_once '../layouts/header.php';
                     </div>
                     <div class="divider my-2"></div>
                      <div>
-                        <h3 class="font-semibold text-base flex items-center gap-2"><i class="fa-solid fa-clock text-primary"></i> วันและเวลาทำการ</h3>
-                        <div class="mt-2 pl-7 text-base-content/90 text-sm">
+                        <h3 class="font-semibold text-lg flex items-center gap-3"><i class="fa-solid fa-clock text-primary"></i> วันและเวลาทำการ</h3>
+                        <div class="mt-2 pl-8 text-base-content/90 text-base space-y-1">
                             <p>จันทร์ - ศุกร์ (เว้นวันหยุดราชการ)</p>
                             <p>เวลา 08:30 - 16:30 น.</p>
                         </div>
@@ -38,20 +38,20 @@ require_once '../layouts/header.php';
                 <!-- Right Column: Channels -->
                 <div class="space-y-4">
                     <div>
-                        <h3 class="font-semibold text-base flex items-center gap-2"><i class="fa-solid fa-headset text-primary"></i> ช่องทางติดต่อ</h3>
+                        <h3 class="font-semibold text-lg flex items-center gap-3"><i class="fa-solid fa-headset text-primary"></i> ช่องทางติดต่อ</h3>
                         <div class="mt-2 space-y-3">
                             <div class="card card-compact bg-base-200 border">
-                                <div class="card-body p-3">
-                                    <p class="font-semibold text-sm">พบปัญหาการใช้งานระบบ:</p>
-                                    <p class="text-xs">ร.ท. พรหมินทร์ อินทมาตย์ (ผู้พัฒนาระบบ)</p>
-                                    <p class="text-xs break-words"><i class="fa-solid fa-envelope w-4 text-base-content/60"></i> oid.engrdept@gmail.com</p>
+                                <div class="card-body p-4">
+                                    <p class="font-semibold text-base">พบปัญหาการใช้งานระบบ:</p>
+                                    <p class="text-sm">ร.ท. พรหมินทร์ อินทมาตย์ (ผู้พัฒนาระบบ)</p>
+                                    <p class="text-sm break-words"><i class="fa-solid fa-envelope w-4 text-base-content/60"></i> oid.engrdept@gmail.com</p>
                                 </div>
                             </div>
                              <div class="card card-compact bg-base-200 border">
-                                <div class="card-body p-3">
-                                    <p class="font-semibold text-sm">สอบถามเรื่องเอกสารและติดตามสถานะ:</p>
-                                    <a href="https://line.me/ti/p/~YOUR_LINE_ID" target="_blank" class="btn btn-success no-underline w-full mt-1">
-                                        <i class="fab fa-line text-base"></i> Line Official: บัตรผ่านยานพาหนะ กช.
+                                <div class="card-body p-4">
+                                    <p class="font-semibold text-base">สอบถามเรื่องเอกสารและติดตามสถานะ:</p>
+                                    <a href="https://line.me/ti/p/~YOUR_LINE_ID" target="_blank" class="btn btn-success no-underline w-full mt-2">
+                                        <span class="text-white"><i class="fab fa-line text-xl"></i> Line: บัตรผ่านยานพาหนะ กช.</span>
                                     </a>
                                 </div>
                             </div>

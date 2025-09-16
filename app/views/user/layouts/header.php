@@ -27,8 +27,7 @@
     <link rel="stylesheet" href="/lib/jquery.Thailand/dist/jquery.Thailand.min.css">
     <link rel="stylesheet" href="/lib/google-fonts-prompt/prompt.css">
     <link rel="stylesheet" href="/lib/fontawesome-free-7.0.1-web/css/all.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/photoswipe/5.4.3/photoswipe.min.css">
-
+    
     <!-- Custom Styles -->
     <style>
         body { 
@@ -50,7 +49,6 @@
 
         .break-words { word-wrap: break-word; overflow-wrap: break-word; }
         
-        /* [NEW] Fix for FOUC (Flash of Unstyled Content) on sidebar */
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         .drawer-content { animation: fadeIn 0.3s ease-in-out; }
         
