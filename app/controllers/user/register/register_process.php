@@ -7,16 +7,13 @@ date_default_timezone_set('Asia/Bangkok');
 require_once '../../../models/db_config.php';
 require_once '../../../models/log_helper.php';
 
-// --- 1. ฟังก์ชันจัดการข้อผิดพลาด ---
 function handle_error($user_message, $log_message = '') {
-    // ในสถานการณ์จริง ควร redirect กลับไปหน้า register พร้อมแสดงข้อความ error
-    // แต่เพื่อความเรียบง่าย จะแสดงข้อความและหยุดการทำงานที่นี่
-    // error_log($log_message); // ควรเปิดใช้งานใน production environment
+    error_log("Register Error: " . ($log_message ?: $user_message));
+    // For production, you might want a more user-friendly error page
     die("เกิดข้อผิดพลาดในการสมัคร: " . htmlspecialchars($user_message));
 }
 
-// --- 2. ฟังก์ชันสำหรับจัดการการอัปโหลดไฟล์ เพิ่มการตรวจสอบและแก้ไขการหมุนภาพอัตโนมัติ ---
-function uploadAndCompressImage($file, $targetDir) {
+function process_profile_image_upload($file, $targetDir) {
     if (!isset($file) || $file['error'] !== UPLOAD_ERR_OK) {
         return ['error' => 'เกิดข้อผิดพลาดในการอัปโหลดไฟล์: ' . $file['error']];
     }
@@ -26,104 +23,118 @@ function uploadAndCompressImage($file, $targetDir) {
     }
     $finfo = finfo_open(FILEINFO_MIME_TYPE);
     $mime_type = finfo_file($finfo, $file["tmp_name"]);
+    finfo_close($finfo);
     $allowed_mime_types = ['image/jpeg', 'image/png'];
     if (!in_array($mime_type, $allowed_mime_types)) {
-        finfo_close($finfo);
         return ['error' => 'อนุญาตเฉพาะไฟล์รูปภาพ (JPG, PNG) เท่านั้น'];
     }
-    finfo_close($finfo);
     if (!file_exists($targetDir)) {
         mkdir($targetDir, 0777, true);
     }
+    
     $extension = strtolower(pathinfo($file["name"], PATHINFO_EXTENSION));
-    $newFileName = bin2hex(random_bytes(16)) . '.' . $extension;
-    $finalTargetPath = $targetDir . $newFileName;
-    $quality = 75;
-
-    $image = null;
+    $baseFileName = bin2hex(random_bytes(16));
+    
+    $source_image = null;
     if ($mime_type == "image/jpeg") {
-        $image = imagecreatefromjpeg($file["tmp_name"]);
-        
-        if ($image && function_exists('exif_read_data')) {
+        $source_image = @imagecreatefromjpeg($file["tmp_name"]);
+        if ($source_image && function_exists('exif_read_data')) {
             $exif = @exif_read_data($file["tmp_name"]);
             if (!empty($exif['Orientation'])) {
                 switch ($exif['Orientation']) {
-                    case 3:
-                        $image = imagerotate($image, 180, 0);
-                        break;
-                    case 6:
-                        $image = imagerotate($image, -90, 0);
-                        break;
-                    case 8:
-                        $image = imagerotate($image, 90, 0);
-                        break;
+                    case 3: $source_image = imagerotate($source_image, 180, 0); break;
+                    case 6: $source_image = imagerotate($source_image, -90, 0); break;
+                    case 8: $source_image = imagerotate($source_image, 90, 0); break;
                 }
             }
         }
-        
-        if($image) {
-            imagejpeg($image, $finalTargetPath, $quality);
-        }
-
     } elseif ($mime_type == "image/png") {
-        $image = imagecreatefrompng($file["tmp_name"]);
-        if($image) {
-            imagepng($image, $finalTargetPath, 7);
+        $source_image = @imagecreatefrompng($file["tmp_name"]);
+    }
+    if (!$source_image) return ['error' => 'ไม่สามารถประมวลผลไฟล์รูปภาพได้'];
+
+    $versions = [
+        'normal' => ['width' => 300, 'height' => 300, 'suffix' => ''],
+        'thumb'  => ['width' => 64, 'height' => 64, 'suffix' => '_thumb'],
+    ];
+    $generated_files = [];
+    list($original_width, $original_height) = getimagesize($file["tmp_name"]);
+
+    foreach ($versions as $key => $version) {
+        $target_width = $version['width'];
+        $target_height = $version['height'];
+        $newFileName = $baseFileName . $version['suffix'] . '.' . $extension;
+        $finalTargetPath = $targetDir . $newFileName;
+        $thumb = imagecreatetruecolor($target_width, $target_height);
+
+        if ($mime_type == "image/png") {
+            imagealphablending($thumb, false);
+            imagesavealpha($thumb, true);
+            $transparent = imagecolorallocatealpha($thumb, 255, 255, 255, 127);
+            imagefilledrectangle($thumb, 0, 0, $target_width, $target_height, $transparent);
         }
-    }
 
-    if ($image) {
-        imagedestroy($image);
-    } else {
-        return ['error' => 'ไม่สามารถประมวลผลไฟล์รูปภาพได้'];
-    }
+        $original_aspect = $original_width / $original_height;
+        $target_aspect = $target_width / $target_height;
+        if ($original_aspect >= $target_aspect) {
+           $new_height = $target_height;
+           $new_width = $original_width / ($original_height / $target_height);
+           $crop_x = ($new_width - $target_width) / 2;
+           $crop_y = 0;
+        } else {
+           $new_width = $target_width;
+           $new_height = $original_height / ($original_width / $target_width);
+           $crop_x = 0;
+           $crop_y = ($new_height - $target_height) / 2;
+        }
 
-    return ['filename' => $newFileName];
+        imagecopyresampled($thumb, $source_image, -$crop_x, -$crop_y, 0, 0, $new_width, $new_height, $original_width, $original_height);
+
+        if ($mime_type == "image/jpeg") {
+            imagejpeg($thumb, $finalTargetPath, 75);
+        } else {
+            imagepng($thumb, $finalTargetPath, 7);
+        }
+        imagedestroy($thumb);
+        $generated_files[$key] = $newFileName;
+    }
+    imagedestroy($source_image);
+    return ['filenames' => $generated_files];
 }
 
-
-// --- 3. ตรวจสอบและประมวลผลข้อมูล ---
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
-    // ตรวจสอบ CSRF Token
     if (!isset($_POST['csrf_token']) || !hash_equals($_SESSION['csrf_token'], $_POST['csrf_token'])) {
         handle_error('CSRF token ไม่ถูกต้อง');
     }
-    unset($_SESSION['csrf_token']); // ใช้ Token ได้ครั้งเดียว
+    unset($_SESSION['csrf_token']);
 
-    // เชื่อมต่อฐานข้อมูล
     $conn = new mysqli($servername, $username, $password, $dbname);
     if ($conn->connect_error) {
-        handle_error("เกิดข้อผิดพลาดในการเชื่อมต่อกับฐานข้อมูล", "Database Connection failed: " . $conn->connect_error);
+        handle_error("เกิดข้อผิดพลาดในการเชื่อมต่อกับฐานข้อมูล", "DB Connection Error: " . $conn->connect_error);
     }
     $conn->set_charset("utf8");
 
-    // --- กรองและเตรียมข้อมูล (ย้าย user_key มาสร้างก่อน) ---
     $user_key = bin2hex(random_bytes(10));
-
-    // --- จัดการการอัปโหลดไฟล์รูปโปรไฟล์ตามโครงสร้างใหม่ ---
     $targetDir = "../../../../public/uploads/{$user_key}/profile/";
-    $photoUploadResult = uploadAndCompressImage($_FILES["photo_upload"], $targetDir);
+    $photoUploadResult = process_profile_image_upload($_FILES["photo_upload"], $targetDir);
+
     if (isset($photoUploadResult['error'])) {
         handle_error("อัปโหลดรูปโปรไฟล์ไม่สำเร็จ: " . $photoUploadResult['error']);
     }
-    // [แก้ไข] บันทึกเฉพาะชื่อไฟล์ลงในฐานข้อมูล
-    $photo_profile_filename = $photoUploadResult['filename'];
+    
+    $photo_profile_filename = $photoUploadResult['filenames']['normal'];
+    $photo_profile_thumb_filename = $photoUploadResult['filenames']['thumb'];
 
-    
     $user_type = htmlspecialchars(strip_tags(trim($_POST['user_type'] ?? '')));
-    
     $phone_number = preg_replace('/\D/', '', $_POST['form_phone'] ?? '');
     $national_id = preg_replace('/\D/', '', $_POST['personal_id'] ?? '');
 
-    // ตรวจสอบข้อมูลซ้ำฝั่ง Server
     $sql_check = "SELECT id FROM users WHERE phone_number = ? OR national_id = ?";
     $stmt_check = $conn->prepare($sql_check);
     $stmt_check->bind_param("ss", $phone_number, $national_id);
     $stmt_check->execute();
-    $result_check = $stmt_check->get_result();
-    if ($result_check->num_rows > 0) {
-        $stmt_check->close();
+    if ($stmt_check->get_result()->num_rows > 0) {
         handle_error("เบอร์โทรศัพท์หรือเลขบัตรประชาชนนี้มีอยู่ในระบบแล้ว");
     }
     $stmt_check->close();
@@ -134,18 +145,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     }
     $firstname = htmlspecialchars(strip_tags(trim($_POST['firstname'] ?? '')));
     $lastname = htmlspecialchars(strip_tags(trim($_POST['lastname'] ?? '')));
-
     $dob_day = htmlspecialchars(strip_tags(trim($_POST['dob_day'] ?? '')));
     $dob_month = htmlspecialchars(strip_tags(trim($_POST['dob_month'] ?? '')));
     $dob_year_be = htmlspecialchars(strip_tags(trim($_POST['dob_year'] ?? '')));
     $dob_year_ad = $dob_year_be ? intval($dob_year_be) - 543 : '';
     $dob = ($dob_year_ad && $dob_month && $dob_day && checkdate($dob_month, $dob_day, $dob_year_ad)) 
-        ? "{$dob_year_ad}-{$dob_month}-{$dob_day}" 
-        : null;
+        ? "{$dob_year_ad}-{$dob_month}-{$dob_day}" : null;
 
-    if (!$dob) {
-        handle_error("วันเดือนปีเกิดไม่ถูกต้อง");
-    }
+    if (!$dob) handle_error("วันเดือนปีเกิดไม่ถูกต้อง");
 
     $gender = htmlspecialchars(strip_tags(trim($_POST['gender'] ?? '')));
     $address = htmlspecialchars(strip_tags(trim($_POST['address'] ?? '')));
@@ -154,14 +161,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $province = htmlspecialchars(strip_tags(trim($_POST['province'] ?? '')));
     $zipcode = htmlspecialchars(strip_tags(trim($_POST['zipcode'] ?? '')));
 
-    // ข้อมูลการทำงาน (สำหรับ 'army' เท่านั้น)
     $work_department = null;
     $position = null;
     $official_id = null;
     if ($user_type === 'army') {
-        // --- [ใหม่] ตรรกะจัดการสังกัด ---
-        $work_department_choice = htmlspecialchars(strip_tags(trim($_POST['work_department'])));
-        $work_department_other = htmlspecialchars(strip_tags(trim($_POST['work_department_other'])));
+        $work_department_choice = htmlspecialchars(strip_tags(trim($_POST['work_department'] ?? '')));
+        $work_department_other = htmlspecialchars(strip_tags(trim($_POST['work_department_other'] ?? '')));
 
         if ($work_department_choice === 'other') {
             if (empty($work_department_other)) {
@@ -176,13 +181,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $stmt_check_dept->store_result();
 
             if ($stmt_check_dept->num_rows == 0) {
-                // ค้นหา display_order สูงสุด (ที่ไม่ใช่ 999 ของ "อื่นๆ")
-                $sql_max_order = "SELECT MAX(display_order) as max_order FROM departments WHERE display_order < 999";
+                $sql_max_order = "SELECT MAX(display_order) as max_order FROM departments";
                 $result_max_order = $conn->query($sql_max_order);
                 $max_order_row = $result_max_order->fetch_assoc();
                 $next_display_order = ($max_order_row['max_order'] ?? 0) + 1;
 
-                // เพิ่มสังกัดใหม่พร้อม display_order
                 $sql_insert_dept = "INSERT INTO departments (name, display_order) VALUES (?, ?)";
                 $stmt_insert_dept = $conn->prepare($sql_insert_dept);
                 $stmt_insert_dept->bind_param("si", $work_department, $next_display_order);
@@ -198,41 +201,29 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $official_id = preg_replace('/\D/', '', $_POST['official_id'] ?? '');
     }
 
-    // --- สร้าง SQL INSERT Statement ---
-    $sql = "INSERT INTO users (user_key, user_type, phone_number, national_id, title, firstname, lastname, dob, gender, address, subdistrict, district, province, zipcode, photo_profile, work_department, position, official_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+    $sql = "INSERT INTO users (user_key, user_type, phone_number, national_id, title, firstname, lastname, dob, gender, address, subdistrict, district, province, zipcode, photo_profile, photo_profile_thumb, work_department, position, official_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
     
     $stmt = $conn->prepare($sql);
-    $stmt->bind_param(
-        "ssssssssssssssssss",
+    $stmt->bind_param("sssssssssssssssssss",
         $user_key, $user_type, $phone_number, $national_id, $title, $firstname, $lastname, $dob, $gender,
-        $address, $subdistrict, $district, $province, $zipcode, $photo_profile_filename, // [แก้ไข] ใช้ $photo_profile_filename
+        $address, $subdistrict, $district, $province, $zipcode, 
+        $photo_profile_filename, $photo_profile_thumb_filename,
         $work_department, $position, $official_id
     );
 
     if ($stmt->execute()) {
         $new_user_id = $stmt->insert_id;
-
-        // บันทึก Log การสมัครสำเร็จ
-        log_activity($conn, 'register_success', [
-            'user_id' => $new_user_id,
-            'phone' => $phone_number
-        ]);
-
-        // Redirect ไปยังหน้า login พร้อมสถานะสำเร็จ
+        log_activity($conn, 'register_success', ['user_id' => $new_user_id, 'phone' => $phone_number]);
         header("Location: ../../../views/user/login/login.php?status=success");
         exit();
-
     } else {
-        // บันทึก Log การสมัครล้มเหลว
         log_activity($conn, 'register_fail', ['error' => $stmt->error]);
-        handle_error("เกิดข้อผิดพลาดในการบันทึกข้อมูล", "SQL Execute Error: " . $stmt->error);
+        handle_error("เกิดข้อผิดพลาดในการบันทึกข้อมูล", "SQL Error: " . $stmt->error);
     }
     
     $stmt->close();
     $conn->close();
-
 } else {
-    // Redirect หากไม่ได้เข้ามาด้วยวิธี POST
     header("Location: ../../../views/user/register/register.php");
     exit();
 }

@@ -83,7 +83,7 @@ require_once __DIR__ . '/../layouts/header.php';
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-base-200 rounded-box">
                             <div class="form-control w-full">
                                 <label class="label py-1"><span class="label-text font-medium">ประเภทรถ</span></label>
-                                <select id="check-vehicle-type" class="select select-bordered" required>
+                                <select id="check-vehicle-type" class="select select-sm select-bordered" required>
                                     <option disabled selected value="">เลือกประเภทรถ</option>
                                     <option value="รถยนต์">รถยนต์</option>
                                     <option value="รถจักรยานยนต์">รถจักรยานยนต์</option>
@@ -92,12 +92,12 @@ require_once __DIR__ . '/../layouts/header.php';
                             </div>
                             <div class="form-control w-full">
                                 <label class="label py-1"><span class="label-text font-medium">เลขทะเบียนรถ</span></label>
-                                <input type="text" id="check-license-plate" placeholder="เช่น 1กข1234" class="input input-bordered w-full" required oninput="this.value = this.value.replace(/[^ก-๙0-9]/g, '')" />
+                                <input type="text" id="check-license-plate" placeholder="เช่น 1กข1234" class="input input-sm input-bordered w-full" required oninput="this.value = this.value.replace(/[^ก-๙0-9]/g, '')" />
                                 <p class="error-message hidden text-error text-xs mt-1"></p>
                             </div>
                             <div class="form-control w-full">
                                 <label class="label py-1"><span class="label-text font-medium">จังหวัดทะเบียนรถ</span></label>
-                                <select id="check-license-province" class="select select-bordered" required>
+                                <select id="check-license-province" class="select select-sm select-bordered" required>
                                     <option disabled selected value="">เลือกจังหวัด</option>
                                     <?php foreach ($provinces as $province): ?>
                                         <option value="<?php echo htmlspecialchars($province); ?>"><?php echo htmlspecialchars($province); ?></option>
@@ -107,24 +107,30 @@ require_once __DIR__ . '/../layouts/header.php';
                             </div>
                         </div>
                         <div class="card-actions justify-center mt-6">
-                            <button type="button" id="check-vehicle-btn" class="btn btn-primary"><i class="fa-solid fa-arrow-right mr-2"></i>ขั้นตอนถัดไป</button>
+                            <button type="button" id="check-vehicle-btn" class="btn btn-sm btn-primary"><i class="fa-solid fa-arrow-right mr-2"></i>ขั้นตอนถัดไป</button>
                         </div>
                     </div>
                     
-                    <!-- STEP 2: DETAILS -->
+                    <!-- STEP 2: DETAILS (Reverted to old layout inside the card) -->
                     <div id="vehicle-details-section" class="hidden">
-                        <div class="stats stats-vertical sm:stats-horizontal shadow bg-base-200 w-full mb-4">
-                          <div class="stat p-3">
-                            <div class="stat-title text-xs">ประเภทรถ</div>
-                            <div id="display-vehicle-type" class="stat-value text-base text-neutral"><?php echo htmlspecialchars($renewal_data['vehicle_type'] ?? ''); ?></div>
-                          </div>
-                          <div class="stat p-3">
-                            <div class="stat-title text-xs">เลขทะเบียน</div>
-                            <div class="stat-value text-base text-neutral">
-                                <span id="display-license-plate"><?php echo htmlspecialchars($renewal_data['license_plate'] ?? ''); ?></span>
-                                <span id="display-license-province"><?php echo htmlspecialchars($renewal_data['province'] ?? ''); ?></span>
+                        <div class="stats stats-vertical sm:stats-horizontal shadow w-full mb-4" style="background-color: oklch(0.25 0.08 255.06); color: oklch(1 0 0);">
+                            <div class="stat">
+                                <div class="stat-figure">
+                                    <i id="display-vehicle-type-icon" class="fa-solid fa-car-side text-3xl"></i>
+                                </div>
+                                <div class="stat-title" style="color: oklch(1 0 0);">ประเภทรถ</div>
+                                <div id="display-vehicle-type" class="stat-value text-lg"><?php echo htmlspecialchars($renewal_data['vehicle_type'] ?? ''); ?></div>
                             </div>
-                          </div>
+                            <div class="stat">
+                                <div class="stat-figure">
+                                     <i class="fa-regular fa-window-maximize text-3xl"></i>
+                                </div>
+                                <div class="stat-title" style="color: oklch(1 0 0);">เลขทะเบียน</div>
+                                <div class="stat-value text-lg">
+                                    <span id="display-license-plate"><?php echo htmlspecialchars($renewal_data['license_plate'] ?? ''); ?></span>
+                                    <span id="display-license-province"><?php echo htmlspecialchars($renewal_data['province'] ?? ''); ?></span>
+                                </div>
+                            </div>
                         </div>
                         <input type="hidden" name="vehicle_type" value="<?php echo htmlspecialchars($renewal_data['vehicle_type'] ?? ''); ?>" required />
                         <input type="hidden" name="license_plate" value="<?php echo htmlspecialchars($renewal_data['license_plate'] ?? ''); ?>" required />
@@ -135,14 +141,14 @@ require_once __DIR__ . '/../layouts/header.php';
                             <div class="space-y-4">
                                 <div class="space-y-2">
                                     <div class="divider divider-start text-sm font-semibold m-0">ข้อมูลยานพาหนะและเจ้าของ</div>
-                                    <div class="form-control w-full"><label class="label py-1"><span class="label-text font-medium text-xs">ยี่ห้อรถ</span></label><select name="vehicle_brand" class="select select-bordered" required><option disabled selected value="">เลือกยี่ห้อ</option><?php foreach ($car_brands as $brand): ?><option value="<?php echo htmlspecialchars($brand); ?>" <?php echo (isset($renewal_data['brand']) && $renewal_data['brand'] == $brand) ? 'selected' : ''; ?>><?php echo htmlspecialchars($brand); ?></option><?php endforeach; ?></select><p class="error-message hidden text-error text-xs mt-1"></p></div>
+                                    <div class="form-control w-full"><label class="label py-1"><span class="label-text font-medium text-xs">ยี่ห้อรถ</span></label><select name="vehicle_brand" class="select select-sm select-bordered" required><option disabled selected value="">เลือกยี่ห้อ</option><?php foreach ($car_brands as $brand): ?><option value="<?php echo htmlspecialchars($brand); ?>" <?php echo (isset($renewal_data['brand']) && $renewal_data['brand'] == $brand) ? 'selected' : ''; ?>><?php echo htmlspecialchars($brand); ?></option><?php endforeach; ?></select><p class="error-message hidden text-error text-xs mt-1"></p></div>
                                     <div class="grid grid-cols-2 gap-2">
-                                        <div class="form-control w-full"><label class="label py-1"><span class="label-text font-medium text-xs">รุ่นรถ (ภาษาอังกฤษ)</span></label><input type="text" name="vehicle_model" placeholder="เช่น COROLLA" class="input input-bordered w-full" value="<?php echo htmlspecialchars($renewal_data['model'] ?? ''); ?>" required oninput="this.value = this.value.replace(/[^a-zA-Z0-9\s!@#$%^&*()_+\-=\[\]{};':&quot;\\|,.<>\/?~`]/g, '')" /><p class="error-message hidden text-error text-xs mt-1"></p></div>
-                                        <div class="form-control w-full"><label class="label py-1"><span class="label-text font-medium text-xs">สีรถ</span></label><input type="text" name="vehicle_color" placeholder="เช่น ดำ" class="input input-bordered w-full" value="<?php echo htmlspecialchars($renewal_data['color'] ?? ''); ?>" required oninput="this.value = this.value.replace(/[^ก-๙\s!@#$%^&*()_+\-=\[\]{};':&quot;\\|,.<>\/?~`]/g, '')" /><p class="error-message hidden text-error text-xs mt-1"></p></div>
+                                        <div class="form-control w-full"><label class="label py-1"><span class="label-text font-medium text-xs">รุ่นรถ (ภาษาอังกฤษ)</span></label><input type="text" name="vehicle_model" placeholder="เช่น COROLLA" class="input input-sm input-bordered w-full" value="<?php echo htmlspecialchars($renewal_data['model'] ?? ''); ?>" required oninput="this.value = this.value.replace(/[^a-zA-Z0-9\s!@#$%^&*()_+\-=\[\]{};':&quot;\\|,.<>\/?~`]/g, '')" /><p class="error-message hidden text-error text-xs mt-1"></p></div>
+                                        <div class="form-control w-full"><label class="label py-1"><span class="label-text font-medium text-xs">สีรถ</span></label><input type="text" name="vehicle_color" placeholder="เช่น ดำ" class="input input-sm input-bordered w-full" value="<?php echo htmlspecialchars($renewal_data['color'] ?? ''); ?>" required oninput="this.value = this.value.replace(/[^ก-๙\s!@#$%^&*()_+\-=\[\]{};':&quot;\\|,.<>\/?~`]/g, '')" /><p class="error-message hidden text-error text-xs mt-1"></p></div>
                                     </div>
-                                    <div class="form-control w-full"><label class="label py-1"><span class="label-text font-medium text-xs">วันสิ้นอายุภาษีรถ</span></label><div class="grid grid-cols-3 gap-2"><select name="tax_day" class="select select-bordered" required></select><select name="tax_month" class="select select-bordered" required></select><select name="tax_year" class="select select-bordered" required></select></div><p class="error-message hidden text-error text-xs mt-1"></p></div>
-                                    <div class="form-control w-full"><label class="label py-1"><span class="label-text font-medium text-xs">เป็นรถของใคร?</span></label><select name="owner_type" class="select select-bordered" required><option disabled selected value="">กรุณาเลือก</option><option value="self" <?php echo (isset($renewal_data['owner_type']) && $renewal_data['owner_type'] == 'self') ? 'selected' : ''; ?>>รถชื่อตนเอง</option><option value="other" <?php echo (isset($renewal_data['owner_type']) && $renewal_data['owner_type'] == 'other') ? 'selected' : ''; ?>>รถคนอื่น</option></select><p class="error-message hidden text-error text-xs mt-1"></p></div>
-                                    <div id="other-owner-details" class="hidden space-y-2 p-3 bg-base-200 rounded-box"><div role="alert" class="alert alert-warning alert-soft text-xs p-2 justify-start text-left"><span><i class="fa-solid fa-triangle-exclamation"></i> <b>คำเตือน:</b> หากยานพาหนะเกิดปัญหาใดๆ ผู้ยื่นคำร้องจะต้องเป็นผู้รับผิดชอบ</span></div><div class="grid grid-cols-2 gap-2"><div class="form-control w-full"><label class="label py-1"><span class="label-text font-medium text-xs">ชื่อ-สกุล เจ้าของรถ</span></label><input type="text" name="other_owner_name" placeholder="เช่น นายสมชาย ใจดี" class="input input-bordered w-full" value="<?php echo htmlspecialchars($renewal_data['other_owner_name'] ?? ''); ?>" oninput="this.value = this.value.replace(/[^ก-๙\s!@#$%^&*()_+\-=\[\]{};':&quot;\\|,.<>\/?~`]/g, '')" /><p class="error-message hidden text-error text-xs mt-1"></p></div><div class="form-control w-full"><label class="label py-1"><span class="label-text font-medium text-xs">เกี่ยวข้องเป็น</span></label><input type="text" name="other_owner_relation" placeholder="เช่น บิดา, มารดา, เพื่อน" class="input input-bordered w-full" value="<?php echo htmlspecialchars($renewal_data['other_owner_relation'] ?? ''); ?>" oninput="this.value = this.value.replace(/[^ก-๙\s!@#$%^&*()_+\-=\[\]{};':&quot;\\|,.<>\/?~`]/g, '')" /><p class="error-message hidden text-error text-xs mt-1"></p></div></div></div>
+                                    <div class="form-control w-full"><label class="label py-1"><span class="label-text font-medium text-xs">วันสิ้นอายุภาษีรถ</span></label><div class="grid grid-cols-3 gap-2"><select name="tax_day" class="select select-sm select-bordered" required></select><select name="tax_month" class="select select-sm select-bordered" required></select><select name="tax_year" class="select select-sm select-bordered" required></select></div><p class="error-message hidden text-error text-xs mt-1"></p></div>
+                                    <div class="form-control w-full"><label class="label py-1"><span class="label-text font-medium text-xs">เป็นรถของใคร?</span></label><select name="owner_type" class="select select-sm select-bordered" required><option disabled selected value="">กรุณาเลือก</option><option value="self" <?php echo (isset($renewal_data['owner_type']) && $renewal_data['owner_type'] == 'self') ? 'selected' : ''; ?>>รถชื่อตนเอง</option><option value="other" <?php echo (isset($renewal_data['owner_type']) && $renewal_data['owner_type'] == 'other') ? 'selected' : ''; ?>>รถคนอื่น</option></select><p class="error-message hidden text-error text-xs mt-1"></p></div>
+                                    <div id="other-owner-details" class="hidden space-y-2 p-3 bg-base-200 rounded-box"><div role="alert" class="alert alert-warning alert-soft text-xs p-2 justify-start text-left"><span><i class="fa-solid fa-triangle-exclamation"></i> <b>คำเตือน:</b> หากยานพาหนะเกิดปัญหาใดๆ ผู้ยื่นคำร้องจะต้องเป็นผู้รับผิดชอบ</span></div><div class="grid grid-cols-2 gap-2"><div class="form-control w-full"><label class="label py-1"><span class="label-text font-medium text-xs">ชื่อ-สกุล เจ้าของรถ</span></label><input type="text" name="other_owner_name" placeholder="เช่น นายสมชาย ใจดี" class="input input-sm input-bordered w-full" value="<?php echo htmlspecialchars($renewal_data['other_owner_name'] ?? ''); ?>" oninput="this.value = this.value.replace(/[^ก-๙\s!@#$%^&*()_+\-=\[\]{};':&quot;\\|,.<>\/?~`]/g, '')" /><p class="error-message hidden text-error text-xs mt-1"></p></div><div class="form-control w-full"><label class="label py-1"><span class="label-text font-medium text-xs">เกี่ยวข้องเป็น</span></label><input type="text" name="other_owner_relation" placeholder="เช่น บิดา, มารดา, เพื่อน" class="input input-sm input-bordered w-full" value="<?php echo htmlspecialchars($renewal_data['other_owner_relation'] ?? ''); ?>" oninput="this.value = this.value.replace(/[^ก-๙\s!@#$%^&*()_+\-=\[\]{};':&quot;\\|,.<>\/?~`]/g, '')" /><p class="error-message hidden text-error text-xs mt-1"></p></div></div></div>
                                 </div>
                             </div>
 
@@ -151,10 +157,10 @@ require_once __DIR__ . '/../layouts/header.php';
                                 <div class="divider divider-start text-sm font-semibold m-0">หลักฐานประกอบ</div>
                                 <div role="alert" class="alert alert-info alert-soft text-xs p-2 justify-start"><span><i class="fa-solid fa-circle-info"></i> โปรดตรวจสอบความคมชัดของรูปถ่าย (.jpg, .png) และขนาดไฟล์ต้องไม่เกิน 5 MB</span></div>
                                 <div class="grid grid-cols-2 gap-3">
-                                    <div class="form-control w-full"><label class="block font-medium mb-1 text-center text-xs">สำเนาทะเบียนรถ</label><div class="flex justify-center bg-base-200 p-2 rounded-box border overflow-hidden h-28"><img id="reg-copy-preview" src="/public/assets/images/registration.jpg" alt="ตัวอย่าง" class="w-full h-full object-contain"></div><input type="file" id="reg_copy_upload" name="reg_copy_upload" class="file-input file-input-sm file-input-bordered w-full mt-2" accept=".jpg, .jpeg, .png" required><p class="error-message hidden text-error text-xs mt-1"></p></div>
-                                    <div class="form-control w-full"><label class="block font-medium mb-1 text-center text-xs">ป้ายภาษี (ป้ายวงกลม)</label><div class="flex justify-center bg-base-200 p-2 rounded-box border overflow-hidden h-28"><img id="tax-sticker-preview" src="/public/assets/images/tax_sticker.jpg" alt="ตัวอย่าง" class="w-full h-full object-contain"></div><input type="file" id="tax_sticker_upload" name="tax_sticker_upload" class="file-input file-input-sm file-input-bordered w-full mt-2" accept=".jpg, .jpeg, .png" required><p class="error-message hidden text-error text-xs mt-1"></p></div>
-                                    <div class="form-control w-full"><label class="block font-medium mb-1 text-center text-xs">รูปถ่ายรถด้านหน้า</label><div class="flex justify-center bg-base-200 p-2 rounded-box border overflow-hidden h-28"><img id="front-view-preview" src="/public/assets/images/front_view.png" alt="ตัวอย่าง" class="w-full h-full object-contain"></div><input type="file" id="front_view_upload" name="front_view_upload" class="file-input file-input-sm file-input-bordered w-full mt-2" accept=".jpg, .jpeg, .png" required><p class="error-message hidden text-error text-xs mt-1"></p></div>
-                                    <div class="form-control w-full"><label class="block font-medium mb-1 text-center text-xs">รูปถ่ายรถด้านหลัง</label><div class="flex justify-center bg-base-200 p-2 rounded-box border overflow-hidden h-28"><img id="rear-view-preview" src="/public/assets/images/rear_view.png" alt="ตัวอย่าง" class="w-full h-full object-contain"></div><input type="file" id="rear_view_upload" name="rear_view_upload" class="file-input file-input-sm file-input-bordered w-full mt-2" accept=".jpg, .jpeg, .png" required><p class="error-message hidden text-error text-xs mt-1"></p></div>
+                                    <div class="form-control w-full"><label class="block font-medium mb-1 text-center text-xs">สำเนาทะเบียนรถ</label><div class="flex justify-center bg-base-200 p-2 rounded-box border overflow-hidden h-28"><img id="reg-copy-preview" src="/public/assets/images/registration.jpg" alt="ตัวอย่างสำเนาทะเบียนรถ" class="w-full h-full object-contain cursor-pointer example-image"></div><input type="file" id="reg_copy_upload" name="reg_copy_upload" class="file-input file-input-sm file-input-bordered w-full mt-2" accept=".jpg, .jpeg, .png" required><p class="error-message hidden text-error text-xs mt-1"></p></div>
+                                    <div class="form-control w-full"><label class="block font-medium mb-1 text-center text-xs">ป้ายภาษี (ป้ายวงกลม)</label><div class="flex justify-center bg-base-200 p-2 rounded-box border overflow-hidden h-28"><img id="tax-sticker-preview" src="/public/assets/images/tax_sticker.jpg" alt="ตัวอย่างป้ายภาษี" class="w-full h-full object-contain cursor-pointer example-image"></div><input type="file" id="tax_sticker_upload" name="tax_sticker_upload" class="file-input file-input-sm file-input-bordered w-full mt-2" accept=".jpg, .jpeg, .png" required><p class="error-message hidden text-error text-xs mt-1"></p></div>
+                                    <div class="form-control w-full"><label class="block font-medium mb-1 text-center text-xs">รูปถ่ายรถด้านหน้า</label><div class="flex justify-center bg-base-200 p-2 rounded-box border overflow-hidden h-28"><img id="front-view-preview" src="/public/assets/images/front_view.png" alt="ตัวอย่างรูปถ่ายรถด้านหน้า" class="w-full h-full object-contain cursor-pointer example-image"></div><input type="file" id="front_view_upload" name="front_view_upload" class="file-input file-input-sm file-input-bordered w-full mt-2" accept=".jpg, .jpeg, .png" required><p class="error-message hidden text-error text-xs mt-1"></p></div>
+                                    <div class="form-control w-full"><label class="block font-medium mb-1 text-center text-xs">รูปถ่ายรถด้านหลัง</label><div class="flex justify-center bg-base-200 p-2 rounded-box border overflow-hidden h-28"><img id="rear-view-preview" src="/public/assets/images/rear_view.png" alt="ตัวอย่างรูปถ่ายรถด้านหลัง" class="w-full h-full object-contain cursor-pointer example-image"></div><input type="file" id="rear_view_upload" name="rear_view_upload" class="file-input file-input-sm file-input-bordered w-full mt-2" accept=".jpg, .jpeg, .png" required><p class="error-message hidden text-error text-xs mt-1"></p></div>
                                 </div>
                             </div>
                         </div>
@@ -165,7 +171,7 @@ require_once __DIR__ . '/../layouts/header.php';
                         <div class="flex flex-col items-center gap-4">
                             <div class="form-control w-full max-w-md">
                                 <label class="label cursor-pointer justify-start gap-4">
-                                    <input type="checkbox" name="terms_confirm" class="checkbox checkbox-primary" required />
+                                    <input type="checkbox" name="terms_confirm" class="checkbox checkbox-sm checkbox-primary" required />
                                     <span class="label-text text-sm font-semibold">ข้าพเจ้ายืนยันและยอมรับเงื่อนไขการใช้งาน</span>
                                 </label>
                                 <div class="text-xs text-base-content/70 pl-10">
@@ -178,8 +184,8 @@ require_once __DIR__ . '/../layouts/header.php';
                                 <p class="error-message hidden text-error text-xs mt-1 pl-10"></p>
                             </div>
                             <div class="card-actions justify-center mt-2 gap-4">
-                                <button type="button" id="back-to-step1-btn" class="btn btn-ghost"><i class="fa-solid fa-arrow-left mr-2"></i>ย้อนกลับ</button>
-                                <button type="button" id="submit-request-btn" class="btn btn-primary"><i class="fa-solid fa-paper-plane mr-2"></i>ยืนยันและส่งคำร้อง</button>
+                                <button type="button" id="back-to-step1-btn" class="btn btn-sm btn-ghost"><i class="fa-solid fa-arrow-left mr-2"></i>ย้อนกลับ</button>
+                                <button type="button" id="submit-request-btn" class="btn btn-sm btn-primary"><i class="fa-solid fa-paper-plane mr-2"></i>ยืนยันและส่งคำร้อง</button>
                             </div>
                         </div>
                     </div>
@@ -191,19 +197,13 @@ require_once __DIR__ . '/../layouts/header.php';
     <?php endif; ?>
 </div>
 
-<dialog id="resetConfirmModal" class="modal modal-middle">
-  <div class="modal-box w-11/12 max-w-sm">
-    <h3 class="font-bold text-lg">ยืนยันการเริ่มใหม่</h3>
-    <p class="py-4 text-sm">คุณแน่ใจหรือไม่ว่าต้องการล้างข้อมูลและกลับไปเริ่มต้นที่ขั้นตอนที่ 1 ใหม่?</p>
-    <div class="modal-action">
-      <form method="dialog">
-        <button class="btn">ยกเลิก</button>
-      </form>
-      <button id="confirm-reset-btn" class="btn btn-error">ยืนยัน</button>
-    </div>
-  </div>
-   <form method="dialog" class="modal-backdrop"><button>close</button></form>
-</dialog>
+<!-- W3Schools Image Modal -->
+<div id="w3-image-modal" class="w3-modal">
+  <span class="w3-modal-close">&times;</span>
+  <img class="w3-modal-content" id="w3-modal-img">
+  <div id="w3-modal-caption"></div>
+</div>
+
 
 <!-- Loading Modal -->
 <dialog id="loading_modal" class="modal modal-middle">

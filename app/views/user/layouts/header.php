@@ -27,7 +27,8 @@
     <link rel="stylesheet" href="/lib/jquery.Thailand/dist/jquery.Thailand.min.css">
     <link rel="stylesheet" href="/lib/google-fonts-prompt/prompt.css">
     <link rel="stylesheet" href="/lib/fontawesome-free-7.0.1-web/css/all.min.css">
-    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/photoswipe/5.4.3/photoswipe.min.css">
+
     <!-- Custom Styles -->
     <style>
         body { 
@@ -49,12 +50,75 @@
 
         .break-words { word-wrap: break-word; overflow-wrap: break-word; }
         
+        /* [NEW] Fix for FOUC (Flash of Unstyled Content) on sidebar */
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         .drawer-content { animation: fadeIn 0.3s ease-in-out; }
         
         @media (min-width: 1024px) {
             .drawer.lg\:drawer-open .drawer-content { height: 100vh; overflow-y: auto; }
             .drawer.lg\:drawer-open .drawer-side { position: sticky; top: 0; height: 100vh; }
+        }
+
+        /* [MODIFIED] W3Schools Image Modal CSS for Centering and Sizing */
+        .w3-modal {
+            display: none; /* Initially hidden, JS will change this to 'flex' */
+            position: fixed; 
+            z-index: 1000; 
+            left: 0;
+            top: 0;
+            width: 100%; 
+            height: 100%; 
+            overflow: hidden; /* Prevent scrollbars on the modal background */
+            background-color: rgba(0,0,0,0.9);
+            /* Use Flexbox to center the content */
+            justify-content: center;
+            align-items: center;
+        }
+
+        .w3-modal-content {
+            display: block;
+            margin: auto;
+            /* Constrain image size to fit within the viewport with some padding */
+            max-width: 90vw;
+            max-height: 85vh;
+            object-fit: contain; /* Maintain aspect ratio without cropping */
+        }
+
+        #w3-modal-caption {
+            /* Position caption absolutely at the bottom */
+            position: absolute;
+            bottom: 15px;
+            width: 100%;
+            text-align: center;
+            color: #ccc;
+            padding: 10px 0;
+        }
+
+        .w3-modal-content, #w3-modal-caption {
+            animation-name: zoom;
+            animation-duration: 0.6s;
+        }
+
+        @keyframes zoom {
+            from {transform:scale(0)}
+            to {transform:scale(1)}
+        }
+
+        .w3-modal-close {
+            position: absolute;
+            top: 15px;
+            right: 35px;
+            color: #f1f1f1;
+            font-size: 40px;
+            font-weight: bold;
+            transition: 0.3s;
+        }
+
+        .w3-modal-close:hover,
+        .w3-modal-close:focus {
+            color: #bbb;
+            text-decoration: none;
+            cursor: pointer;
         }
 
     </style>

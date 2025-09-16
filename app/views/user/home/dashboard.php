@@ -80,8 +80,8 @@ require_once __DIR__ . '/../layouts/header.php';
 <div class="card bg-base-100 shadow-md mb-4">
     <div class="card-body p-3 flex-row items-center gap-4">
         <div class="avatar">
-            <div class="w-14 rounded-full ring ring-primary ring-offset-base-100 ring-offset-2">
-                <img src="<?php echo htmlspecialchars($user_photo_path); ?>" />
+            <div class="w-14 h-14 rounded-full ring ring-primary ring-offset-base-100 ring-offset-2">
+                <img src="<?php echo htmlspecialchars($user_photo_thumb_path); ?>" class="object-cover w-full h-full" />
             </div>
         </div>
         <div>
@@ -181,7 +181,7 @@ require_once __DIR__ . '/../layouts/header.php';
             $status_class = '';
             $status_icon = '';
             $border_class = 'border-transparent';
-            $status_badge_bg = ''; // [NEW] Initialize the variable
+            $status_badge_bg = '';
 
             if ($request['status'] === 'approved' && $is_expired) {
                 $status_key = 'expired';
@@ -189,7 +189,7 @@ require_once __DIR__ . '/../layouts/header.php';
                 $status_class = 'badge-neutral';
                 $status_icon = 'fa-solid fa-calendar-times';
                 $border_class = 'border-base-300';
-                $status_badge_bg = 'bg-base-300'; // [NEW] Set background for expired
+                $status_badge_bg = 'bg-base-300';
             } else {
                 switch ($request['status']) {
                     case 'approved': 
@@ -197,21 +197,21 @@ require_once __DIR__ . '/../layouts/header.php';
                         $status_class = 'badge-success'; 
                         $status_icon = 'fa-solid fa-check-circle'; 
                         $border_class = 'border-success/50';
-                        $status_badge_bg = 'bg-success text-success-content'; // [NEW] Set background for approved
+                        $status_badge_bg = 'bg-success text-success-content';
                         break;
                     case 'pending': 
                         $status_text = 'รออนุมัติ'; 
                         $status_class = 'badge-warning'; 
                         $status_icon = 'fa-solid fa-clock'; 
                         $border_class = 'border-warning/50'; 
-                        $status_badge_bg = 'bg-warning text-warning-content'; // [NEW] Set background for pending
+                        $status_badge_bg = 'bg-warning text-warning-content';
                         break;
                     case 'rejected': 
                         $status_text = 'ไม่ผ่าน'; 
                         $status_class = 'badge-error'; 
                         $status_icon = 'fa-solid fa-circle-xmark'; 
                         $border_class = 'border-error/50'; 
-                        $status_badge_bg = 'bg-error text-error-content'; // [NEW] Set background for rejected
+                        $status_badge_bg = 'bg-error text-error-content';
                         break;
                 }
             }
@@ -363,10 +363,10 @@ require_once __DIR__ . '/../layouts/header.php';
                      </div>
                       <div class="divider text-sm font-semibold">หลักฐาน (อัปโหลดใหม่เฉพาะที่ต้องการเปลี่ยน)</div>
                       <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                         <div class="form-control w-full"><label class="label pb-1"><span class="label-text text-sm">สำเนาทะเบียนรถ</span></label><div class="flex justify-center items-center bg-base-200 p-1 rounded-box border h-24"><img id="edit-reg-copy-preview" src="" class="max-w-full max-h-full object-contain"></div><input type="file" name="reg_copy_upload" id="edit-reg-copy-upload" class="file-input file-input-bordered file-input-sm w-full mt-2" accept=".jpg, .jpeg, .png"><p class="error-message hidden text-error text-xs mt-1"></p></div>
-                         <div class="form-control w-full"><label class="label pb-1"><span class="label-text text-sm">ป้ายภาษี</span></label><div class="flex justify-center items-center bg-base-200 p-1 rounded-box border h-24"><img id="edit-tax-sticker-preview" src="" class="max-w-full max-h-full object-contain"></div><input type="file" name="tax_sticker_upload" id="edit-tax-sticker-upload" class="file-input file-input-bordered file-input-sm w-full mt-2" accept=".jpg, .jpeg, .png"><p class="error-message hidden text-error text-xs mt-1"></p></div>
-                         <div class="form-control w-full"><label class="label pb-1"><span class="label-text text-sm">รูปถ่ายด้านหน้า</span></label><div class="flex justify-center items-center bg-base-200 p-1 rounded-box border h-24"><img id="edit-front-view-preview" src="" class="max-w-full max-h-full object-contain"></div><input type="file" name="front_view_upload" id="edit-front-view-upload" class="file-input file-input-bordered file-input-sm w-full mt-2" accept=".jpg, .jpeg, .png"><p class="error-message hidden text-error text-xs mt-1"></p></div>
-                         <div class="form-control w-full"><label class="label pb-1"><span class="label-text text-sm">รูปถ่ายด้านหลัง</span></label><div class="flex justify-center items-center bg-base-200 p-1 rounded-box border h-24"><img id="edit-rear-view-preview" src="" class="max-w-full max-h-full object-contain"></div><input type="file" name="rear_view_upload" id="edit-rear-view-upload" class="file-input file-input-bordered file-input-sm w-full mt-2" accept=".jpg, .jpeg, .png"><p class="error-message hidden text-error text-xs mt-1"></p></div>
+                         <div class="form-control w-full"><label class="label pb-1"><span class="label-text text-sm">สำเนาทะเบียนรถ</span></label><div class="flex justify-center items-center bg-base-200 p-1 rounded-box border h-24"><img id="edit-reg-copy-preview" src="" class="max-w-full max-h-full object-contain"></div><input type="file" name="reg_copy_upload" id="edit-reg-copy-upload" class="file-input file-input-sm file-input-bordered w-full mt-2" accept=".jpg, .jpeg, .png"><p class="error-message hidden text-error text-xs mt-1"></p></div>
+                         <div class="form-control w-full"><label class="label pb-1"><span class="label-text text-sm">ป้ายภาษี</span></label><div class="flex justify-center items-center bg-base-200 p-1 rounded-box border h-24"><img id="edit-tax-sticker-preview" src="" class="max-w-full max-h-full object-contain"></div><input type="file" name="tax_sticker_upload" id="edit-tax-sticker-upload" class="file-input file-input-sm file-input-bordered w-full mt-2" accept=".jpg, .jpeg, .png"><p class="error-message hidden text-error text-xs mt-1"></p></div>
+                         <div class="form-control w-full"><label class="label pb-1"><span class="label-text text-sm">รูปถ่ายด้านหน้า</span></label><div class="flex justify-center items-center bg-base-200 p-1 rounded-box border h-24"><img id="edit-front-view-preview" src="" class="max-w-full max-h-full object-contain"></div><input type="file" name="front_view_upload" id="edit-front-view-upload" class="file-input file-input-sm file-input-bordered w-full mt-2" accept=".jpg, .jpeg, .png"><p class="error-message hidden text-error text-xs mt-1"></p></div>
+                         <div class="form-control w-full"><label class="label pb-1"><span class="label-text text-sm">รูปถ่ายด้านหลัง</span></label><div class="flex justify-center items-center bg-base-200 p-1 rounded-box border h-24"><img id="edit-rear-view-preview" src="" class="max-w-full max-h-full object-contain"></div><input type="file" name="rear_view_upload" id="edit-rear-view-upload" class="file-input file-input-sm file-input-bordered w-full mt-2" accept=".jpg, .jpeg, .png"><p class="error-message hidden text-error text-xs mt-1"></p></div>
                       </div>
                  </div>
                 <div class="p-4 bg-base-200 flex justify-end items-center gap-2">
