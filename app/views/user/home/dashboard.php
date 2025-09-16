@@ -230,6 +230,217 @@ require_once __DIR__ . '/../layouts/header.php';
     </div>
 </div>
 
+<!-- Request Details Modal -->
+<dialog id="request_details_modal" class="modal">
+    <div class="modal-box w-11/12 max-w-4xl">
+        <!-- Main Content Wrapper -->
+        <div id="modal-content-wrapper">
+            <div class="flex justify-between items-start mb-4">
+                <div>
+                    <h3 id="modal-license-plate" class="font-bold text-xl"></h3>
+                    <p id="modal-brand-model" class="text-base-content/80"></p>
+                </div>
+                <div id="modal-status-badge" class="badge badge-lg"></div>
+            </div>
+
+            <div id="modal-rejection-reason-box" class="alert alert-error alert-soft my-3 hidden">
+                    <div class="flex items-center">
+                    <i class="fa-solid fa-circle-info mr-2"></i>
+                    <div>
+                        <h3 class="font-bold text-sm">เหตุผลที่ไม่ผ่าน</h3>
+                        <p id="modal-rejection-reason-text" class="text-xs"></p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+                <!-- Left Column -->
+                <div>
+                    <div class="space-y-4">
+                        <div>
+                            <h4 class="font-medium text-sm border-b border-base-300 pb-1 mb-2"><i class="fa-solid fa-car-side w-4 mr-2"></i>ข้อมูลยานพาหนะและความเป็นเจ้าของ</h4>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 text-sm pt-2">
+                                <div class="space-y-1" id="modal-vehicle-info-list"></div>
+                                <div class="space-y-1" id="modal-owner-info-list"></div>
+                            </div>
+                        </div>
+                        <div class="divider my-1"></div>
+                        <div>
+                             <h4 class="font-medium text-sm border-b border-base-300 pb-1 mb-2"><i class="fa-solid fa-images w-4 mr-2"></i>หลักฐานประกอบ</h4>
+                             <div class="grid grid-cols-2 lg:grid-cols-4 gap-2 pt-2">
+                                <a href="#" target="_blank" data-pswp-src="#" data-pswp-width="800" data-pswp-height="600" class="group relative">
+                                    <img id="modal-photo-reg" class="w-full h-20 object-cover rounded-md" alt="สำเนาทะเบียนรถ">
+                                    <div class="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center text-white text-xs opacity-0 group-hover:opacity-100 transition-opacity">สำเนาทะเบียน</div>
+                                </a>
+                                <a href="#" target="_blank" data-pswp-src="#" data-pswp-width="800" data-pswp-height="600" class="group relative">
+                                    <img id="modal-photo-tax" class="w-full h-20 object-cover rounded-md" alt="ป้ายภาษี">
+                                    <div class="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center text-white text-xs opacity-0 group-hover:opacity-100 transition-opacity">ป้ายภาษี</div>
+                                </a>
+                                <a href="#" target="_blank" data-pswp-src="#" data-pswp-width="800" data-pswp-height="600" class="group relative">
+                                    <img id="modal-photo-front" class="w-full h-20 object-cover rounded-md" alt="รูปถ่ายด้านหน้า">
+                                    <div class="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center text-white text-xs opacity-0 group-hover:opacity-100 transition-opacity">ด้านหน้า</div>
+                                </a>
+                                <a href="#" target="_blank" data-pswp-src="#" data-pswp-width="800" data-pswp-height="600" class="group relative">
+                                    <img id="modal-photo-rear" class="w-full h-20 object-cover rounded-md" alt="รูปถ่ายด้านหลัง">
+                                    <div class="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center text-white text-xs opacity-0 group-hover:opacity-100 transition-opacity">ด้านหลัง</div>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Column -->
+                <div>
+                     <div class="space-y-4">
+                        <div>
+                            <h4 class="font-medium text-sm border-b border-base-300 pb-1 mb-2"><i class="fa-solid fa-file-lines w-4 mr-2"></i>ข้อมูลคำร้องและบัตร</h4>
+                            <div class="text-sm space-y-1 pt-2" id="modal-card-info-list"></div>
+                        </div>
+                         <div class="divider my-1"></div>
+                        <div id="modal-qr-code-container" class="text-center hidden">
+                             <h4 class="font-medium text-sm border-b border-base-300 pb-1 mb-2"><i class="fa-solid fa-qrcode w-4 mr-2"></i>QR Code</h4>
+                            <img src="" class="mx-auto w-1/2 mt-2" alt="QR Code">
+                            <p class="text-xs mt-2 text-base-content/70">สแกนเพื่อตรวจสอบสถานะ</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="modal-action mt-6" id="modal-action-buttons"></div>
+        </div>
+        
+        <!-- Edit Form Wrapper -->
+        <div id="modal-edit-form-wrapper" class="hidden">
+            <h3 class="font-bold text-lg mb-4">แก้ไขข้อมูลยานพาหนะและคำร้อง</h3>
+            <form id="editVehicleForm" action="../../../controllers/user/vehicle/edit_vehicle_process.php" method="POST" enctype="multipart/form-data" novalidate>
+                <input type="hidden" name="request_id" id="edit-request-id">
+
+                <!-- Vehicle Details -->
+                <div class="divider text-sm">ข้อมูลยานพาหนะ</div>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div class="form-control">
+                        <label class="label"><span class="label-text">ยี่ห้อ</span></label>
+                        <input type="text" name="brand" id="edit-vehicle-brand" class="input input-bordered" required>
+                    </div>
+                    <div class="form-control">
+                        <label class="label"><span class="label-text">รุ่น</span></label>
+                        <input type="text" name="model" id="edit-vehicle-model" class="input input-bordered" required>
+                    </div>
+                    <div class="form-control">
+                        <label class="label"><span class="label-text">สี</span></label>
+                        <input type="text" name="color" id="edit-vehicle-color" class="input input-bordered" required>
+                    </div>
+                </div>
+
+                <!-- Request Details -->
+                <div class="divider text-sm mt-6">ข้อมูลคำร้อง</div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div class="form-control">
+                        <label class="label"><span class="label-text">วันสิ้นอายุภาษี</span></label>
+                        <div class="grid grid-cols-3 gap-2">
+                            <select name="tax_day" id="edit-tax-day" class="select select-bordered" required></select>
+                            <select name="tax_month" id="edit-tax-month" class="select select-bordered" required></select>
+                            <select name="tax_year" id="edit-tax-year" class="select select-bordered" required></select>
+                        </div>
+                    </div>
+                    <div class="form-control">
+                        <label class="label"><span class="label-text">ความเป็นเจ้าของ</span></label>
+                        <select name="owner_type" id="edit-owner-type" class="select select-bordered" required>
+                            <option value="self">รถชื่อตนเอง</option>
+                            <option value="other">รถคนอื่น</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="edit-other-owner-details" class="hidden grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+                    <div class="form-control">
+                        <label class="label"><span class="label-text">ชื่อเจ้าของ</span></label>
+                        <input type="text" name="other_owner_name" id="edit-other-owner-name" class="input input-bordered">
+                    </div>
+                    <div class="form-control">
+                        <label class="label"><span class="label-text">ความเกี่ยวข้อง</span></label>
+                        <input type="text" name="other_owner_relation" id="edit-other-owner-relation" class="input input-bordered">
+                    </div>
+                </div>
+                
+                <!-- File Uploads -->
+                <div class="divider text-sm mt-6">หลักฐาน (แนบไฟล์ใหม่หากต้องการเปลี่ยนแปลง)</div>
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 text-center">
+                    <!-- Reg Copy -->
+                    <div class="form-control">
+                        <label for="edit-reg-copy-upload" class="cursor-pointer">
+                            <span class="label-text mb-1 text-xs sm:text-sm">สำเนาทะเบียนรถ</span>
+                            <img id="edit-reg-copy-preview" src="" class="w-full h-24 object-cover rounded-lg border-2 border-dashed border-base-300 p-1" alt="Preview">
+                        </label>
+                        <input type="file" name="photo_reg_copy" id="edit-reg-copy-upload" class="hidden" accept="image/*">
+                    </div>
+                    <!-- Tax Sticker -->
+                    <div class="form-control">
+                        <label for="edit-tax-sticker-upload" class="cursor-pointer">
+                            <span class="label-text mb-1 text-xs sm:text-sm">ป้ายภาษี</span>
+                            <img id="edit-tax-sticker-preview" src="" class="w-full h-24 object-cover rounded-lg border-2 border-dashed border-base-300 p-1" alt="Preview">
+                        </label>
+                        <input type="file" name="photo_tax_sticker" id="edit-tax-sticker-upload" class="hidden" accept="image/*">
+                    </div>
+                    <!-- Front View -->
+                    <div class="form-control">
+                        <label for="edit-front-view-upload" class="cursor-pointer">
+                            <span class="label-text mb-1 text-xs sm:text-sm">รูปถ่ายด้านหน้า</span>
+                            <img id="edit-front-view-preview" src="" class="w-full h-24 object-cover rounded-lg border-2 border-dashed border-base-300 p-1" alt="Preview">
+                        </label>
+                        <input type="file" name="photo_front" id="edit-front-view-upload" class="hidden" accept="image/*">
+                    </div>
+                    <!-- Rear View -->
+                    <div class="form-control">
+                        <label for="edit-rear-view-upload" class="cursor-pointer">
+                            <span class="label-text mb-1 text-xs sm:text-sm">รูปถ่ายด้านหลัง</span>
+                            <img id="edit-rear-view-preview" src="" class="w-full h-24 object-cover rounded-lg border-2 border-dashed border-base-300 p-1" alt="Preview">
+                        </label>
+                        <input type="file" name="photo_rear" id="edit-rear-view-upload" class="hidden" accept="image/*">
+                    </div>
+                </div>
+
+                <div class="modal-action mt-6">
+                    <button type="button" id="cancel-edit-btn" class="btn btn-ghost">ยกเลิก</button>
+                    <button type="submit" class="btn btn-primary">บันทึกการเปลี่ยนแปลง</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <form method="dialog" class="modal-backdrop"><button>close</button></form>
+</dialog>
+
+    <!-- [CORRECTED] Image Zoom Modal - To match admin's fullscreen behavior -->
+    <dialog id="image_zoom_modal" class="modal">
+        <div class="modal-box w-full max-w-none p-4 bg-transparent shadow-none flex justify-center items-center">
+            <div class="relative">
+                <img id="zoomed_image" src="" alt="ขยายรูปภาพ" class="rounded-lg max-h-[90vh] max-w-[90vw] object-contain">
+                <form method="dialog">
+                    <button class="btn btn-circle btn-sm absolute -top-3 -right-3 bg-black/50 hover:bg-black/75 text-white border-none z-10">✕</button>
+                </form>
+            </div>
+        </div>
+        <form method="dialog" class="modal-backdrop"><button>close</button></form>
+    </dialog>
+
+
+
+    <!-- Delete Confirmation Modal -->
+    <dialog id="delete_confirm_modal" class="modal">
+        <div class="modal-box">
+            <h3 class="font-bold text-lg text-error"><i class="fa-solid fa-triangle-exclamation mr-2"></i>ยืนยันการลบคำร้อง</h3>
+            <p class="py-4">คุณแน่ใจหรือไม่ว่าต้องการลบคำร้องนี้? การกระทำนี้ไม่สามารถย้อนกลับได้</p>
+            <div class="modal-action">
+                <form method="dialog"><button class="btn btn-sm">ยกเลิก</button></form>
+                <form id="deleteRequestForm" action="../../../controllers/user/vehicle/delete_vehicle_process.php" method="POST">
+                    <input type="hidden" name="request_id" id="delete-request-id">
+                    <button type="submit" class="btn btn-sm btn-error">ยืนยันการลบ</button>
+                </form>
+            </div>
+        </div>
+        <form method="dialog" class="modal-backdrop"><button>close</button></form>
+    </dialog>
+
 <?php
 require_once __DIR__ . '/../layouts/footer.php';
 ?>
+

@@ -110,88 +110,130 @@ document.addEventListener('DOMContentLoaded', function () {
                             <span class="font-semibold text-right break-words">${value}</span>
                         </div>`;
             };
+
+            const setupImagePreview = (inputId, previewId) => {
+                const input = document.getElementById(inputId);
+                const preview = document.getElementById(previewId);
+                if(input && preview){
+                    input.addEventListener('change', function(event) {
+                        const file = event.target.files[0];
+                        if (file) {
+                            preview.src = URL.createObjectURL(file);
+                        }
+                    });
+                }
+            };
             
             const openDetailsModal = (card) => {
-                currentCardData = card.dataset;
-                const data = currentCardData;
-                const basePath = `/public/uploads/${data.userKey}/vehicle/${data.requestKey}/`;
-                const qrPath = `/public/qr/${data.requestKey}.png`;
+                try {
+                    currentCardData = card.dataset;
+                    const data = currentCardData;
+                    const basePath = `/public/uploads/${data.userKey}/vehicle/${data.requestKey}/`;
+                    const qrPath = `/public/qr/${data.requestKey}.png`;
 
-                detailsModalEl.querySelector('#modal-status-badge').className = `badge badge-lg ${data.statusClass}`;
-                detailsModalEl.querySelector('#modal-status-badge').innerHTML = `<i class="${data.statusIcon} mr-2"></i> ${data.statusText}`;
-                detailsModalEl.querySelector('#modal-license-plate').textContent = `${data.licensePlate} ${data.province}`;
-                detailsModalEl.querySelector('#modal-brand-model').textContent = `${data.brand} / ${data.model}`;
+                    // Main Info
+                    detailsModalEl.querySelector('#modal-status-badge').className = `badge badge-lg ${data.statusClass}`;
+                    detailsModalEl.querySelector('#modal-status-badge').innerHTML = `<i class="${data.statusIcon} mr-2"></i> ${data.statusText}`;
+                    detailsModalEl.querySelector('#modal-license-plate').textContent = `${data.licensePlate} ${data.province}`;
+                    detailsModalEl.querySelector('#modal-brand-model').textContent = `${data.brand} / ${data.model}`;
+                    
+                    // Rejection Box
+                    const rejectionBox = detailsModalEl.querySelector('#modal-rejection-reason-box');
+                    rejectionBox.classList.toggle('hidden', !(data.statusKey === 'rejected' && data.rejectionReason));
+                    if (data.statusKey === 'rejected' && data.rejectionReason) {
+                        detailsModalEl.querySelector('#modal-rejection-reason-text').textContent = data.rejectionReason;
+                    }
+                    
+                    // Vehicle & Owner Info
+                    const vehicleInfoList = detailsModalEl.querySelector('#modal-vehicle-info-list');
+                    vehicleInfoList.innerHTML = createInfoRow('ประเภท', data.vehicleType) +
+                                            createInfoRow('สี', data.color) +
+                                            createInfoRow('วันสิ้นอายุภาษี', formatThaiDate(data.taxExpiry));
 
-                const rejectionBox = detailsModalEl.querySelector('#modal-rejection-reason-box');
-                rejectionBox.classList.toggle('hidden', !(data.statusKey === 'rejected' && data.rejectionReason));
-                if (data.statusKey === 'rejected' && data.rejectionReason) {
-                    detailsModalEl.querySelector('#modal-rejection-reason-text').textContent = data.rejectionReason;
-                }
-                
-                const vehicleInfoList = detailsModalEl.querySelector('#modal-vehicle-info-list');
-                vehicleInfoList.innerHTML = createInfoRow('ประเภท', data.vehicleType) +
-                                          createInfoRow('สี', data.color) +
-                                          createInfoRow('วันสิ้นอายุภาษี', formatThaiDate(data.taxExpiry));
+                    const ownerInfoList = detailsModalEl.querySelector('#modal-owner-info-list');
+                    let ownerHtml = createInfoRow('ความเป็นเจ้าของ', data.ownerType === 'self' ? 'รถชื่อตนเอง' : 'รถคนอื่น');
+                    if (data.ownerType === 'other') {
+                        ownerHtml += createInfoRow('ชื่อเจ้าของ', data.otherOwnerName || '-');
+                        ownerHtml += createInfoRow('เกี่ยวข้องเป็น', data.otherOwnerRelation || '-');
+                    }
+                    ownerInfoList.innerHTML = ownerHtml;
+                    
+                    // Request & Card Info
+                    const cardInfoList = detailsModalEl.querySelector('#modal-card-info-list');
+                    const cardTypeThai = data.cardType === 'internal' ? 'ภายใน' : (data.cardType === 'external' ? 'ภายนอก' : '-');
+                    let cardHtml = createInfoRow('รหัสคำร้อง', data.searchId);
+                    if (data.cardType) cardHtml += createInfoRow('ประเภทบัตร', cardTypeThai);
+                    cardHtml += createInfoRow('วันยื่นคำร้อง', formatThaiDateTime(data.createdAt));
+                    if (data.createdAt.substring(0, 19) !== data.updatedAt.substring(0, 19)) {
+                        cardHtml += createInfoRow('แก้ไขล่าสุด', formatThaiDateTime(data.updatedAt));
+                    }
+                    if (data.statusKey === 'approved' || data.statusKey === 'expired') {
+                        cardHtml += createInfoRow('เลขที่บัตร', data.cardNumber);
+                        cardHtml += createInfoRow('ผู้อนุมัติ', data.approvedBy);
+                        cardHtml += createInfoRow('วันอนุมัติ', formatThaiDateTime(data.approvedAt));
+                        cardHtml += createInfoRow('วันหมดอายุ', formatThaiDate(data.cardExpiry));
+                    }
+                    cardInfoList.innerHTML = cardHtml;
+                    
+                    // QR Code
+                    const qrContainer = detailsModalEl.querySelector('#modal-qr-code-container');
+                    const isQrVisible = data.statusKey === 'approved' || data.statusKey === 'expired';
+                    if (qrContainer) {
+                        qrContainer.classList.toggle('hidden', !isQrVisible);
+                        if(isQrVisible) {
+                             qrContainer.querySelector('img').src = qrPath;
+                        }
+                    }
 
-                const ownerInfoList = detailsModalEl.querySelector('#modal-owner-info-list');
-                let ownerHtml = createInfoRow('สถานะ', data.ownerType === 'self' ? 'รถชื่อตนเอง' : 'รถคนอื่น');
-                if (data.ownerType === 'other') {
-                    ownerHtml += createInfoRow('ชื่อเจ้าของ', data.otherOwnerName || '-');
-                    ownerHtml += createInfoRow('เกี่ยวข้องเป็น', data.otherOwnerRelation || '-');
-                }
-                ownerInfoList.innerHTML = ownerHtml;
-                
-                const cardInfoList = detailsModalEl.querySelector('#modal-card-info-list');
-                const cardTypeThai = data.cardType === 'internal' ? 'ภายใน' : (data.cardType === 'external' ? 'ภายนอก' : '-');
-                let cardHtml = createInfoRow('รหัสคำร้อง', data.searchId);
-                if (data.cardType) cardHtml += createInfoRow('ประเภทบัตร', cardTypeThai);
-                cardHtml += createInfoRow('วันยื่นคำร้อง', formatThaiDateTime(data.createdAt));
-                if (data.createdAt.substring(0, 19) !== data.updatedAt.substring(0, 19)) {
-                    cardHtml += createInfoRow('แก้ไขล่าสุด', formatThaiDateTime(data.updatedAt));
-                }
-                if (data.statusKey === 'approved' || data.statusKey === 'expired') {
-                    cardHtml += createInfoRow('เลขที่บัตร', data.cardNumber);
-                    cardHtml += createInfoRow('ผู้อนุมัติ', data.approvedBy);
-                    cardHtml += createInfoRow('วันอนุมัติ', formatThaiDateTime(data.approvedAt));
-                    cardHtml += createInfoRow('วันหมดอายุ', formatThaiDate(data.cardExpiry));
-                }
-                cardInfoList.innerHTML = cardHtml;
-                
-                const qrContainer = detailsModalEl.querySelector('#modal-qr-code-container');
-                qrContainer.classList.toggle('hidden', data.statusKey !== 'approved' && data.statusKey !== 'expired');
-                if (data.statusKey === 'approved' || data.statusKey === 'expired') {
-                    qrContainer.querySelector('img').src = qrPath;
-                }
+                    // Evidence Images
+                    const populateImage = (id, fileName) => {
+                        const imgEl = detailsModalEl.querySelector(`#${id}`);
+                        if (imgEl) {
+                            const fullPath = basePath + fileName;
+                            imgEl.src = fullPath;
+                            const parentLink = imgEl.parentElement;
+                            if (parentLink && parentLink.tagName === 'A') {
+                                parentLink.href = fullPath;
+                                parentLink.dataset.pswpSrc = fullPath;
+                            }
+                        }
+                    };
+                    populateImage('modal-photo-reg', data.photoReg);
+                    populateImage('modal-photo-tax', data.photoTax);
+                    populateImage('modal-photo-front', data.photoFront);
+                    populateImage('modal-photo-rear', data.photoRear);
 
-                detailsModalEl.querySelector('#modal-photo-reg').src = basePath + data.photoReg;
-                detailsModalEl.querySelector('#modal-photo-tax').src = basePath + data.photoTax;
-                detailsModalEl.querySelector('#modal-photo-front').src = basePath + data.photoFront;
-                detailsModalEl.querySelector('#modal-photo-rear').src = basePath + data.photoRear;
+                    // Action Buttons
+                    const actionContainer = detailsModalEl.querySelector('#modal-action-buttons');
+                    actionContainer.innerHTML = '';
+                    actionContainer.innerHTML += '<div class="flex-grow"></div>';
+                    if (data.canRenew === 'true') {
+                        actionContainer.innerHTML += `<a href="add_vehicle.php?renew_id=${data.vehicleId}" class="btn btn-sm btn-success"><i class="fa-solid fa-calendar-check"></i>ต่ออายุบัตร</a>`;
+                    }
+                    if (data.statusKey === 'pending' || data.statusKey === 'rejected') {
+                        actionContainer.innerHTML += `<button id="modal-edit-btn" class="btn btn-sm btn-warning"><i class="fa-solid fa-pencil"></i>แก้ไข</button>`;
+                    }
+                    if (data.statusKey !== 'approved') {
+                        actionContainer.innerHTML += `<button id="modal-delete-btn" class="btn btn-sm btn-error"><i class="fa-solid fa-trash-can"></i>ลบ</button>`;
+                    }
+                    actionContainer.innerHTML += `<form method="dialog"><button class="btn btn-sm btn-ghost">ปิด</button></form>`;
 
-                const actionContainer = detailsModalEl.querySelector('#modal-action-buttons');
-                actionContainer.innerHTML = '';
-                actionContainer.innerHTML += '<div class="flex-grow"></div>';
-                if (data.canRenew === 'true') {
-                    actionContainer.innerHTML += `<a href="add_vehicle.php?renew_id=${data.vehicleId}" class="btn btn-sm btn-success"><i class="fa-solid fa-calendar-check"></i>ต่ออายุบัตร</a>`;
-                }
-                if (data.statusKey === 'pending' || data.statusKey === 'rejected') {
-                    actionContainer.innerHTML += `<button id="modal-edit-btn" class="btn btn-sm btn-warning"><i class="fa-solid fa-pencil"></i>แก้ไข</button>`;
-                }
-                 if (data.statusKey !== 'approved') {
-                    actionContainer.innerHTML += `<button id="modal-delete-btn" class="btn btn-sm btn-error"><i class="fa-solid fa-trash-can"></i>ลบ</button>`;
-                }
-                actionContainer.innerHTML += `<form method="dialog"><button class="btn btn-sm btn-ghost">ปิด</button></form>`;
+                    // Show Modal
+                    detailsModalEl.querySelector('#modal-content-wrapper').classList.remove('hidden');
+                    detailsModalEl.querySelector('#modal-edit-form-wrapper').classList.add('hidden');
+                    
+                    detailsModalEl.showModal();
 
-
-                detailsModalEl.querySelector('#modal-content-wrapper').classList.remove('hidden');
-                detailsModalEl.querySelector('#modal-edit-form-wrapper').classList.add('hidden');
-                
-                detailsModalEl.showModal();
+                } catch (error) {
+                    console.error("Error opening details modal:", error);
+                    showAlert('เกิดข้อผิดพลาดในการแสดงข้อมูล', 'error');
+                }
             };
 
             const switchToEditMode = () => {
                 const data = currentCardData;
                 const editForm = detailsModalEl.querySelector('#editVehicleForm');
+                const basePath = `/public/uploads/${data.userKey}/vehicle/${data.requestKey}/`;
                 
                 editForm.querySelector('#edit-request-id').value = data.requestId;
                 editForm.querySelector('#edit-vehicle-brand').value = data.brand;
@@ -213,6 +255,12 @@ document.addEventListener('DOMContentLoaded', function () {
                     editForm.querySelector('#edit-other-owner-relation').value = data.otherOwnerRelation;
                 }
                 ownerSelect.dispatchEvent(new Event('change'));
+
+                // Set initial images for preview
+                editForm.querySelector('#edit-reg-copy-preview').src = basePath + data.photoReg;
+                editForm.querySelector('#edit-tax-sticker-preview').src = basePath + data.photoTax;
+                editForm.querySelector('#edit-front-view-preview').src = basePath + data.photoFront;
+                editForm.querySelector('#edit-rear-view-preview').src = basePath + data.photoRear;
 
                 detailsModalEl.querySelector('#modal-content-wrapper').classList.add('hidden');
                 detailsModalEl.querySelector('#modal-edit-form-wrapper').classList.remove('hidden');
@@ -294,6 +342,12 @@ document.addEventListener('DOMContentLoaded', function () {
                     loadingModalEl.showModal();
                 });
             }
+
+            // Setup image previews for the edit form
+            setupImagePreview('edit-reg-copy-upload', 'edit-reg-copy-preview');
+            setupImagePreview('edit-tax-sticker-upload', 'edit-tax-sticker-preview');
+            setupImagePreview('edit-front-view-upload', 'edit-front-view-preview');
+            setupImagePreview('edit-rear-view-upload', 'edit-rear-view-preview');
         },
 
         initAddVehiclePage: function() {
@@ -631,4 +685,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // Run the app
     App.init();
 });
+
+
+
 

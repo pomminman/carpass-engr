@@ -17,14 +17,17 @@
     <meta name="apple-mobile-web-app-title" content="carpass engrdept" />
     <link rel="manifest" href="/public/assets/favicon/site.webmanifest" />
 
+    
+    <!-- Local JS -->
+    <script src="/lib/jquery/jquery-3.7.1.min.js"></script>
+    <script src="/lib/tailwindcss/tailwindcss.js"></script>
+
     <!-- Local CSS -->
     <link rel="stylesheet" href="/lib/daisyui@4.12.10/dist/full.min.css" type="text/css" />
     <link rel="stylesheet" href="/lib/jquery.Thailand/dist/jquery.Thailand.min.css">
     <link rel="stylesheet" href="/lib/google-fonts-prompt/prompt.css">
     <link rel="stylesheet" href="/lib/fontawesome-free-7.0.1-web/css/all.min.css">
-
-    <!-- Local JS -->
-    <script src="/lib/tailwindcss/tailwindcss.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/photoswipe/5.4.3/photoswipe.min.css">
 
     <!-- Custom Styles -->
     <style>

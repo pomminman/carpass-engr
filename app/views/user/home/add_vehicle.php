@@ -170,6 +170,14 @@ require_once __DIR__ . '/../layouts/header.php';
    <form method="dialog" class="modal-backdrop"><button>close</button></form>
 </dialog>
 
+<!-- Loading Modal -->
+<dialog id="loading_modal" class="modal modal-middle">
+    <div class="modal-box text-center">
+        <span class="loading loading-spinner loading-lg text-primary"></span>
+        <h3 class="font-bold text-lg mt-4">กรุณารอสักครู่...</h3>
+    </div>
+</dialog>
+
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     const plateInput = document.getElementById('check-license-plate');
