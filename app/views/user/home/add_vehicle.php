@@ -157,10 +157,46 @@ require_once __DIR__ . '/../layouts/header.php';
                                 <div class="divider divider-start text-sm font-semibold m-0">หลักฐานประกอบ</div>
                                 <div role="alert" class="alert alert-info alert-soft text-xs p-2 justify-start"><span><i class="fa-solid fa-circle-info"></i> โปรดตรวจสอบความคมชัดของรูปถ่าย (.jpg, .png) และขนาดไฟล์ต้องไม่เกิน 5 MB</span></div>
                                 <div class="grid grid-cols-2 gap-3">
-                                    <div class="form-control w-full"><label class="block font-medium mb-1 text-center text-xs">สำเนาทะเบียนรถ</label><div class="flex justify-center bg-base-200 p-2 rounded-box border overflow-hidden h-28"><img id="reg-copy-preview" src="/public/assets/images/registration.jpg" alt="ตัวอย่างสำเนาทะเบียนรถ" class="w-full h-full object-contain cursor-pointer example-image"></div><input type="file" id="reg_copy_upload" name="reg_copy_upload" class="file-input file-input-sm file-input-bordered w-full mt-2" accept=".jpg, .jpeg, .png" required><p class="error-message hidden text-error text-xs mt-1"></p></div>
-                                    <div class="form-control w-full"><label class="block font-medium mb-1 text-center text-xs">ป้ายภาษี (ป้ายวงกลม)</label><div class="flex justify-center bg-base-200 p-2 rounded-box border overflow-hidden h-28"><img id="tax-sticker-preview" src="/public/assets/images/tax_sticker.jpg" alt="ตัวอย่างป้ายภาษี" class="w-full h-full object-contain cursor-pointer example-image"></div><input type="file" id="tax_sticker_upload" name="tax_sticker_upload" class="file-input file-input-sm file-input-bordered w-full mt-2" accept=".jpg, .jpeg, .png" required><p class="error-message hidden text-error text-xs mt-1"></p></div>
-                                    <div class="form-control w-full"><label class="block font-medium mb-1 text-center text-xs">รูปถ่ายรถด้านหน้า</label><div class="flex justify-center bg-base-200 p-2 rounded-box border overflow-hidden h-28"><img id="front-view-preview" src="/public/assets/images/front_view.png" alt="ตัวอย่างรูปถ่ายรถด้านหน้า" class="w-full h-full object-contain cursor-pointer example-image"></div><input type="file" id="front_view_upload" name="front_view_upload" class="file-input file-input-sm file-input-bordered w-full mt-2" accept=".jpg, .jpeg, .png" required><p class="error-message hidden text-error text-xs mt-1"></p></div>
-                                    <div class="form-control w-full"><label class="block font-medium mb-1 text-center text-xs">รูปถ่ายรถด้านหลัง</label><div class="flex justify-center bg-base-200 p-2 rounded-box border overflow-hidden h-28"><img id="rear-view-preview" src="/public/assets/images/rear_view.png" alt="ตัวอย่างรูปถ่ายรถด้านหลัง" class="w-full h-full object-contain cursor-pointer example-image"></div><input type="file" id="rear_view_upload" name="rear_view_upload" class="file-input file-input-sm file-input-bordered w-full mt-2" accept=".jpg, .jpeg, .png" required><p class="error-message hidden text-error text-xs mt-1"></p></div>
+                                    <div class="form-control w-full">
+                                        <label class="block font-medium mb-1 text-center text-xs">สำเนาทะเบียนรถ</label>
+                                        <a href="/public/assets/images/registration.jpg" data-fancybox="evidence-gallery" data-caption="สำเนาทะเบียนรถ">
+                                            <div class="flex justify-center bg-base-200 p-2 rounded-box border overflow-hidden h-28">
+                                                <img id="reg-copy-preview" src="/public/assets/images/registration.jpg" alt="สำเนาทะเบียนรถ" class="w-full h-full object-contain cursor-pointer">
+                                            </div>
+                                        </a>
+                                        <input type="file" id="reg_copy_upload" name="reg_copy_upload" class="file-input file-input-sm file-input-bordered w-full mt-2" accept=".jpg, .jpeg, .png" required>
+                                        <p class="error-message hidden text-error text-xs mt-1"></p>
+                                    </div>
+                                    <div class="form-control w-full">
+                                        <label class="block font-medium mb-1 text-center text-xs">ป้ายภาษี (ป้ายวงกลม)</label>
+                                        <a href="/public/assets/images/tax_sticker.jpg" data-fancybox="evidence-gallery" data-caption="ป้ายภาษี">
+                                            <div class="flex justify-center bg-base-200 p-2 rounded-box border overflow-hidden h-28">
+                                                <img id="tax-sticker-preview" src="/public/assets/images/tax_sticker.jpg" alt="ป้ายภาษี" class="w-full h-full object-contain cursor-pointer">
+                                            </div>
+                                        </a>
+                                        <input type="file" id="tax_sticker_upload" name="tax_sticker_upload" class="file-input file-input-sm file-input-bordered w-full mt-2" accept=".jpg, .jpeg, .png" required>
+                                        <p class="error-message hidden text-error text-xs mt-1"></p>
+                                    </div>
+                                    <div class="form-control w-full">
+                                        <label class="block font-medium mb-1 text-center text-xs">รูปถ่ายรถด้านหน้า</label>
+                                        <a href="/public/assets/images/front_view.png" data-fancybox="evidence-gallery" data-caption="รูปถ่ายรถด้านหน้า">
+                                            <div class="flex justify-center bg-base-200 p-2 rounded-box border overflow-hidden h-28">
+                                                <img id="front-view-preview" src="/public/assets/images/front_view.png" alt="รูปถ่ายรถด้านหน้า" class="w-full h-full object-contain cursor-pointer">
+                                            </div>
+                                        </a>
+                                        <input type="file" id="front_view_upload" name="front_view_upload" class="file-input file-input-sm file-input-bordered w-full mt-2" accept=".jpg, .jpeg, .png" required>
+                                        <p class="error-message hidden text-error text-xs mt-1"></p>
+                                    </div>
+                                    <div class="form-control w-full">
+                                        <label class="block font-medium mb-1 text-center text-xs">รูปถ่ายรถด้านหลัง</label>
+                                        <a href="/public/assets/images/rear_view.png" data-fancybox="evidence-gallery" data-caption="รูปถ่ายรถด้านหลัง">
+                                            <div class="flex justify-center bg-base-200 p-2 rounded-box border overflow-hidden h-28">
+                                                <img id="rear-view-preview" src="/public/assets/images/rear_view.png" alt="รูปถ่ายรถด้านหลัง" class="w-full h-full object-contain cursor-pointer">
+                                            </div>
+                                        </a>
+                                        <input type="file" id="rear_view_upload" name="rear_view_upload" class="file-input file-input-sm file-input-bordered w-full mt-2" accept=".jpg, .jpeg, .png" required>
+                                        <p class="error-message hidden text-error text-xs mt-1"></p>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -196,14 +232,6 @@ require_once __DIR__ . '/../layouts/header.php';
         <div class="card bg-base-100 shadow"><div class="card-body items-center text-center"><div role="alert" class="alert alert-warning"><i class="fa-solid fa-triangle-exclamation text-lg"></i><div><h3 class="font-bold text-sm sm:text-base">ระบบปิดรับคำร้องชั่วคราว</h3><div class="text-xs sm:text-sm">ขณะนี้ยังไม่ถึงช่วงเวลาสำหรับการยื่นคำร้อง กรุณาตรวจสอบกำหนดการอีกครั้ง</div></div></div><div class="mt-6"><a href="dashboard.php" class="btn btn-primary">กลับหน้าหลัก</a></div></div></div>
     <?php endif; ?>
 </div>
-
-<!-- W3Schools Image Modal -->
-<div id="w3-image-modal" class="w3-modal">
-  <span class="w3-modal-close">&times;</span>
-  <img class="w3-modal-content" id="w3-modal-img">
-  <div id="w3-modal-caption"></div>
-</div>
-
 
 <!-- Loading Modal -->
 <dialog id="loading_modal" class="modal modal-middle">

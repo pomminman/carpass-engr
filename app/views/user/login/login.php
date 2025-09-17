@@ -184,7 +184,7 @@ if (isset($_SESSION['logout_message'])) {
                                     <i class="fa-solid fa-phone w-4 text-base-content/60"></i>
                                     <a href="tel:032337014" class="link link-hover">032-337-014</a> ต่อ 5-3132 (กยข.กช.)
                                 </p>
-                                <a href="https://line.me/ti/p/~YOUR_LINE_ID" target="_blank" class="btn btn-xs btn-success no-underline mt-1">
+                                <a href="https://lin.ee/NeGjmgs" target="_blank" class="btn btn-xs btn-success no-underline mt-1">
                                     <span class="text-white"><i class="fab fa-line"></i> Line: บัตรผ่านยานพาหนะ กรมการทหารช่าง</span>
                                 </a>
                             </div>

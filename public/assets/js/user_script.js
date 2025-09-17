@@ -14,7 +14,6 @@ document.addEventListener('DOMContentLoaded', function () {
          */
         init: function() {
             this.initGlobalHelpers();
-            this.initW3ModalFunctionality(); // Initialize modal functionality globally
             if (document.getElementById('vehicle-grid')) {
                 this.initDashboard();
             }
@@ -27,7 +26,7 @@ document.addEventListener('DOMContentLoaded', function () {
         },
 
         /**
-         * Initializes global functionalities like flash messages.
+         * Initializes global functionalities like flash messages and Fancybox.
          */
         initGlobalHelpers: function() {
             const flashMessage = document.body.dataset.flashMessage;
@@ -35,6 +34,10 @@ document.addEventListener('DOMContentLoaded', function () {
             if (flashMessage && flashStatus) {
                 this.showAlert(flashMessage, flashStatus);
             }
+            // Initialize Fancybox for non-modal images
+            Fancybox.bind("[data-fancybox]:not(.modal-gallery-item)", {
+                // Your custom options
+            });
         },
         
         //======================================================================
@@ -54,22 +57,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 alertEl.style.opacity = '0';
                 setTimeout(() => alertEl.remove(), 300);
             }, 3000);
-        },
-
-        initW3ModalFunctionality: function() {
-            const w3Modal = document.getElementById('w3-image-modal');
-            if (!w3Modal) return; 
-
-            const w3ModalClose = w3Modal.querySelector('.w3-modal-close');
-            
-            if (w3ModalClose) {
-                w3ModalClose.onclick = () => w3Modal.style.display = "none";
-            }
-            w3Modal.onclick = (event) => {
-                if (event.target === w3Modal) {
-                    w3Modal.style.display = "none";
-                }
-            }
         },
 
         formatThaiDate: function(dateString) {
@@ -270,13 +257,72 @@ document.addEventListener('DOMContentLoaded', function () {
                          cardNumberBox.querySelector('span').textContent = data.cardNumber || '-';
                          cardNumberBox.className = `card text-center p-2 ${data.statusKey === 'approved' ? 'bg-success text-success-content' : 'bg-base-300'}`;
                     }
+                    
+                    const galleryHTML = `
+                        <div class="text-center">
+                            <p class="font-semibold mb-1 text-sm">ทะเบียนรถ</p>
+                            <a href="${basePath + data.photoReg}" class="modal-gallery-item" data-caption="สำเนาทะเบียนรถ: ${data.licensePlate}">
+                                <div class="flex justify-center bg-base-100 p-2 rounded-lg border h-24">
+                                    <img src="${basePath + data.photoReg}" class="max-w-full max-h-full object-contain cursor-pointer" alt="สำเนาทะเบียนรถ">
+                                </div>
+                            </a>
+                        </div>
+                        <div class="text-center">
+                            <p class="font-semibold mb-1 text-sm">ป้ายภาษี</p>
+                            <a href="${basePath + data.photoTax}" class="modal-gallery-item" data-caption="ป้ายภาษี: ${data.licensePlate}">
+                                <div class="flex justify-center bg-base-100 p-2 rounded-lg border h-24">
+                                    <img src="${basePath + data.photoTax}" class="max-w-full max-h-full object-contain cursor-pointer" alt="ป้ายภาษี">
+                                </div>
+                            </a>
+                        </div>
+                        <div class="text-center">
+                            <p class="font-semibold mb-1 text-sm">ด้านหน้า</p>
+                            <a href="${basePath + data.photoFront}" class="modal-gallery-item" data-caption="รูปถ่ายด้านหน้า: ${data.licensePlate}">
+                                <div class="flex justify-center bg-base-100 p-2 rounded-lg border h-24">
+                                    <img src="${basePath + data.photoFront}" class="max-w-full max-h-full object-contain cursor-pointer" alt="รูปถ่ายด้านหน้า">
+                                </div>
+                            </a>
+                        </div>
+                        <div class="text-center">
+                            <p class="font-semibold mb-1 text-sm">ด้านหลัง</p>
+                            <a href="${basePath + data.photoRear}" class="modal-gallery-item" data-caption="รูปถ่ายด้านหลัง: ${data.licensePlate}">
+                                <div class="flex justify-center bg-base-100 p-2 rounded-lg border h-24">
+                                    <img src="${basePath + data.photoRear}" class="max-w-full max-h-full object-contain cursor-pointer" alt="รูปถ่ายด้านหลัง">
+                                </div>
+                            </a>
+                        </div>`;
+                    queryAndSet('#modal-evidence-gallery', galleryHTML, true);
 
-                    queryAndSet('#modal-evidence-gallery', `
-                        <div class="text-center"><p class="font-semibold mb-1 text-sm">ทะเบียนรถ</p><div class="flex justify-center bg-base-100 p-2 rounded-lg border h-24"><img src="${basePath + data.photoReg}" class="max-w-full max-h-full object-contain" alt="สำเนาทะเบียนรถ"></div></div>
-                        <div class="text-center"><p class="font-semibold mb-1 text-sm">ป้ายภาษี</p><div class="flex justify-center bg-base-100 p-2 rounded-lg border h-24"><img src="${basePath + data.photoTax}" class="max-w-full max-h-full object-contain" alt="ป้ายภาษี"></div></div>
-                        <div class="text-center"><p class="font-semibold mb-1 text-sm">ด้านหน้า</p><div class="flex justify-center bg-base-100 p-2 rounded-lg border h-24"><img src="${basePath + data.photoFront}" class="max-w-full max-h-full object-contain" alt="รูปถ่ายด้านหน้า"></div></div>
-                        <div class="text-center"><p class="font-semibold mb-1 text-sm">ด้านหลัง</p><div class="flex justify-center bg-base-100 p-2 rounded-lg border h-24"><img src="${basePath + data.photoRear}" class="max-w-full max-h-full object-contain" alt="รูปถ่ายด้านหลัง"></div></div>
-                    `, true);
+                    // --- [FIXED] Programmatic Fancybox initialization for modal content ---
+                    const galleryItems = detailsModalEl.querySelectorAll('.modal-gallery-item');
+                    
+                    galleryItems.forEach(item => {
+                        item.addEventListener('click', (e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+
+                            // Re-build slides array on each click to ensure it's fresh
+                            const currentSlides = Array.from(detailsModalEl.querySelectorAll('.modal-gallery-item')).map(el => ({
+                                src: el.href,
+                                caption: el.dataset.caption
+                            }));
+                            
+                            const startIndex = Array.from(detailsModalEl.querySelectorAll('.modal-gallery-item')).indexOf(item);
+
+                            Fancybox.show(currentSlides, {
+                                startIndex: startIndex,
+                                // This is the crucial fix:
+                                // We let Fancybox create itself, then move its container into our modal dialog.
+                                // This ensures it becomes part of the modal's "top layer" and appears above it.
+                                on: {
+                                    'reveal': (fancybox, slide) => {
+                                        detailsModalEl.appendChild(fancybox.container);
+                                    }
+                                }
+                            });
+                        });
+                    });
+                    // --- End of new Fancybox logic ---
 
                     let buttonsHtml = '';
                     if (data.canRenew === 'true') buttonsHtml += `<a href="add_vehicle.php?renew_id=${data.vehicleId}" class="btn btn-sm btn-success"><i class="fa-solid fa-calendar-check"></i>ต่ออายุบัตร</a>`;
@@ -340,7 +386,10 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
             };
             
-            elements.vehicleCards.forEach(card => card.addEventListener('click', () => openDetailsModal(card)));
+            elements.vehicleCards.forEach(card => card.addEventListener('click', (e) => {
+                if(e.target.closest('a[data-fancybox]') || e.target.closest('.modal-gallery-item')) return;
+                openDetailsModal(card);
+            }));
             elements.statFilters.forEach(filter => filter.addEventListener('click', () => {
                 elements.statFilters.forEach(f => f.classList.remove('active', 'ring-2', 'ring-primary'));
                 filter.classList.add('active', 'ring-2', 'ring-primary');
@@ -410,11 +459,34 @@ document.addEventListener('DOMContentLoaded', function () {
                 step1Indicator: document.getElementById('step1-indicator'),
                 step2Indicator: document.getElementById('step2-indicator'),
                 loadingModal: document.getElementById('loading_modal'),
-                w3Modal: document.getElementById('w3-image-modal'),
-                w3ModalImg: document.getElementById('w3-modal-img'),
-                w3ModalCaption: document.getElementById('w3-modal-caption'),
                 typeIcon: document.getElementById('display-vehicle-type-icon')
             };
+
+            // --- [NEW] Function to handle dynamic preview and Fancybox link update ---
+            const setupDynamicImagePreview = (inputId, previewImgId, fancyboxLinkId) => {
+                const input = document.getElementById(inputId);
+                const previewImg = document.getElementById(previewImgId);
+                const fancyboxLink = previewImg.closest('a'); // Get the parent <a> tag
+
+                if (input && previewImg && fancyboxLink) {
+                    const defaultSrc = previewImg.src;
+                    const defaultHref = fancyboxLink.href;
+
+                    input.addEventListener('change', (event) => {
+                        const file = event.target.files[0];
+                        if (file) {
+                            const newSrc = URL.createObjectURL(file);
+                            previewImg.src = newSrc;
+                            fancyboxLink.href = newSrc; // Update Fancybox link
+                        } else {
+                            // Optional: Revert to default if the file selection is cancelled
+                            previewImg.src = defaultSrc;
+                            fancyboxLink.href = defaultHref;
+                        }
+                    });
+                }
+            };
+            // --- End of new function ---
 
             const setStep = (stepNumber) => {
                 const activeClasses = ['bg-primary', 'text-primary-content', 'border-primary'];
@@ -521,10 +593,11 @@ document.addEventListener('DOMContentLoaded', function () {
             };
             populateDateSelects(taxDayEl, taxMonthEl, taxYearEl, form.dataset.renewalTaxDate || null);
             
-            this.setupImagePreview('reg_copy_upload', 'reg-copy-preview');
-            this.setupImagePreview('tax_sticker_upload', 'tax-sticker-preview');
-            this.setupImagePreview('front_view_upload', 'front-view-preview');
-            this.setupImagePreview('rear_view_upload', 'rear-view-preview');
+            // --- [MODIFIED] Use the new dynamic preview function ---
+            setupDynamicImagePreview('reg_copy_upload', 'reg-copy-preview');
+            setupDynamicImagePreview('tax_sticker_upload', 'tax-sticker-preview');
+            setupDynamicImagePreview('front_view_upload', 'front-view-preview');
+            setupDynamicImagePreview('rear_view_upload', 'rear-view-preview');
             
             const ownerSelect = form.querySelector('select[name="owner_type"]');
             ownerSelect.addEventListener('change', () => {
@@ -543,16 +616,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 field.addEventListener(eventType, () => this.validateField(field));
             });
             
-            form.querySelectorAll('.example-image').forEach(img => {
-                img.onclick = () => {
-                    if(elements.w3Modal) {
-                        elements.w3Modal.style.display = "flex";
-                        elements.w3ModalImg.src = img.src;
-                        elements.w3ModalCaption.innerHTML = img.alt;
-                    }
-                }
-            });
-
             if (form.dataset.isRenewal === 'true') {
                 setStep(2);
                 const vehicleType = document.getElementById('display-vehicle-type').textContent;
@@ -577,9 +640,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 titleOtherInput: document.getElementById('profile-title-other'),
                 phoneInput: form.querySelector('input[name="phone"]'),
                 nidInput: document.getElementById('profile-national-id'),
-                w3Modal: document.getElementById('w3-image-modal'),
-                w3ModalImg: document.getElementById('w3-modal-img'),
-                w3ModalCaption: document.getElementById('w3-modal-caption'),
             };
             
             const formatInput = (input, patterns) => {
@@ -613,7 +673,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 elements.photoUpload.classList.toggle('hidden', !isEditing);
                 elements.photoGuidance.classList.toggle('hidden', !isEditing);
-                elements.photoContainer.classList.toggle('cursor-pointer', true);
 
                 const nonEditable = ['national_id_display', 'work_department_display'];
                 form.querySelectorAll('input:not([type=hidden]), select').forEach(field => {
@@ -670,15 +729,11 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
             });
             
-            elements.photoContainer.addEventListener('click', () => {
+            const photoLink = elements.photoContainer.querySelector('a');
+            photoLink.addEventListener('click', (e) => {
                 if (form.classList.contains('form-edit-mode')) {
+                    e.preventDefault(); 
                     elements.photoUpload.click();
-                } else {
-                     if(elements.w3Modal) {
-                        elements.w3Modal.style.display = "flex";
-                        elements.w3ModalImg.src = elements.photoContainer.querySelector('img').src;
-                        elements.w3ModalCaption.innerHTML = elements.photoContainer.querySelector('img').alt;
-                    }
                 }
             });
 
@@ -721,4 +776,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
     App.init();
 });
+
+
 

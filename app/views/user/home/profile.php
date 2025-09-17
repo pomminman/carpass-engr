@@ -12,6 +12,10 @@ if ($result_dept->num_rows > 0) {
     }
 }
 
+// [Overwrite] กำหนด path รูปโปรไฟล์ใหม่ให้เป็นรูปขนาดเต็มเสมอสำหรับหน้านี้
+$user_photo_path = "/public/uploads/{$user['user_key']}/profile/{$user['photo_profile']}";
+
+
 require_once __DIR__ . '/../layouts/header.php';
 ?>
 <!-- Custom Styles for Profile Page Inputs -->
@@ -63,8 +67,12 @@ require_once __DIR__ . '/../layouts/header.php';
                     <div class="lg:col-span-1 flex flex-col items-center">
                         <div class="form-control w-full max-w-[300px]">
                             <label class="block font-medium mb-1 text-center text-sm">รูปถ่ายหน้าตรง</label>
-                            <div id="profile-photo-container" class="flex justify-center bg-base-200 p-2 rounded-box border overflow-hidden w-full aspect-square cursor-pointer">
-                                <img id="profile-photo-preview" src="<?php echo $user_photo_path; ?>" alt="รูปโปรไฟล์" class="w-full h-full object-cover" onerror="this.onerror=null;this.src='https://placehold.co/300x300/e2e8f0/475569?text=Profile';">
+                            <div id="profile-photo-container" class="w-full aspect-square">
+                                <a href="<?php echo htmlspecialchars($user_photo_path); ?>" data-fancybox data-caption="รูปถ่ายหน้าตรง">
+                                    <div class="flex justify-center bg-base-200 p-2 rounded-box border overflow-hidden w-full h-full">
+                                        <img id="profile-photo-preview" src="<?php echo htmlspecialchars($user_photo_path); ?>" alt="รูปโปรไฟล์" class="w-full h-full object-contain cursor-pointer" onerror="this.onerror=null;this.src='https://placehold.co/300x300/e2e8f0/475569?text=Profile';">
+                                    </div>
+                                </a>
                             </div>
                             <div id="photo-guidance" class="mt-2 text-xs p-2 rounded-box bg-info alert-soft hidden">
                                 <ul class="list-disc list-inside"><li>ไฟล์ .jpg, .png ไม่เกิน 5 MB</li></ul>
@@ -149,13 +157,4 @@ require_once __DIR__ . '/../layouts/header.php';
     </form>
 </div>
 
-<!-- W3Schools Image Modal -->
-<div id="w3-image-modal" class="w3-modal">
-    <span class="w3-modal-close">&times;</span>
-    <img class="w3-modal-content" id="w3-modal-img">
-    <div id="w3-modal-caption"></div>
-</div>
-
-
 <?php require_once __DIR__ . '/../layouts/footer.php'; ?>
-

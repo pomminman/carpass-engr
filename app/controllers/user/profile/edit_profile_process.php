@@ -26,9 +26,6 @@ function handle_error($user_message) {
 }
 
 function process_profile_image_upload($file, $targetDir) {
-    // This is the same updated function as in register_process.php
-    if (!isset($file) || $file['error'] !== UPLOAD_ERR_OK) return ['error' => '...'];
-    // ... (rest of the function is identical to the one in register_process.php)
     if (!isset($file) || $file['error'] !== UPLOAD_ERR_OK) {
         return ['error' => 'เกิดข้อผิดพลาดในการอัปโหลดไฟล์: ' . $file['error']];
     }
@@ -69,48 +66,54 @@ function process_profile_image_upload($file, $targetDir) {
     if (!$source_image) return ['error' => 'ไม่สามารถประมวลผลไฟล์รูปภาพได้'];
 
     $versions = [
-        'normal' => ['width' => 300, 'height' => 300, 'suffix' => ''],
-        'thumb'  => ['width' => 64, 'height' => 64, 'suffix' => '_thumb'],
+        'normal' => ['width' => 1024, 'height' => 1024, 'suffix' => ''],
+        'thumb'  => ['width' => 256, 'height' => 256, 'suffix' => '_thumb'], // [แก้ไข] เพิ่มขนาด Thumbnail
     ];
     $generated_files = [];
     list($original_width, $original_height) = getimagesize($file["tmp_name"]);
 
     foreach ($versions as $key => $version) {
-        $target_width = $version['width'];
-        $target_height = $version['height'];
-        $newFileName = $baseFileName . $version['suffix'] . '.' . $extension;
-        $finalTargetPath = $targetDir . $newFileName;
-        $thumb = imagecreatetruecolor($target_width, $target_height);
+        $max_width = $version['width'];
+        $max_height = $version['height'];
+
+        $new_width = $original_width;
+        $new_height = $original_height;
+
+        // ย่อขนาดเฉพาะเมื่อรูปใหญ่กว่าที่กำหนด (สำหรับ 'normal') หรือย่อเสมอ (สำหรับ 'thumb')
+        if ($key === 'thumb' || ($original_width > $max_width || $original_height > $max_height)) {
+            $ratio = $original_width / $original_height;
+            if ($max_width / $max_height > $ratio) {
+                $new_width = $max_height * $ratio;
+                $new_height = $max_height;
+            } else {
+                $new_height = $max_width / $ratio;
+                $new_width = $max_width;
+            }
+        }
+        
+        $new_width = floor($new_width);
+        $new_height = floor($new_height);
+
+        $new_image = imagecreatetruecolor($new_width, $new_height);
 
         if ($mime_type == "image/png") {
-            imagealphablending($thumb, false);
-            imagesavealpha($thumb, true);
-            $transparent = imagecolorallocatealpha($thumb, 255, 255, 255, 127);
-            imagefilledrectangle($thumb, 0, 0, $target_width, $target_height, $transparent);
+            imagealphablending($new_image, false);
+            imagesavealpha($new_image, true);
+            $transparent = imagecolorallocatealpha($new_image, 255, 255, 255, 127);
+            imagefilledrectangle($new_image, 0, 0, $new_width, $new_height, $transparent);
         }
 
-        $original_aspect = $original_width / $original_height;
-        $target_aspect = $target_width / $target_height;
-        if ($original_aspect >= $target_aspect) {
-           $new_height = $target_height;
-           $new_width = $original_width / ($original_height / $target_height);
-           $crop_x = ($new_width - $target_width) / 2;
-           $crop_y = 0;
-        } else {
-           $new_width = $target_width;
-           $new_height = $original_height / ($original_width / $target_width);
-           $crop_x = 0;
-           $crop_y = ($new_height - $target_height) / 2;
-        }
+        imagecopyresampled($new_image, $source_image, 0, 0, 0, 0, $new_width, $new_height, $original_width, $original_height);
 
-        imagecopyresampled($thumb, $source_image, -$crop_x, -$crop_y, 0, 0, $new_width, $new_height, $original_width, $original_height);
+        $newFileName = $baseFileName . $version['suffix'] . '.' . $extension;
+        $finalTargetPath = $targetDir . $newFileName;
 
         if ($mime_type == "image/jpeg") {
-            imagejpeg($thumb, $finalTargetPath, 75);
+            imagejpeg($new_image, $finalTargetPath, 85);
         } else {
-            imagepng($thumb, $finalTargetPath, 7);
+            imagepng($new_image, $finalTargetPath, 7);
         }
-        imagedestroy($thumb);
+        imagedestroy($new_image);
         $generated_files[$key] = $newFileName;
     }
     imagedestroy($source_image);
