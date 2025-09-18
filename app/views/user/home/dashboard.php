@@ -81,11 +81,11 @@ require_once __DIR__ . '/../layouts/header.php';
     <div class="card-body p-3 flex-row items-center gap-4">
         <div class="avatar">
             <div class="w-14 h-14 rounded-full ring ring-primary ring-offset-base-100 ring-offset-2">
-                <img src="<?php echo htmlspecialchars($user_photo_thumb_path); ?>" class="object-cover w-full h-full" />
+                <img src="<?php echo htmlspecialchars($user_photo_path); ?>" class="object-cover w-full h-full" />
             </div>
         </div>
         <div>
-            <h2 class="card-title text-base"><?php echo htmlspecialchars($title . ' ' . $firstname . ' ' . $lastname); ?></h2>
+            <h2 class="card-title text-base"><?php echo htmlspecialchars($user['title'] . ' ' . $user['firstname'] . ' ' . $user['lastname']); ?></h2>
             <div class="flex flex-wrap gap-2 mt-1">
                 <div class="badge badge-outline gap-2 h-auto whitespace-normal">
                     <?php echo $user_type_icon; ?>
@@ -217,13 +217,13 @@ require_once __DIR__ . '/../layouts/header.php';
             }
 
             $approved_by = ($request['admin_title'] && $request['admin_firstname']) ? $request['admin_title'] . $request['admin_firstname'] : '-';
-            $front_image_path = "/public/uploads/" . htmlspecialchars($user_key) . "/vehicle/" . htmlspecialchars($request['request_key']) . "/" . htmlspecialchars($request['photo_front']);
+            $front_image_path = "/public/uploads/" . htmlspecialchars($user['user_key']) . "/vehicle/" . htmlspecialchars($request['request_key']) . "/" . htmlspecialchars($request['photo_front']);
         ?>
             <div class="card bg-base-100 shadow-md hover:shadow-xl transition-shadow duration-300 vehicle-card cursor-pointer border-2 <?= $border_class ?>"
                 data-status-key="<?= $status_key ?>"
                 data-request-id="<?= htmlspecialchars($request['id']) ?>"
                 data-vehicle-id="<?= htmlspecialchars($request['vehicle_id']) ?>"
-                data-user-key="<?= htmlspecialchars($user_key) ?>"
+                data-user-key="<?= htmlspecialchars($user['user_key']) ?>"
                 data-request-key="<?= htmlspecialchars($request['request_key']) ?>"
                 data-vehicle-type="<?= htmlspecialchars($request['vehicle_type']) ?>"
                 data-brand="<?= htmlspecialchars($request['brand']) ?>"
@@ -334,7 +334,7 @@ require_once __DIR__ . '/../layouts/header.php';
             
              <!-- Action Buttons Footer -->
              <div class="p-4 flex flex-wrap justify-end items-center gap-2" id="modal-action-buttons">
-                <!-- Buttons will be dynamically inserted here by JS -->
+                 <!-- Buttons will be dynamically inserted here by JS -->
             </div>
         </div>
 
@@ -363,16 +363,16 @@ require_once __DIR__ . '/../layouts/header.php';
                      </div>
                       <div class="divider text-sm font-semibold">หลักฐาน (อัปโหลดใหม่เฉพาะที่ต้องการเปลี่ยน)</div>
                       <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                         <div class="form-control w-full"><label class="label pb-1"><span class="label-text text-sm">สำเนาทะเบียนรถ</span></label><div class="flex justify-center items-center bg-base-200 p-1 rounded-box border h-24"><img id="edit-reg-copy-preview" src="" class="max-w-full max-h-full object-contain"></div><input type="file" name="reg_copy_upload" id="edit-reg-copy-upload" class="file-input file-input-sm file-input-bordered w-full mt-2" accept=".jpg, .jpeg, .png"><p class="error-message hidden text-error text-xs mt-1"></p></div>
-                         <div class="form-control w-full"><label class="label pb-1"><span class="label-text text-sm">ป้ายภาษี</span></label><div class="flex justify-center items-center bg-base-200 p-1 rounded-box border h-24"><img id="edit-tax-sticker-preview" src="" class="max-w-full max-h-full object-contain"></div><input type="file" name="tax_sticker_upload" id="edit-tax-sticker-upload" class="file-input file-input-sm file-input-bordered w-full mt-2" accept=".jpg, .jpeg, .png"><p class="error-message hidden text-error text-xs mt-1"></p></div>
-                         <div class="form-control w-full"><label class="label pb-1"><span class="label-text text-sm">รูปถ่ายด้านหน้า</span></label><div class="flex justify-center items-center bg-base-200 p-1 rounded-box border h-24"><img id="edit-front-view-preview" src="" class="max-w-full max-h-full object-contain"></div><input type="file" name="front_view_upload" id="edit-front-view-upload" class="file-input file-input-sm file-input-bordered w-full mt-2" accept=".jpg, .jpeg, .png"><p class="error-message hidden text-error text-xs mt-1"></p></div>
-                         <div class="form-control w-full"><label class="label pb-1"><span class="label-text text-sm">รูปถ่ายด้านหลัง</span></label><div class="flex justify-center items-center bg-base-200 p-1 rounded-box border h-24"><img id="edit-rear-view-preview" src="" class="max-w-full max-h-full object-contain"></div><input type="file" name="rear_view_upload" id="edit-rear-view-upload" class="file-input file-input-sm file-input-bordered w-full mt-2" accept=".jpg, .jpeg, .png"><p class="error-message hidden text-error text-xs mt-1"></p></div>
+                          <div class="form-control w-full"><label class="label pb-1"><span class="label-text text-sm">สำเนาทะเบียนรถ</span></label><div class="flex justify-center items-center bg-base-200 p-1 rounded-box border h-24"><img id="edit-reg-copy-preview" src="" class="max-w-full max-h-full object-contain"></div><input type="file" name="reg_copy_upload" id="edit-reg-copy-upload" class="file-input file-input-sm file-input-bordered w-full mt-2" accept=".jpg, .jpeg, .png"><p class="error-message hidden text-error text-xs mt-1"></p></div>
+                          <div class="form-control w-full"><label class="label pb-1"><span class="label-text text-sm">ป้ายภาษี</span></label><div class="flex justify-center items-center bg-base-200 p-1 rounded-box border h-24"><img id="edit-tax-sticker-preview" src="" class="max-w-full max-h-full object-contain"></div><input type="file" name="tax_sticker_upload" id="edit-tax-sticker-upload" class="file-input file-input-sm file-input-bordered w-full mt-2" accept=".jpg, .jpeg, .png"><p class="error-message hidden text-error text-xs mt-1"></p></div>
+                          <div class="form-control w-full"><label class="label pb-1"><span class="label-text text-sm">รูปถ่ายด้านหน้า</span></label><div class="flex justify-center items-center bg-base-200 p-1 rounded-box border h-24"><img id="edit-front-view-preview" src="" class="max-w-full max-h-full object-contain"></div><input type="file" name="front_view_upload" id="edit-front-view-upload" class="file-input file-input-sm file-input-bordered w-full mt-2" accept=".jpg, .jpeg, .png"><p class="error-message hidden text-error text-xs mt-1"></p></div>
+                          <div class="form-control w-full"><label class="label pb-1"><span class="label-text text-sm">รูปถ่ายด้านหลัง</span></label><div class="flex justify-center items-center bg-base-200 p-1 rounded-box border h-24"><img id="edit-rear-view-preview" src="" class="max-w-full max-h-full object-contain"></div><input type="file" name="rear_view_upload" id="edit-rear-view-upload" class="file-input file-input-sm file-input-bordered w-full mt-2" accept=".jpg, .jpeg, .png"><p class="error-message hidden text-error text-xs mt-1"></p></div>
                       </div>
                  </div>
-                <div class="p-4 bg-base-200 flex justify-end items-center gap-2">
-                    <button type="button" id="cancel-edit-btn" class="btn btn-sm btn-ghost">ยกเลิก</button>
-                    <button type="submit" class="btn btn-sm btn-primary">บันทึกการแก้ไข</button>
-                </div>
+                 <div class="p-4 bg-base-200 flex justify-end items-center gap-2">
+                     <button type="button" id="cancel-edit-btn" class="btn btn-sm btn-ghost">ยกเลิก</button>
+                     <button type="submit" class="btn btn-sm btn-primary">บันทึกการแก้ไข</button>
+                 </div>
              </form>
         </div>
     </div>

@@ -115,20 +115,24 @@ require_once __DIR__ . '/../layouts/header.php';
                     <div id="vehicle-details-section" class="hidden">
                         <div class="stats stats-vertical sm:stats-horizontal shadow w-full mb-4" style="background-color: oklch(0.25 0.08 255.06); color: oklch(1 0 0);">
                             <div class="stat">
-                                <div class="stat-figure">
-                                    <i id="display-vehicle-type-icon" class="fa-solid fa-car-side text-3xl"></i>
+                                <div class="flex items-center gap-4">
+                                    <i id="display-vehicle-type-icon" class="fa-solid fa-car-side text-3xl opacity-80"></i>
+                                    <div>
+                                        <div class="stat-title" style="color: oklch(1 0 0);">ประเภทรถ</div>
+                                        <div id="display-vehicle-type" class="stat-value text-lg"><?php echo htmlspecialchars($renewal_data['vehicle_type'] ?? ''); ?></div>
+                                    </div>
                                 </div>
-                                <div class="stat-title" style="color: oklch(1 0 0);">ประเภทรถ</div>
-                                <div id="display-vehicle-type" class="stat-value text-lg"><?php echo htmlspecialchars($renewal_data['vehicle_type'] ?? ''); ?></div>
                             </div>
                             <div class="stat">
-                                <div class="stat-figure">
-                                     <i class="fa-regular fa-window-maximize text-3xl"></i>
-                                </div>
-                                <div class="stat-title" style="color: oklch(1 0 0);">เลขทะเบียน</div>
-                                <div class="stat-value text-lg">
-                                    <span id="display-license-plate"><?php echo htmlspecialchars($renewal_data['license_plate'] ?? ''); ?></span>
-                                    <span id="display-license-province"><?php echo htmlspecialchars($renewal_data['province'] ?? ''); ?></span>
+                                <div class="flex items-center gap-4">
+                                    <i class="fa-regular fa-window-maximize text-3xl opacity-80"></i>
+                                    <div>
+                                        <div class="stat-title" style="color: oklch(1 0 0);">เลขทะเบียน</div>
+                                        <div class="stat-value text-lg">
+                                            <span id="display-license-plate"><?php echo htmlspecialchars($renewal_data['license_plate'] ?? ''); ?></span>
+                                            <span id="display-license-province"><?php echo htmlspecialchars($renewal_data['province'] ?? ''); ?></span>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -239,6 +243,20 @@ require_once __DIR__ . '/../layouts/header.php';
         <span class="loading loading-spinner loading-lg text-primary"></span>
         <h3 class="font-bold text-lg mt-4">กรุณารอสักครู่...</h3>
     </div>
+</dialog>
+
+<!-- [เพิ่ม] Review Modal -->
+<dialog id="review_request_modal" class="modal modal-middle">
+  <div class="modal-box w-11/12 max-w-3xl">
+    <h3 class="font-bold text-lg">โปรดตรวจสอบข้อมูลคำร้อง</h3>
+    <div id="summary-content" class="py-4 space-y-4 text-sm"></div>
+    <div class="modal-action">
+      <form method="dialog">
+        <button class="btn btn-sm">แก้ไข</button>
+      </form>
+      <button id="final-submit-btn" class="btn btn-sm btn-primary">ยืนยันและส่งคำร้อง</button>
+    </div>
+  </div>
 </dialog>
 
 <?php require_once __DIR__ . '/../layouts/footer.php'; ?>

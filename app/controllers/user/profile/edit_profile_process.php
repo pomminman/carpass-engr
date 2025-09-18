@@ -19,12 +19,16 @@ if ($conn->connect_error) {
 $conn->set_charset("utf8");
 
 function handle_error($user_message) {
+    global $conn; // [เพิ่ม] ทำให้ $conn เข้าถึงได้ใน function
+    // [เพิ่ม] บันทึก Log ก่อน redirect
+    log_activity($conn, 'edit_profile_fail', ['error' => $user_message]);
     $_SESSION['request_status'] = 'error';
     $_SESSION['request_message'] = $user_message;
     header("Location: ../../../views/user/home/profile.php");
     exit();
 }
 
+// ... (โค้ดส่วน process_profile_image_upload ไม่เปลี่ยนแปลง) ...
 function process_profile_image_upload($file, $targetDir) {
     if (!isset($file) || $file['error'] !== UPLOAD_ERR_OK) {
         return ['error' => 'เกิดข้อผิดพลาดในการอัปโหลดไฟล์: ' . $file['error']];
@@ -67,7 +71,7 @@ function process_profile_image_upload($file, $targetDir) {
 
     $versions = [
         'normal' => ['width' => 1024, 'height' => 1024, 'suffix' => ''],
-        'thumb'  => ['width' => 256, 'height' => 256, 'suffix' => '_thumb'], // [แก้ไข] เพิ่มขนาด Thumbnail
+        'thumb'  => ['width' => 256, 'height' => 256, 'suffix' => '_thumb'],
     ];
     $generated_files = [];
     list($original_width, $original_height) = getimagesize($file["tmp_name"]);
@@ -75,11 +79,8 @@ function process_profile_image_upload($file, $targetDir) {
     foreach ($versions as $key => $version) {
         $max_width = $version['width'];
         $max_height = $version['height'];
-
         $new_width = $original_width;
         $new_height = $original_height;
-
-        // ย่อขนาดเฉพาะเมื่อรูปใหญ่กว่าที่กำหนด (สำหรับ 'normal') หรือย่อเสมอ (สำหรับ 'thumb')
         if ($key === 'thumb' || ($original_width > $max_width || $original_height > $max_height)) {
             $ratio = $original_width / $original_height;
             if ($max_width / $max_height > $ratio) {
@@ -90,24 +91,18 @@ function process_profile_image_upload($file, $targetDir) {
                 $new_width = $max_width;
             }
         }
-        
         $new_width = floor($new_width);
         $new_height = floor($new_height);
-
         $new_image = imagecreatetruecolor($new_width, $new_height);
-
         if ($mime_type == "image/png") {
             imagealphablending($new_image, false);
             imagesavealpha($new_image, true);
             $transparent = imagecolorallocatealpha($new_image, 255, 255, 255, 127);
             imagefilledrectangle($new_image, 0, 0, $new_width, $new_height, $transparent);
         }
-
         imagecopyresampled($new_image, $source_image, 0, 0, 0, 0, $new_width, $new_height, $original_width, $original_height);
-
         $newFileName = $baseFileName . $version['suffix'] . '.' . $extension;
         $finalTargetPath = $targetDir . $newFileName;
-
         if ($mime_type == "image/jpeg") {
             imagejpeg($new_image, $finalTargetPath, 85);
         } else {
@@ -157,7 +152,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     $title_choice = htmlspecialchars(strip_tags(trim($_POST['title'])));
     $final_title = ($title_choice === 'other') ? htmlspecialchars(strip_tags(trim($_POST['title_other']))) : $title_choice;
-
     $firstname = htmlspecialchars(strip_tags(trim($_POST['firstname'])));
     $lastname = htmlspecialchars(strip_tags(trim($_POST['lastname'])));
     $dob_day = str_pad(htmlspecialchars(strip_tags(trim($_POST['dob_day']))), 2, '0', STR_PAD_LEFT);
@@ -196,7 +190,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $stmt_update->bind_param($types, ...$params);
 
         if ($stmt_update->execute()) {
-            log_activity($conn, 'edit_profile', ['user_id' => $user_id]);
+            log_activity($conn, 'edit_profile_success', ['user_id' => $user_id]);
             $_SESSION['request_status'] = 'success';
             $_SESSION['request_message'] = 'แก้ไขข้อมูลส่วนตัวสำเร็จ';
         } else {
@@ -216,4 +210,3 @@ $conn->close();
 header("Location: ../../../views/user/home/profile.php");
 exit();
 ?>
-

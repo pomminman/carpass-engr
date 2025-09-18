@@ -93,6 +93,7 @@ $result_period = $conn->query($sql_period);
 if ($result_period->num_rows > 0) {
     $active_period = $result_period->fetch_assoc();
 } else {
+    log_activity($conn, 'create_vehicle_request_fail', ['error' => 'Attempted to submit outside of active period']);
     handle_error("ระบบปิดรับคำร้องชั่วคราว");
 }
 
@@ -189,9 +190,10 @@ try {
 
 } catch (Exception $e) {
     $conn->rollback();
+    // [เพิ่ม] บันทึก Log เมื่อเกิดข้อผิดพลาด
+    log_activity($conn, 'create_vehicle_request_fail', ['error' => $e->getMessage()]);
     handle_error($e->getMessage());
 }
 
 $conn->close();
 ?>
-

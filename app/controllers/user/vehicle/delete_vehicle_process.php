@@ -137,6 +137,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     } catch (Exception $e) {
         $conn->rollback();
+        // [เพิ่ม] บันทึก Log เมื่อเกิดข้อผิดพลาด
+        log_activity($conn, 'delete_vehicle_request_fail', ['request_id' => $request_id, 'error' => $e->getMessage()]);
         handle_error($e->getMessage(), "Deletion Error: " . $e->getMessage());
     }
     
@@ -149,4 +151,3 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     header("Location: ../../../views/user/home/dashboard.php");
     exit();
 }
-

@@ -15,6 +15,26 @@ if ($result_dept->num_rows > 0) {
 // [Overwrite] กำหนด path รูปโปรไฟล์ใหม่ให้เป็นรูปขนาดเต็มเสมอสำหรับหน้านี้
 $user_photo_path = "/public/uploads/{$user['user_key']}/profile/{$user['photo_profile']}";
 
+$standard_titles = ["นาย", "นาง", "นางสาว", "พล.อ.", "พล.อ.หญิง", "พล.ท.", "พล.ท.หญิง", "พล.ต.", "พล.ต.หญิง", "พ.อ.", "พ.อ.หญิง", "พ.ท.", "พ.ท.หญิง", "พ.ต.", "พ.ต.หญิง", "ร.อ.", "ร.อ.หญิง", "ร.ท.", "ร.ท.หญิง", "ร.ต.", "ร.ต.หญิง", "จ.ส.อ.", "จ.ส.อ.หญิง", "จ.ส.ท.", "จ.ส.ท.หญิง", "จ.ส.ต.", "จ.ส.ต.หญิง", "ส.อ.", "ส.อ.หญิง", "ส.ท.", "ส.ท.หญิง", "ส.ต.", "ส.ต.หญิง", "พลทหาร"];
+$is_other_title = !in_array($user['title'], $standard_titles);
+
+// [เพิ่ม] Helper functions for formatting
+function format_phone_number($phone) {
+    $numbers = preg_replace('/\D/', '', $phone);
+    if (strlen($numbers) == 10) {
+        return substr($numbers, 0, 3) . '-' . substr($numbers, 3, 3) . '-' . substr($numbers, 6);
+    }
+    return $phone;
+}
+
+function format_national_id($nid) {
+    $numbers = preg_replace('/\D/', '', $nid);
+    if (strlen($numbers) == 13) {
+        return substr($numbers, 0, 1) . '-' . substr($numbers, 1, 4) . '-' . substr($numbers, 5, 5) . '-' . substr($numbers, 10, 2) . '-' . substr($numbers, 12, 1);
+    }
+    return $nid;
+}
+
 
 require_once __DIR__ . '/../layouts/header.php';
 ?>
@@ -41,6 +61,31 @@ require_once __DIR__ . '/../layouts/header.php';
         color: #4b5563;
         border-color: #e5e7eb;
         opacity: 1;
+    }
+    #profileForm.form-edit-mode .input.input-error,
+    #profileForm.form-edit-mode .select.select-error,
+    #profileForm.form-edit-mode .file-input.file-input-error {
+        border-color: #f87272;
+    }
+
+    /* สไตล์สำหรับ dropdown ของ jquery.Thailand.js ให้มี scrollbar */
+    .twitter-typeahead .tt-menu {
+        max-height: 200px; /* ลดความสูงลง */
+        overflow-y: auto;
+        display: block;
+        scrollbar-width: thin;
+        scrollbar-color: #a0aec0 #e2e8f0;
+    }
+    .twitter-typeahead .tt-menu::-webkit-scrollbar {
+        width: 8px;
+    }
+    .twitter-typeahead .tt-menu::-webkit-scrollbar-track {
+        background: #e2e8f0;
+    }
+    .twitter-typeahead .tt-menu::-webkit-scrollbar-thumb {
+        background-color: #a0aec0;
+        border-radius: 4px;
+        border: 2px solid #e2e8f0;
     }
 </style>
 
@@ -95,10 +140,31 @@ require_once __DIR__ . '/../layouts/header.php';
                             ?>
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                 <div class="form-control w-full sm:col-span-2"><div class="grid grid-cols-3 gap-2">
-                                    <div class="form-control w-full"><div class="label py-1"><span class="label-text text-xs">คำนำหน้า</span></div>
-                                        <input type="text" name="title_display" value="<?php echo htmlspecialchars($user['title']); ?>" class="input input-sm input-bordered w-full view-mode-element" disabled />
-                                        <select id="profile-title" name="title" class="select select-sm select-bordered w-full edit-mode-element hidden" disabled required><?php $titles = ["นาย", "นาง", "นางสาว", "พล.อ.", "พล.อ.หญิง", "พล.ท.", "พล.ท.หญิง", "พล.ต.", "พล.ต.หญิง", "พ.อ.", "พ.อ.หญิง", "พ.ท.", "พ.ท.หญิง", "พ.ต.", "พ.ต.หญิง", "ร.อ.", "ร.อ.หญิง", "ร.ท.", "ร.ท.หญิง", "ร.ต.", "ร.ต.หญิง", "จ.ส.อ.", "จ.ส.อ.หญิง", "จ.ส.ท.", "จ.ส.ท.หญิง", "จ.ส.ต.", "จ.ส.ต.หญิง", "ส.อ.", "ส.อ.หญิง", "ส.ท.", "ส.ท.หญิง", "ส.ต.", "ส.ต.หญิง", "พลทหาร"]; $is_other_title = !in_array($user['title'], $titles); foreach($titles as $t) { echo "<option value='$t'" . ($user['title'] == $t ? ' selected' : '') . ">$t</option>"; } ?><option value="other" <?php echo $is_other_title ? 'selected' : ''; ?>>อื่นๆ</option></select>
-                                        <input type="text" id="profile-title-other" name="title_other" placeholder="ระบุ" class="input input-sm input-bordered w-full mt-2 <?php echo !$is_other_title ? 'hidden' : ''; ?>" value="<?php echo $is_other_title ? htmlspecialchars($user['title']) : ''; ?>" disabled oninput="this.value = this.value.replace(/[^ก-๙\s.()]/g, '')"/>
+                                    <div class="form-control w-full">
+                                        <div class="label py-1"><span class="label-text text-xs">คำนำหน้า</span></div>
+                                        
+                                        <div class="view-mode-element">
+                                        <?php if (!$is_other_title): ?>
+                                            <input type="text" value="<?php echo htmlspecialchars($user['title']); ?>" class="input input-sm input-bordered w-full" disabled />
+                                        <?php else: ?>
+                                            <div class="grid grid-cols-2 gap-2">
+                                                <input type="text" value="อื่นๆ" class="input input-sm input-bordered w-full" disabled />
+                                                <input type="text" value="<?php echo htmlspecialchars($user['title']); ?>" class="input input-sm input-bordered w-full" disabled />
+                                            </div>
+                                        <?php endif; ?>
+                                        </div>
+
+                                        <div class="edit-mode-element hidden">
+                                            <select id="profile-title" name="title" class="select select-sm select-bordered w-full" disabled required>
+                                                <?php 
+                                                    foreach($standard_titles as $t) {
+                                                        echo "<option value='$t'" . ($user['title'] == $t ? ' selected' : '') . ">$t</option>";
+                                                    }
+                                                ?>
+                                                <option value="other" <?php echo $is_other_title ? 'selected' : ''; ?>>อื่นๆ</option>
+                                            </select>
+                                            <input type="text" id="profile-title-other" name="title_other" placeholder="ระบุ" class="input input-sm input-bordered w-full mt-2 hidden" value="<?php echo $is_other_title ? htmlspecialchars($user['title']) : ''; ?>" disabled oninput="this.value = this.value.replace(/[^ก-๙\s.()]/g, '')"/>
+                                        </div>
                                         <p class="error-message hidden text-error text-xs mt-1"></p>
                                     </div>
                                     <div class="form-control w-full"><div class="label py-1"><span class="label-text text-xs">ชื่อจริง</span></div><input type="text" name="firstname" value="<?php echo htmlspecialchars($user['firstname']); ?>" class="input input-sm input-bordered w-full" disabled required oninput="this.value = this.value.replace(/[^ก-๙\s]/g, '')" /><p class="error-message hidden text-error text-xs mt-1"></p></div>
@@ -108,9 +174,9 @@ require_once __DIR__ . '/../layouts/header.php';
                                     <div class="form-control w-full sm:col-span-8">
                                         <div class="label py-1"><span class="label-text text-xs">วันเดือนปีเกิด</span></div>
                                         <div class="grid grid-cols-3 gap-2">
-                                            <input type="text" name="dob_day_display" value="<?php echo $user_dob_day; ?>" class="input input-sm input-bordered w-full view-mode-element" disabled />
-                                            <input type="text" name="dob_month_display" value="<?php echo $user_dob_month_text; ?>" class="input input-sm input-bordered w-full view-mode-element" disabled />
-                                            <input type="text" name="dob_year_display" value="<?php echo $user_dob_year; ?>" class="input input-sm input-bordered w-full view-mode-element" disabled />
+                                            <input type="text" value="<?php echo $user_dob_day; ?>" class="input input-sm input-bordered w-full view-mode-element" disabled />
+                                            <input type="text" value="<?php echo $user_dob_month_text; ?>" class="input input-sm input-bordered w-full view-mode-element" disabled />
+                                            <input type="text" value="<?php echo $user_dob_year; ?>" class="input input-sm input-bordered w-full view-mode-element" disabled />
                                             <select id="profile-dob-day" name="dob_day" class="select select-sm select-bordered w-full edit-mode-element hidden" disabled required><option value="">วัน</option><?php for ($i = 1; $i <= 31; $i++): ?><option value="<?php echo $i; ?>" <?php echo ($user_dob_day == $i) ? 'selected' : ''; ?>><?php echo $i; ?></option><?php endfor; ?></select>
                                             <select id="profile-dob-month" name="dob_month" class="select select-sm select-bordered w-full edit-mode-element hidden" disabled required><option value="">เดือน</option><?php foreach ($months as $index => $month): ?><option value="<?php echo $index + 1; ?>" <?php echo ($user_dob_month_num == ($index + 1)) ? 'selected' : ''; ?>><?php echo $month; ?></option><?php endforeach; ?></select>
                                             <select id="profile-dob-year" name="dob_year" class="select select-sm select-bordered w-full edit-mode-element hidden" disabled required><option value="">ปี พ.ศ.</option><?php $current_year_be = date("Y") + 543; ?><?php for ($i = $current_year_be; $i >= $current_year_be - 100; $i--): ?><option value="<?php echo $i; ?>" <?php echo ($user_dob_year == $i) ? 'selected' : ''; ?>><?php echo $i; ?></option><?php endfor; ?></select>
@@ -118,13 +184,13 @@ require_once __DIR__ . '/../layouts/header.php';
                                         <p class="error-message hidden text-error text-xs mt-1"></p>
                                     </div>
                                      <div class="form-control w-full sm:col-span-4"><div class="label py-1"><span class="label-text text-xs">เพศ</span></div>
-                                        <input type="text" name="gender_display" value="<?php echo htmlspecialchars($user['gender']); ?>" class="input input-sm input-bordered w-full view-mode-element" disabled />
+                                        <input type="text" value="<?php echo htmlspecialchars($user['gender']); ?>" class="input input-sm input-bordered w-full view-mode-element" disabled />
                                         <select name="gender" class="select select-sm select-bordered w-full edit-mode-element hidden" disabled required><option value="ชาย" <?php echo $user['gender'] == 'ชาย' ? 'selected' : ''; ?>>ชาย</option><option value="หญิง" <?php echo $user['gender'] == 'หญิง' ? 'selected' : ''; ?>>หญิง</option></select>
                                         <p class="error-message hidden text-error text-xs mt-1"></p>
                                      </div>
                                 </div></div>
-                                <div class="form-control w-full"><div class="label py-1"><span class="label-text text-xs">เบอร์โทร</span></div><input type="tel" name="phone" value="<?php echo htmlspecialchars($user['phone_number']); ?>" class="input input-sm input-bordered w-full" disabled required maxlength="12" /><p class="error-message hidden text-error text-xs mt-1"></p></div>
-                                <div class="form-control w-full"><div class="label py-1"><span class="label-text text-xs">เลขบัตรประชาชน</span></div><input type="text" id="profile-national-id" name="national_id_display" value="<?php echo htmlspecialchars($user['national_id']); ?>" class="input input-sm input-bordered w-full" disabled /></div>
+                                <div class="form-control w-full"><div class="label py-1"><span class="label-text text-xs">เบอร์โทร</span></div><input type="tel" name="phone" value="<?php echo format_phone_number($user['phone_number']); ?>" class="input input-sm input-bordered w-full" disabled required maxlength="12" /><p class="error-message hidden text-error text-xs mt-1"></p></div>
+                                <div class="form-control w-full"><div class="label py-1"><span class="label-text text-xs">เลขบัตรประชาชน</span></div><input type="text" name="national_id_display" value="<?php echo format_national_id($user['national_id']); ?>" class="input input-sm input-bordered w-full" disabled /></div>
                             </div>
                         </div>
                         <div>
@@ -146,7 +212,7 @@ require_once __DIR__ . '/../layouts/header.php';
                                     <input type="text" name="work_department_display" value="<?php echo htmlspecialchars($user['work_department']); ?>" class="input input-sm input-bordered w-full" disabled />
                                 </div>
                                 <div class="form-control w-full"><div class="label py-1"><span class="label-text text-xs">ตำแหน่ง</span></div><input type="text" name="position" value="<?php echo htmlspecialchars($user['position']); ?>" class="input input-sm input-bordered w-full" disabled required /><p class="error-message hidden text-error text-xs mt-1"></p></div>
-                                <div class="form-control w-full"><div class="label py-1"><span class="label-text text-xs">เลขบัตรข้าราชการ</span></div><input type="tel" name="official_id" value="<?php echo htmlspecialchars($user['official_id']); ?>" class="input input-sm input-bordered w-full" disabled maxlength="10" oninput="this.value = this.value.replace(/\D/g, '')" /><p class="error-message hidden text-error text-xs mt-1"></p></div>
+                                <div class="form-control w-full"><div class="label py-1"><span class="label-text text-xs">เลขบัตรข้าราชการ</span></div><input type="tel" name="official_id" value="<?php echo htmlspecialchars($user['official_id']); ?>" class="input input-sm input-bordered w-full" disabled maxlength="10" oninput="this.value = this.value.replace(/\D/g, '')" required /><p class="error-message hidden text-error text-xs mt-1"></p></div>
                             </div>
                         </div>
                         <?php endif; ?>
@@ -158,3 +224,4 @@ require_once __DIR__ . '/../layouts/header.php';
 </div>
 
 <?php require_once __DIR__ . '/../layouts/footer.php'; ?>
+

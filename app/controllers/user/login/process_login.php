@@ -15,8 +15,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     }
     $conn->set_charset("utf8");
 
-    $phone = preg_replace('/\D/', '', $_POST['phone'] ?? '');
-    $national_id = preg_replace('/\D/', '', $_POST['national_id'] ?? '');
+    $phone = preg_replace('/\\D/', '', $_POST['phone'] ?? '');
+    $national_id = preg_replace('/\\D/', '', $_POST['national_id'] ?? '');
 
     if (empty($phone) || empty($national_id)) {
         $response['message'] = 'กรุณากรอกข้อมูลให้ครบถ้วน';
@@ -36,14 +36,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $_SESSION['loggedin'] = true;
         $_SESSION['user_id'] = $user['id'];
 
-        // ตั้งค่า session สำหรับแจ้งเตือนเมื่อเข้าสู่ระบบสำเร็จ เพื่อนำไปแสดงผลที่หน้า home
-        $_SESSION['login_success_message'] = "เข้าสู่ระบบสำเร็จ";
+        // [START] ***** EDITED CODE *****
+        // ตั้งค่า session สำหรับ flash message ให้สอดคล้องกับระบบแจ้งเตือนหลัก
+        $_SESSION['request_status'] = 'success';
+        $_SESSION['request_message'] = "เข้าสู่ระบบสำเร็จ ยินดีต้อนรับ!";
+        // [END] ***** EDITED CODE *****
 
         // บันทึก Log การเข้าสู่ระบบสำเร็จ
         log_activity($conn, 'login_success');
 
         $response['success'] = true;
-        $response['redirect_url'] = '../../../views/user/home/dashboard.php'; // <- แก้ไข redirect ไปยัง dashboard.php
+        $response['redirect_url'] = '../../../views/user/home/dashboard.php';
         $response['user'] = [
             'title' => $user['title'],
             'firstname' => $user['firstname'],
@@ -57,8 +60,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     $stmt->close();
     $conn->close();
-} else {
-    $response['message'] = 'Invalid request method.';
 }
 
 echo json_encode($response);

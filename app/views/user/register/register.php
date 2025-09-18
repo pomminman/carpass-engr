@@ -68,6 +68,25 @@ $conn_dept->close(); // ปิดการเชื่อมต่อหลั�
             border-color: #7dd3fc;
             color: #0369a1;
         }
+        /* [เพิ่ม] สไตล์สำหรับ dropdown ของ jquery.Thailand.js ให้มี scrollbar */
+        .twitter-typeahead .tt-menu {
+            max-height: 250px;
+            overflow-y: auto;
+            display: block;
+            scrollbar-width: thin;
+            scrollbar-color: #a0aec0 #e2e8f0;
+        }
+        .twitter-typeahead .tt-menu::-webkit-scrollbar {
+            width: 8px;
+        }
+        .twitter-typeahead .tt-menu::-webkit-scrollbar-track {
+            background: #e2e8f0;
+        }
+        .twitter-typeahead .tt-menu::-webkit-scrollbar-thumb {
+            background-color: #a0aec0;
+            border-radius: 4px;
+            border: 2px solid #e2e8f0;
+        }
     </style>
 </head>
 <body class="flex flex-col min-h-screen">

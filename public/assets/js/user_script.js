@@ -35,7 +35,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 this.showAlert(flashMessage, flashStatus);
             }
             // Initialize Fancybox for non-modal images
-            Fancybox.bind("[data-fancybox]:not(.modal-gallery-item)", {
+            Fancybox.bind("[data-fancybox]", {
                 // Your custom options
             });
         },
@@ -82,10 +82,15 @@ document.addEventListener('DOMContentLoaded', function () {
             const input = document.getElementById(inputId);
             const preview = document.getElementById(previewId);
             if(input && preview){
+                const fancyboxLink = preview.closest('a'); // Get parent <a> tag for fancybox
                 input.addEventListener('change', function(event) {
                     const file = event.target.files[0];
                     if (file) {
-                        preview.src = URL.createObjectURL(file);
+                        const newSrc = URL.createObjectURL(file);
+                        preview.src = newSrc;
+                        if (fancyboxLink) {
+                            fancyboxLink.href = newSrc; // Update href for fancybox
+                        }
                     }
                 });
             }
@@ -98,6 +103,15 @@ document.addEventListener('DOMContentLoaded', function () {
                 errorEl.textContent = message;
                 errorEl.classList.remove('hidden');
             }
+            
+            if (element.name === 'dob_day' || element.name === 'dob_month' || element.name === 'dob_year') {
+                const dobContainer = element.closest('.grid');
+                if (dobContainer) {
+                    dobContainer.querySelectorAll('select').forEach(sel => sel.classList.add('select-error'));
+                }
+                return;
+            }
+
             if (element.type === 'file') element.classList.add('file-input-error');
             else if (element.tagName === 'SELECT') element.classList.add('select-error');
             else element.classList.add('input-error');
@@ -110,6 +124,15 @@ document.addEventListener('DOMContentLoaded', function () {
                 errorEl.textContent = '';
                 errorEl.classList.add('hidden');
             }
+
+             if (element.name === 'dob_day' || element.name === 'dob_month' || element.name === 'dob_year') {
+                const dobContainer = element.closest('.grid');
+                if (dobContainer) {
+                    dobContainer.querySelectorAll('select').forEach(sel => sel.classList.remove('select-error'));
+                }
+                return;
+            }
+            
             element.classList.remove('input-error', 'select-error', 'file-input-error');
         },
         
@@ -126,7 +149,6 @@ document.addEventListener('DOMContentLoaded', function () {
                     }
                 } else if (field.type === 'file') {
                     if (field.files.length === 0) {
-                        // This check is specifically for add_vehicle page's required file inputs
                         if (field.id !== 'profile-photo-upload') {
                             this.showError(field, 'กรุณาแนบไฟล์');
                             isValid = false;
@@ -183,6 +205,17 @@ document.addEventListener('DOMContentLoaded', function () {
 
             let currentCardData = null;
 
+            const resetEditFormValidation = () => {
+                const editForm = elements.editForm;
+                editForm.querySelectorAll('.input-error, .select-error, .file-input-error').forEach(el => {
+                    el.classList.remove('input-error', 'select-error', 'file-input-error');
+                });
+                editForm.querySelectorAll('.error-message').forEach(el => {
+                    el.classList.add('hidden');
+                    el.textContent = '';
+                });
+            };
+
             const createInfoRow = (label, value) => {
                 if (value === null || value === undefined || value === '-') return '';
                 return `<div class="flex justify-between items-start gap-2"><span class="text-base-content/70 flex-shrink-0">${label}:</span><span class="font-semibold text-right break-words">${value}</span></div>`;
@@ -209,6 +242,23 @@ document.addEventListener('DOMContentLoaded', function () {
                 try {
                     currentCardData = card.dataset;
                     const data = currentCardData;
+
+                    // [START] ***** EDITED CODE *****
+                    // Log the view action with proper response handling
+                    fetch('../../../controllers/user/activity/log_user_process.php', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ request_id: data.requestId })
+                    })
+                    .then(response => response.json())
+                    .then(result => {
+                        if (!result.success) {
+                            console.error('Failed to log view:', result.message);
+                        }
+                    })
+                    .catch(error => console.error('Error logging view:', error));
+                    // [END] ***** EDITED CODE *****
+
                     const basePath = `/public/uploads/${data.userKey}/vehicle/${data.requestKey}/`;
 
                     const queryAndSet = (selector, content, isHtml = false) => {
@@ -292,8 +342,7 @@ document.addEventListener('DOMContentLoaded', function () {
                             </a>
                         </div>`;
                     queryAndSet('#modal-evidence-gallery', galleryHTML, true);
-
-                    // --- [FIXED] Programmatic Fancybox initialization for modal content ---
+                    
                     const galleryItems = detailsModalEl.querySelectorAll('.modal-gallery-item');
                     
                     galleryItems.forEach(item => {
@@ -301,28 +350,27 @@ document.addEventListener('DOMContentLoaded', function () {
                             e.preventDefault();
                             e.stopPropagation();
 
-                            // Re-build slides array on each click to ensure it's fresh
                             const currentSlides = Array.from(detailsModalEl.querySelectorAll('.modal-gallery-item')).map(el => ({
                                 src: el.href,
                                 caption: el.dataset.caption
                             }));
                             
                             const startIndex = Array.from(detailsModalEl.querySelectorAll('.modal-gallery-item')).indexOf(item);
+                            
+                            detailsModalEl.close();
 
                             Fancybox.show(currentSlides, {
                                 startIndex: startIndex,
-                                // This is the crucial fix:
-                                // We let Fancybox create itself, then move its container into our modal dialog.
-                                // This ensures it becomes part of the modal's "top layer" and appears above it.
                                 on: {
-                                    'reveal': (fancybox, slide) => {
-                                        detailsModalEl.appendChild(fancybox.container);
-                                    }
+                                    close: () => {
+                                        setTimeout(() => {
+                                            detailsModalEl.showModal();
+                                        }, 150);
+                                    },
                                 }
                             });
                         });
                     });
-                    // --- End of new Fancybox logic ---
 
                     let buttonsHtml = '';
                     if (data.canRenew === 'true') buttonsHtml += `<a href="add_vehicle.php?renew_id=${data.vehicleId}" class="btn btn-sm btn-success"><i class="fa-solid fa-calendar-check"></i>ต่ออายุบัตร</a>`;
@@ -361,10 +409,18 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
                 ownerSelect.dispatchEvent(new Event('change'));
 
-                editForm.querySelector('#edit-reg-copy-preview').src = basePath + data.photoReg;
-                editForm.querySelector('#edit-tax-sticker-preview').src = basePath + data.photoTax;
-                editForm.querySelector('#edit-front-view-preview').src = basePath + data.photoFront;
-                editForm.querySelector('#edit-rear-view-preview').src = basePath + data.photoRear;
+                const updateLink = (id, newSrc) => {
+                    const img = editForm.querySelector(id);
+                    img.src = newSrc;
+                    if (img.parentElement.tagName === 'A') {
+                        img.parentElement.href = newSrc;
+                    }
+                };
+                
+                updateLink('#edit-reg-copy-preview', basePath + data.photoReg);
+                updateLink('#edit-tax-sticker-preview', basePath + data.photoTax);
+                updateLink('#edit-front-view-preview', basePath + data.photoFront);
+                updateLink('#edit-rear-view-preview', basePath + data.photoRear);
 
                 detailsModalEl.querySelector('#modal-content-wrapper').classList.add('hidden');
                 detailsModalEl.querySelector('#modal-edit-form-wrapper').classList.remove('hidden');
@@ -406,6 +462,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     elements.deleteModal.showModal();
                 }
                 if (e.target.id === 'cancel-edit-btn') {
+                    resetEditFormValidation();
                     detailsModalEl.querySelector('#modal-edit-form-wrapper').classList.add('hidden');
                     detailsModalEl.querySelector('#modal-content-wrapper').classList.remove('hidden');
                 }
@@ -428,9 +485,18 @@ document.addEventListener('DOMContentLoaded', function () {
 
             elements.editForm.querySelector('#edit-owner-type').addEventListener('change', e => {
                 const otherDetails = elements.editForm.querySelector('#edit-other-owner-details');
-                otherDetails.classList.toggle('hidden', e.target.value !== 'other');
-                otherDetails.querySelectorAll('input').forEach(input => {
-                     e.target.value === 'other' ? input.setAttribute('required', '') : input.removeAttribute('required');
+                const inputs = otherDetails.querySelectorAll('input');
+                const isOther = e.target.value === 'other';
+
+                otherDetails.classList.toggle('hidden', !isOther);
+                inputs.forEach(input => {
+                    if (isOther) {
+                        input.setAttribute('required', '');
+                        this.validateField(input); 
+                    } else {
+                        input.removeAttribute('required');
+                        this.clearError(input);
+                    }
                 });
             });
             
@@ -447,7 +513,7 @@ document.addEventListener('DOMContentLoaded', function () {
         },
 
         initAddVehiclePage: function() {
-            const form = document.getElementById('addVehicleForm');
+           const form = document.getElementById('addVehicleForm');
             if (!form) return;
 
             const elements = {
@@ -459,14 +525,101 @@ document.addEventListener('DOMContentLoaded', function () {
                 step1Indicator: document.getElementById('step1-indicator'),
                 step2Indicator: document.getElementById('step2-indicator'),
                 loadingModal: document.getElementById('loading_modal'),
+                reviewModal: document.getElementById('review_request_modal'),
+                finalSubmitBtn: document.getElementById('final-submit-btn'),
                 typeIcon: document.getElementById('display-vehicle-type-icon')
             };
 
-            // --- [NEW] Function to handle dynamic preview and Fancybox link update ---
+            const populateRequestReviewModal = () => {
+                const summaryContent = elements.reviewModal.querySelector('#summary-content');
+                const formData = new FormData(form);
+            
+                const getSelectText = (name) => {
+                    const select = form.querySelector(`select[name="${name}"]`);
+                    return select ? select.options[select.selectedIndex].text : '-';
+                };
+            
+                const vehicleType = document.getElementById('display-vehicle-type').textContent;
+                const licensePlate = document.getElementById('display-license-plate').textContent;
+                const licenseProvince = document.getElementById('display-license-province').textContent;
+                const brand = getSelectText('vehicle_brand');
+                const model = formData.get('vehicle_model');
+                const color = formData.get('vehicle_color');
+                const taxDate = `${formData.get('tax_day')} ${getSelectText('tax_month')} ${formData.get('tax_year')}`;
+                const ownerType = getSelectText('owner_type');
+                const otherOwnerName = formData.get('other_owner_name');
+                const otherOwnerRelation = formData.get('other_owner_relation');
+            
+                const regCopySrc = document.getElementById('reg-copy-preview').src;
+                const taxStickerSrc = document.getElementById('tax-sticker-preview').src;
+                const frontViewSrc = document.getElementById('front-view-preview').src;
+                const rearViewSrc = document.getElementById('rear-view-preview').src;
+            
+                let ownerHtml = `<div><strong>ความเป็นเจ้าของ:</strong> ${ownerType}</div>`;
+                if (ownerType === 'รถคนอื่น') {
+                    ownerHtml += `<div><strong>ชื่อเจ้าของ:</strong> ${otherOwnerName || '-'}</div>`;
+                    ownerHtml += `<div><strong>เกี่ยวข้องเป็น:</strong> ${otherOwnerRelation || '-'}</div>`;
+                }
+            
+                const html = `
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="space-y-4">
+                            <div>
+                                <div class="font-bold text-base-content/70 text-xs uppercase tracking-wider mb-1">ข้อมูลยานพาหนะ</div>
+                                <div class="p-3 bg-base-200 rounded-box text-sm space-y-1">
+                                    <div><strong>ประเภท:</strong> ${vehicleType}</div>
+                                    <div><strong>ทะเบียน:</strong> ${licensePlate} ${licenseProvince}</div>
+                                    <div><strong>ยี่ห้อ/รุ่น:</strong> ${brand} / ${model}</div>
+                                    <div><strong>สี:</strong> ${color}</div>
+                                    <div><strong>วันสิ้นอายุภาษี:</strong> ${taxDate}</div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="font-bold text-base-content/70 text-xs uppercase tracking-wider mb-1">ข้อมูลเจ้าของ</div>
+                                <div class="p-3 bg-base-200 rounded-box text-sm space-y-1">
+                                   ${ownerHtml}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="space-y-2">
+                            <div class="font-bold text-base-content/70 text-xs uppercase tracking-wider mb-1">หลักฐานประกอบ</div>
+                            <div class="grid grid-cols-2 gap-3">
+                                <div class="card bg-base-200/50 p-2 border">
+                                    <div class="flex items-center justify-center h-28 overflow-hidden rounded-md bg-white">
+                                         <img src="${regCopySrc}" class="max-w-full max-h-full object-contain">
+                                    </div>
+                                    <p class="text-xs text-center font-semibold mt-1">สำเนาทะเบียนรถ</p>
+                                </div>
+                                <div class="card bg-base-200/50 p-2 border">
+                                    <div class="flex items-center justify-center h-28 overflow-hidden rounded-md bg-white">
+                                         <img src="${taxStickerSrc}" class="max-w-full max-h-full object-contain">
+                                    </div>
+                                    <p class="text-xs text-center font-semibold mt-1">ป้ายภาษี</p>
+                                </div>
+                                 <div class="card bg-base-200/50 p-2 border">
+                                    <div class="flex items-center justify-center h-28 overflow-hidden rounded-md bg-white">
+                                         <img src="${frontViewSrc}" class="max-w-full max-h-full object-contain">
+                                    </div>
+                                    <p class="text-xs text-center font-semibold mt-1">รูปถ่ายด้านหน้า</p>
+                                </div>
+                                 <div class="card bg-base-200/50 p-2 border">
+                                    <div class="flex items-center justify-center h-28 overflow-hidden rounded-md bg-white">
+                                         <img src="${rearViewSrc}" class="max-w-full max-h-full object-contain">
+                                    </div>
+                                    <p class="text-xs text-center font-semibold mt-1">รูปถ่ายด้านหลัง</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            
+                summaryContent.innerHTML = html;
+            };
+
             const setupDynamicImagePreview = (inputId, previewImgId, fancyboxLinkId) => {
                 const input = document.getElementById(inputId);
                 const previewImg = document.getElementById(previewImgId);
-                const fancyboxLink = previewImg.closest('a'); // Get the parent <a> tag
+                const fancyboxLink = previewImg.closest('a');
 
                 if (input && previewImg && fancyboxLink) {
                     const defaultSrc = previewImg.src;
@@ -477,16 +630,14 @@ document.addEventListener('DOMContentLoaded', function () {
                         if (file) {
                             const newSrc = URL.createObjectURL(file);
                             previewImg.src = newSrc;
-                            fancyboxLink.href = newSrc; // Update Fancybox link
+                            fancyboxLink.href = newSrc;
                         } else {
-                            // Optional: Revert to default if the file selection is cancelled
                             previewImg.src = defaultSrc;
                             fancyboxLink.href = defaultHref;
                         }
                     });
                 }
             };
-            // --- End of new function ---
 
             const setStep = (stepNumber) => {
                 const activeClasses = ['bg-primary', 'text-primary-content', 'border-primary'];
@@ -569,11 +720,16 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
 
                 if (isAllValid) {
-                    elements.loadingModal.showModal();
-                    form.submit();
+                    populateRequestReviewModal();
+                    elements.reviewModal.showModal();
                 } else {
                     this.showAlert('กรุณากรอกข้อมูลให้ครบถ้วนและถูกต้อง', 'error');
                 }
+            });
+
+            elements.finalSubmitBtn.addEventListener('click', () => {
+                elements.loadingModal.showModal();
+                form.submit();
             });
 
             elements.backBtn.addEventListener('click', () => setStep(1));
@@ -593,7 +749,6 @@ document.addEventListener('DOMContentLoaded', function () {
             };
             populateDateSelects(taxDayEl, taxMonthEl, taxYearEl, form.dataset.renewalTaxDate || null);
             
-            // --- [MODIFIED] Use the new dynamic preview function ---
             setupDynamicImagePreview('reg_copy_upload', 'reg-copy-preview');
             setupDynamicImagePreview('tax_sticker_upload', 'tax-sticker-preview');
             setupDynamicImagePreview('front_view_upload', 'front-view-preview');
@@ -639,7 +794,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 titleSelect: document.getElementById('profile-title'),
                 titleOtherInput: document.getElementById('profile-title-other'),
                 phoneInput: form.querySelector('input[name="phone"]'),
-                nidInput: document.getElementById('profile-national-id'),
+                nidInput: form.querySelector('input[name="national_id_display"]'),
             };
             
             const formatInput = (input, patterns) => {
@@ -715,10 +870,17 @@ document.addEventListener('DOMContentLoaded', function () {
                 const dobYear = form.querySelector('#profile-dob-year');
                 if (dobDay.offsetParent !== null) { 
                     if (!dobDay.value || !dobMonth.value || !dobYear.value) {
-                        this.showError(dobDay.closest('.grid').parentElement, 'กรุณาเลือกวันเดือนปีเกิดให้ครบถ้วน');
+                        this.showError(dobDay, 'กรุณาเลือกวันเดือนปีเกิดให้ครบถ้วน');
                         isAllValid = false;
                     } else {
-                        this.clearError(dobDay.closest('.grid').parentElement);
+                        this.clearError(dobDay);
+                    }
+                }
+
+                const officialIdField = form.querySelector('input[name="official_id"]');
+                if (officialIdField && officialIdField.offsetParent !== null) {
+                    if (!this.validateField(officialIdField)) {
+                        isAllValid = false;
                     }
                 }
 
@@ -738,15 +900,24 @@ document.addEventListener('DOMContentLoaded', function () {
             });
 
             this.setupImagePreview('profile-photo-upload', 'profile-photo-preview');
-
+            
             elements.titleSelect.addEventListener('change', function() {
                 const isOther = this.value === 'other';
-                elements.titleOtherInput.classList.toggle('hidden', !isOther);
-                elements.titleOtherInput.disabled = this.disabled || !isOther;
-                if (isOther && !this.disabled) {
-                    elements.titleOtherInput.setAttribute('required', '');
+                const isEditing = !this.disabled;
+                const otherInput = elements.titleOtherInput;
+
+                // [แก้ไข] แก้ไขตรรกะการซ่อน/แสดงผลของช่อง "คำนำหน้าอื่นๆ"
+                if (isEditing) {
+                    otherInput.classList.toggle('hidden', !isOther);
                 } else {
-                    elements.titleOtherInput.removeAttribute('required');
+                    otherInput.classList.add('hidden');
+                }
+                
+                otherInput.disabled = !isEditing || !isOther;
+                if (isOther && isEditing) {
+                    otherInput.setAttribute('required', '');
+                } else {
+                    otherInput.removeAttribute('required');
                 }
             });
             
@@ -776,6 +947,3 @@ document.addEventListener('DOMContentLoaded', function () {
 
     App.init();
 });
-
-
-

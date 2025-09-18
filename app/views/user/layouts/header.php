@@ -23,8 +23,8 @@
     <script src="/lib/tailwindcss/tailwindcss.js"></script>
 
     <!-- Fancybox Library (New) -->
-    <script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.umd.js"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.css" />
+    <script src="/lib/fancybox/fancybox.umd.js"></script>
+    <link rel="stylesheet" href="/lib/fancybox/fancybox.css" />
 
     <!-- Local CSS -->
     <link rel="stylesheet" href="/lib/daisyui@4.12.10/dist/full.min.css" type="text/css" />

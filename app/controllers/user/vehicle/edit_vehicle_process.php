@@ -29,7 +29,8 @@ function uploadAndCompressImage($file, $targetDir) {
     $extension = strtolower(pathinfo($file["name"], PATHINFO_EXTENSION));
     $newFileName = bin2hex(random_bytes(16)) . '.' . $extension;
     $finalTargetPath = $targetDir . $newFileName;
-    // ... (Image processing logic as before) ...
+    
+    // Simple move file, compression logic can be added here if needed
     if(move_uploaded_file($file['tmp_name'], $finalTargetPath)){
          return ['filename' => $newFileName];
     } else {
@@ -54,7 +55,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $request_key = $old_data['request_key'];
         $stmt_old_data->close();
         
-        $user_key = $conn->query("SELECT user_key FROM users WHERE id = $user_id")->fetch_assoc()['user_key'];
+        $user_key_res = $conn->query("SELECT user_key FROM users WHERE id = $user_id");
+        if(!$user_key_res || $user_key_res->num_rows === 0) throw new Exception("Could not find user key.");
+        $user_key = $user_key_res->fetch_assoc()['user_key'];
         
         // Update vehicles table - ONLY editable fields
         $stmt_update_vehicle = $conn->prepare("UPDATE vehicles SET brand = ?, model = ?, color = ? WHERE id = ?");
@@ -108,6 +111,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     } catch (Exception $e) {
         $conn->rollback();
+        // [เพิ่ม] บันทึก Log เมื่อเกิดข้อผิดพลาด
+        log_activity($conn, 'edit_vehicle_request_fail', ['request_id' => $request_id, 'error' => $e->getMessage()]);
         handle_error($e->getMessage());
     }
 }

@@ -3,7 +3,7 @@ session_start();
 
 // 1. ถ้าแอดมินล็อกอินอยู่แล้ว ให้ redirect ไปที่ dashboard
 if (isset($_SESSION['admin_loggedin']) && $_SESSION['admin_loggedin'] === true) {
-    header("Location: ../home/dashboard.php"); // สมมติว่าหน้า dashboard อยู่ที่นี่
+    header("Location: ../home/dashboard.php");
     exit;
 }
 
@@ -31,7 +31,6 @@ if (isset($_SESSION['admin_login_error'])) {
 
     <!-- Local CSS -->
     <link rel="stylesheet" href="/lib/daisyui@4.12.10/dist/full.min.css" type="text/css" />
-    <link rel="stylesheet" href="/lib/jquery.Thailand/dist/jquery.Thailand.min.css">
     <link rel="stylesheet" href="/lib/google-fonts-prompt/prompt.css">
     <link rel="stylesheet" href="/lib/fontawesome-free-7.0.1-web/css/all.min.css">
 
@@ -54,15 +53,18 @@ if (isset($_SESSION['admin_login_error'])) {
             border-color: #fca5a5;
             color: #b91c1c;
         }
+        .error-message {
+            color: #ef4444; /* text-red-500 */
+        }
     </style>
 </head>
 <body>
     <div class="min-h-screen flex flex-col items-center justify-center p-4">
         <div class="w-full max-w-sm">
             <!-- Logo and Title -->
-            <div class="flex flex-col items-center justify-center mb-6">
-                <img src="https://img2.pic.in.th/pic/CARPASS-logo11af8574a9cc9906.png" alt="Logo" class="h-24 w-auto" onerror="this.onerror=null;this.src='https://placehold.co/100x100/CCCCCC/FFFFFF?text=Logo';">
-                <h1 class="text-xl font-bold text-slate-700 mt-4">ระบบจัดการคำร้อง (สำหรับเจ้าหน้าที่)</h1>
+            <div class="flex flex-col items-center justify-center mb-4">
+                <img src="https://img2.pic.in.th/pic/CARPASS-logo11af8574a9cc9906.png" alt="Logo" class="h-32 w-auto" onerror="this.onerror=null;this.src='https://placehold.co/128x128/CCCCCC/FFFFFF?text=Logo';">
+                <h1 class="text-xl font-bold text-slate-700 mt-2">ระบบจัดการคำร้อง (สำหรับเจ้าหน้าที่)</h1>
                 <p class="text-sm text-slate-500">กรุณาลงชื่อเข้าใช้เพื่อดำเนินการต่อ</p>
             </div>
 
@@ -70,32 +72,34 @@ if (isset($_SESSION['admin_login_error'])) {
             <div class="card bg-base-100 login-card border border-base-300/50">
                 <div class="card-body">
                     <form action="../../../controllers/admin/login/process_login.php" method="POST" id="adminLoginForm" novalidate>
-                        <div class="space-y-4">
+                        <div class="space-y-2">
                             <!-- Username Input -->
                             <div class="form-control">
-                                <label class="label">
+                                <label class="label py-1">
                                     <span class="label-text">ชื่อผู้ใช้งาน</span>
                                 </label>
                                 <label class="input input-sm input-bordered flex items-center gap-2">
                                     <i class="fa-solid fa-user text-slate-400"></i>
                                     <input type="text" name="username" class="grow" placeholder="Username" required />
                                 </label>
+                                <p class="text-xs mt-1 h-4 error-message hidden"></p>
                             </div>
                             <!-- Password Input -->
                             <div class="form-control">
-                                <label class="label">
+                                <label class="label py-1">
                                     <span class="label-text">รหัสผ่าน</span>
                                 </label>
                                 <label class="input input-sm input-bordered flex items-center gap-2">
                                     <i class="fa-solid fa-lock text-slate-400"></i>
                                     <input type="password" name="password" class="grow" placeholder="Password" required />
                                 </label>
+                                <p class="text-xs mt-1 h-4 error-message hidden"></p>
                             </div>
                         </div>
 
-                        <!-- Error Message Display -->
+                        <!-- Server-side Error Message Display -->
                         <?php if (!empty($login_error)): ?>
-                        <div role="alert" class="alert alert-error alert-soft text-xs p-2 mt-4">
+                        <div id="server-error-container" role="alert" class="alert alert-error alert-soft text-xs p-2 mt-4">
                             <div class="flex items-center">
                                 <i class="fa-solid fa-circle-xmark mr-2"></i>
                                 <span><?php echo htmlspecialchars($login_error); ?></span>
@@ -115,7 +119,7 @@ if (isset($_SESSION['admin_login_error'])) {
             </div>
 
             <!-- Footer -->
-            <footer class="text-center text-slate-500 mt-8">
+            <footer class="text-center text-slate-500 mt-6">
                 <p class="text-xs">Developed by กยข.กช.</p>
                 <p class="text-xs">ร.ท.พรหมินทร์ อินทมาตย์ (ผู้พัฒนาระบบ)</p>
             </footer>
@@ -125,25 +129,55 @@ if (isset($_SESSION['admin_login_error'])) {
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const form = document.getElementById('adminLoginForm');
+            
+            const showError = (input, message) => {
+                const formControl = input.closest('.form-control');
+                const errorElement = formControl.querySelector('.error-message');
+                const inputWrapper = input.closest('label');
+                if (inputWrapper) inputWrapper.classList.add('input-error');
+                if (errorElement) {
+                    errorElement.textContent = message;
+                    errorElement.classList.remove('hidden');
+                }
+            };
+
+            const clearError = (input) => {
+                const formControl = input.closest('.form-control');
+                const errorElement = formControl.querySelector('.error-message');
+                const inputWrapper = input.closest('label');
+                if (inputWrapper) inputWrapper.classList.remove('input-error');
+                if (errorElement) {
+                    errorElement.textContent = '';
+                    errorElement.classList.add('hidden');
+                }
+            };
+
             form.addEventListener('submit', function(event) {
                 let isValid = true;
+                const serverError = document.getElementById('server-error-container');
+                if (serverError) {
+                    serverError.style.display = 'none';
+                }
+
                 form.querySelectorAll('[required]').forEach(input => {
                     if (!input.value.trim()) {
                         isValid = false;
-                        // You can add visual feedback here if you want
-                        input.closest('label').classList.add('input-error');
+                        showError(input, 'กรุณากรอกข้อมูล');
                     } else {
-                        input.closest('label').classList.remove('input-error');
+                        clearError(input);
                     }
                 });
 
                 if (!isValid) {
                     event.preventDefault();
-                    // Optionally show a generic alert
-                    // alert('กรุณากรอกข้อมูลให้ครบถ้วน');
                 }
+            });
+
+            form.querySelectorAll('[required]').forEach(input => {
+                input.addEventListener('input', () => clearError(input));
             });
         });
     </script>
 </body>
 </html>
+
