@@ -268,7 +268,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 
                 setText('#result-modal-user-name', `${data.user_title} ${data.user_firstname} ${data.user_lastname}`);
                 setText('#result-modal-user-address', `${data.address} ต.${data.subdistrict} อ.${data.district} จ.${data.user_province} ${data.zipcode}`);
-                // [FIX] Use the correct key 'vehicle_province' for the result modal
                 setText('#result-modal-license', `${data.license_plate} ${data.vehicle_province}`);
                 setText('#result-modal-vehicle', `${data.brand} / ${data.model}`);
                 

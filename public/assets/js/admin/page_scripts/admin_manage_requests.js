@@ -1,25 +1,42 @@
-/**
- * admin_manage_requests.js
- * Contains page-specific JavaScript for the Manage Requests page.
- */
-document.addEventListener('DOMContentLoaded', function () {
-    if (!document.getElementById('manage-requests-page')) return;
+document.addEventListener('DOMContentLoaded', function() {
+    const addRequestModal = document.getElementById('add_request_modal');
+    const selectUserForm = document.getElementById('selectUserForm');
+    const userSelect = $('#user-search-select');
 
-    const statsModal = document.getElementById('stats_modal');
-    const showStatsBtn = document.getElementById('show-stats-btn');
-    
-    if (showStatsBtn) {
-        showStatsBtn.addEventListener('click', () => {
-            const container = document.getElementById('stats-cards-container');
-            if (!container || typeof window.requestStatsData === 'undefined') return;
-            const stats = window.requestStatsData;
-            container.innerHTML = `
-                <div class="card bg-info text-info-content text-center"><div class="card-body p-4"><div class="text-3xl font-bold">${stats.total}</div><div class="text-sm">ทั้งหมด</div></div></div>
-                <div class="card bg-warning text-warning-content text-center"><div class="card-body p-4"><div class="text-3xl font-bold">${stats.pending}</div><div class="text-sm">รออนุมัติ</div></div></div>
-                <div class="card bg-success text-success-content text-center"><div class="card-body p-4"><div class="text-3xl font-bold">${stats.approved}</div><div class="text-sm">อนุมัติแล้ว</div></div></div>
-                <div class="card bg-error text-error-content text-center"><div class="card-body p-4"><div class="text-3xl font-bold">${stats.rejected}</div><div class="text-sm">ไม่ผ่าน</div></div></div>
-            `;
-            if(statsModal) statsModal.showModal();
+    // Initialize Select2
+    userSelect.select2({
+        dropdownParent: $('#add_request_modal'),
+        placeholder: 'คลิกเพื่อเลือก หรือพิมพ์เพื่อค้นหา...',
+        ajax: {
+            url: '../../../controllers/admin/requests/check_requests.php?action=search_users', 
+            dataType: 'json',
+            delay: 250,
+            data: function (params) {
+                return {
+                    q: params.term // search term
+                };
+            },
+            processResults: function (data) {
+                return {
+                    results: data.items
+                };
+            },
+            cache: true
+        }
+        // [REMOVED] minimumInputLength: 2 is no longer needed
+    });
+
+    // Handle form submission to go to the add request page
+    if (selectUserForm) {
+        selectUserForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const selectedUserId = userSelect.val();
+            if (selectedUserId) {
+                window.location.href = `add_request.php?user_id=${selectedUserId}`;
+            } else {
+                showAlert('โปรดเลือกผู้ใช้งานที่ต้องการสร้างคำร้อง', 'error');
+            }
         });
     }
 });
+

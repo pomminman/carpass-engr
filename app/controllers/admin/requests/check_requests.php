@@ -91,7 +91,19 @@ switch ($action) {
             $response = [];
             if ($process_action === 'approve') {
                 $current_request_data = getRequestDetails($conn, $request_id);
-                if (!$current_request_data) throw new Exception("Request not found for snapshotting.");
+                if (!$current_request_data) throw new Exception("Request not found for processing.");
+                
+                // --- [NEW] Card Number Generation Logic ---
+                $period_id = $current_request_data['period_id'];
+                $stmt_max_card = $conn->prepare("SELECT MAX(CAST(card_number AS UNSIGNED)) as max_card FROM vehicle_requests WHERE period_id = ?");
+                $stmt_max_card->bind_param("i", $period_id);
+                $stmt_max_card->execute();
+                $max_card_result = $stmt_max_card->get_result()->fetch_assoc();
+                $stmt_max_card->close();
+                
+                $next_card_number_int = ($max_card_result['max_card'] ?? 0) + 1;
+                $new_card_number = str_pad($next_card_number_int, 4, '0', STR_PAD_LEFT);
+                // --- End of [NEW] ---
 
                 $qr_content = "http://localhost/verify.php?key=" . $current_request_data['request_key'];
                 $qr_dir = "../../../../public/qr/";
@@ -99,9 +111,10 @@ switch ($action) {
                 $qr_filename = $current_request_data['request_key'] . '.png';
                 QRcode::png($qr_content, $qr_dir . $qr_filename, QR_ECLEVEL_L, 4, 0);
 
-                $sql_approve = "UPDATE vehicle_requests SET status = 'approved', approved_by_id = ?, approved_at = NOW(), qr_code_path = ? WHERE id = ?";
+                // --- [MODIFIED] Added card_number to the UPDATE statement ---
+                $sql_approve = "UPDATE vehicle_requests SET status = 'approved', card_number = ?, approved_by_id = ?, approved_at = NOW(), qr_code_path = ? WHERE id = ?";
                 $stmt = $conn->prepare($sql_approve);
-                $stmt->bind_param("isi", $admin_id, $qr_filename, $request_id);
+                $stmt->bind_param("sisi", $new_card_number, $admin_id, $qr_filename, $request_id);
                 if (!$stmt->execute()) throw new Exception("Failed to approve request.");
 
                 $sql_snapshot = "
@@ -132,7 +145,7 @@ switch ($action) {
                 $stmt_snapshot->bind_param("iisssssssssssssssss", $request_id, $current_request_data['user_original_id'], $current_request_data['user_type'], $current_request_data['phone_number'], $current_request_data['national_id'], $current_request_data['user_title'], $current_request_data['user_firstname'], $current_request_data['user_lastname'], $current_request_data['dob'], $current_request_data['gender'], $current_request_data['address'], $current_request_data['subdistrict'], $current_request_data['district'], $current_request_data['user_province'], $current_request_data['zipcode'], $current_request_data['photo_profile'], $current_request_data['work_department'], $current_request_data['position'], $current_request_data['official_id']);
                 if (!$stmt_snapshot->execute()) throw new Exception("Failed to snapshot user data.");
 
-                log_activity($conn, 'admin_approve_request', ['request_id' => $request_id]);
+                log_activity($conn, 'admin_approve_request', ['request_id' => $request_id, 'card_number' => $new_card_number]);
                 $response = ['success' => true, 'message' => 'อนุมัติคำร้องสำเร็จแล้ว', 'qr_code_url' => '/public/qr/' . $qr_filename];
 
             } elseif ($process_action === 'reject') {
@@ -156,14 +169,68 @@ switch ($action) {
         }
         break;
 
-    case 'check_vehicle_duplicate':
+    case 'search_users':
+        $searchTerm = $_GET['q'] ?? '';
+        $users_list = [];
+        $stmt_search = null;
+
+        if (empty($searchTerm)) {
+            $sql_search = "SELECT id, firstname, lastname, national_id, title FROM users 
+                           ORDER BY firstname ASC, lastname ASC
+                           LIMIT 50";
+            $stmt_search = $conn->prepare($sql_search);
+        } else {
+            $sql_search = "SELECT id, firstname, lastname, national_id, title FROM users 
+                           WHERE CONCAT(firstname, ' ', lastname) LIKE ? 
+                           OR national_id LIKE ?
+                           ORDER BY firstname ASC
+                           LIMIT 20";
+            $stmt_search = $conn->prepare($sql_search);
+            $likeTerm = "%" . $searchTerm . "%";
+            $stmt_search->bind_param("ss", $likeTerm, $likeTerm);
+        }
+
+        if ($stmt_search) {
+            $stmt_search->execute();
+            $result = $stmt_search->get_result();
+            while ($user = $result->fetch_assoc()) {
+                $users_list[] = [
+                    'id' => $user['id'],
+                    'text' => htmlspecialchars($user['title'] . $user['firstname'] . ' ' . $user['lastname'] . ' (' . $user['national_id'] . ')')
+                ];
+            }
+            $stmt_search->close();
+        }
+        
+        echo json_encode(['items' => $users_list]);
+        break;
+
+    case 'check_user_duplicate':
         $input = json_decode(file_get_contents('php://input'), true);
-        $license_plate = $input['license_plate'] ?? '';
-        $province = $input['province'] ?? '';
-        if (empty($license_plate) || empty($province)) { echo json_encode(['exists' => false, 'message' => 'License plate and province are required.']); break; }
-        $sql = "SELECT vr.id FROM vehicle_requests vr JOIN vehicles v ON vr.vehicle_id = v.id JOIN application_periods ap ON vr.period_id = ap.id WHERE v.license_plate = ? AND v.province = ? AND ap.is_active = 1 AND vr.status IN ('pending', 'approved')";
+        $phone = $input['phone'] ?? null;
+        $nid = $input['nid'] ?? null;
+
+        if (!$phone && !$nid) {
+            echo json_encode(['exists' => false, 'message' => 'Phone or NID is required.']);
+            break;
+        }
+        
+        $sql = "SELECT id FROM users WHERE ";
+        $params = [];
+        $types = '';
+
+        if ($phone) {
+            $sql .= "phone_number = ?";
+            $params[] = $phone;
+            $types .= 's';
+        } else if ($nid) {
+            $sql .= "national_id = ?";
+            $params[] = $nid;
+            $types .= 's';
+        }
+        
         $stmt = $conn->prepare($sql);
-        $stmt->bind_param("ss", $license_plate, $province);
+        $stmt->bind_param($types, ...$params);
         $stmt->execute();
         $result = $stmt->get_result();
         echo json_encode(['exists' => $result->num_rows > 0]);

@@ -15,9 +15,13 @@ if ($result_periods) {
 // (Other data fetching logic remains the same)
 $selected_period_id = $_GET['period_id'] ?? 'all';
 $selected_status = $_GET['status'] ?? 'all';
+// [New] Filter by user_id
+$selected_user_id = isset($_GET['user_id']) ? (int)$_GET['user_id'] : 'all';
+
 $where_clauses = [];
 $params = [];
 $types = '';
+
 if ($selected_period_id !== 'all' && is_numeric($selected_period_id)) {
     $where_clauses[] = 'vr.period_id = ?';
     $params[] = (int)$selected_period_id;
@@ -28,6 +32,14 @@ if ($selected_status !== 'all') {
     $params[] = $selected_status;
     $types .= 's';
 }
+// [New] Add user_id to where clause
+if ($selected_user_id !== 'all') {
+    $where_clauses[] = 'vr.user_id = ?';
+    $params[] = $selected_user_id;
+    $types .= 'i';
+}
+
+
 $where_sql = empty($where_clauses) ? '' : 'WHERE ' . implode(' AND ', $where_clauses);
 $stats = ['pending' => 0, 'approved' => 0, 'rejected' => 0, 'total' => 0];
 $stats_where_clauses = [];
@@ -85,8 +97,17 @@ if ($result_viewed) {
 
 <!-- Page content -->
 <main id="manage-requests-page" class="flex-1 p-4 md:p-6 lg:p-8 pb-24">
-    <h1 class="text-2xl font-bold flex items-center gap-2"><i class="fa-solid fa-file-signature text-primary"></i> จัดการคำร้องทั้งหมด</h1>
-    <p class="text-slate-500 mb-6">ตรวจสอบและจัดการคำร้องขอบัตรผ่านทั้งหมดในระบบ</p>
+    <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-6">
+        <div>
+            <h1 class="text-2xl font-bold flex items-center gap-2"><i class="fa-solid fa-file-signature text-primary"></i> จัดการคำร้องทั้งหมด</h1>
+            <p class="text-slate-500">ตรวจสอบและจัดการคำร้องขอบัตรผ่านทั้งหมดในระบบ</p>
+        </div>
+        <div class="w-full sm:w-auto">
+            <button class="btn btn-primary btn-sm w-full sm:w-auto" onclick="add_request_modal.showModal()">
+                <i class="fa-solid fa-plus"></i> เพิ่มคำร้อง
+            </button>
+        </div>
+    </div>
     
     <div class="card bg-base-100 shadow-lg">
         <div class="card-body">
@@ -109,8 +130,6 @@ if ($result_viewed) {
                             <?php endforeach; ?>
                         </select>
                     </form>
-                    <button id="show-stats-btn" class="btn btn-sm btn-info"><i class="fa-solid fa-chart-pie"></i> ดูสถิติ</button>
-                    <a href="../../../controllers/admin/export/export_requests.php?period_id=<?php echo $selected_period_id; ?>&status=<?php echo $selected_status; ?>" class="btn btn-sm btn-success"><i class="fa-solid fa-file-excel"></i> Export</a>
                    <input type="text" id="searchInput" placeholder="ค้นหา..." class="input input-sm input-bordered w-full sm:w-auto">
                 </div>
             </div>
@@ -182,10 +201,28 @@ if ($result_viewed) {
         </div>
     </div>
 </main>
-<!-- Pass stats data to the global window object -->
-<script>
-    window.requestStatsData = <?php echo json_encode($stats); ?>;
-</script>
+
+<!-- [NEW] Modal for selecting user -->
+<dialog id="add_request_modal" class="modal modal-fade">
+    <div class="modal-box">
+        <h3 class="font-bold text-lg">ขั้นตอนที่ 1: เลือกผู้ใช้งาน</h3>
+        <p class="py-2 text-sm">กรุณาค้นหาและเลือกผู้ใช้ที่ต้องการสร้างคำร้องให้</p>
+        <form id="selectUserForm" method="GET" action="add_request.php">
+            <div class="form-control w-full mt-4">
+                <select id="user-search-select" name="user_id" class="w-full" required>
+                    <option></option>
+                </select>
+                <p class="text-xs text-error mt-1 hidden" id="user-select-error">กรุณาเลือกผู้ใช้งาน</p>
+            </div>
+            <div class="modal-action">
+                <button type="button" class="btn btn-sm" onclick="add_request_modal.close()">ยกเลิก</button>
+                <button type="submit" class="btn btn-sm btn-primary">ถัดไป <i class="fa-solid fa-arrow-right"></i></button>
+            </div>
+        </form>
+    </div>
+    <form method="dialog" class="modal-backdrop"><button>close</button></form>
+</dialog>
+
 
 <?php require_once __DIR__ . '/../layouts/footer.php'; ?>
 

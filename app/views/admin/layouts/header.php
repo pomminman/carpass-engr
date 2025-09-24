@@ -23,21 +23,32 @@ if (isset($_SESSION['flash_message'])) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ระบบจัดการคำร้อง</title>
 
+    <!-- Favicons -->
     <link rel="icon" type="image/png" href="/public/assets/favicon/favicon-96x96.png" sizes="96x96" />
     <link rel="icon" type="image/svg+xml" href="/public/assets/favicon/favicon.svg" />
     <link rel="shortcut icon" href="/public/assets/favicon/favicon.ico" />
     <link rel="apple-touch-icon" sizes="180x180" href="/public/assets/favicon/apple-touch-icon.png" />
     <meta name="apple-mobile-web-app-title" content="carpass engrdept" />
     <link rel="manifest" href="/public/assets/favicon/site.webmanifest" />
-    
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.css" />
-    <link rel="stylesheet" href="/lib/jquery.Thailand/dist/jquery.Thailand.min.css">
 
-    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css" rel="stylesheet" type="text/css" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" xintegrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;700&display=swap" rel="stylesheet">
     
-    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Local JS -->
+    <script src="/lib/jquery/jquery-3.7.1.min.js"></script>
+    <script src="/lib/tailwindcss/tailwindcss.js"></script>
+
+    <!-- Fancybox Library (New) -->
+    <script src="/lib/fancybox/fancybox.umd.js"></script>
+    <link rel="stylesheet" href="/lib/fancybox/fancybox.css" />
+
+    <!-- [NEW] Select2 Library -->
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+    <!-- Local CSS -->
+    <link rel="stylesheet" href="/lib/daisyui@4.12.10/dist/full.min.css" type="text/css" />
+    <link rel="stylesheet" href="/lib/jquery.Thailand/dist/jquery.Thailand.min.css">
+    <link rel="stylesheet" href="/lib/google-fonts-prompt/prompt.css">
+    <link rel="stylesheet" href="/lib/fontawesome-free-7.0.1-web/css/all.min.css">
 
     <style>
         body { font-family: 'Prompt', sans-serif; background-color: #f0f2f5; }
@@ -59,6 +70,27 @@ if (isset($_SESSION['flash_message'])) {
         .twitter-typeahead .tt-menu::-webkit-scrollbar-thumb { background-color: #a0aec0; border-radius: 4px; border: 2px solid #e2e8f0; }
         .tt-suggestion { padding: 8px 12px; border-bottom: 1px solid #eee; }
         .tt-cursor { background-color: #f0f2f5; }
+
+        /* [NEW] Select2 Custom Styles */
+        .select2-container--default .select2-selection--single {
+            background-color: #fff;
+            border: 1px solid #d1d5db; /* border-gray-300 */
+            border-radius: 0.5rem; /* rounded-lg */
+            height: 2.5rem; /* h-10 */
+            padding-top: 4px;
+        }
+        .select2-container--default .select2-selection--single .select2-selection__arrow {
+            height: 2.375rem;
+        }
+        .select2-dropdown {
+            border-color: #d1d5db;
+        }
+        .select2-container .select2-selection--single .select2-selection__rendered {
+            padding-left: 0.75rem;
+        }
+        .select2-container--open .select2-dropdown--below {
+            border-top: 1px solid #d1d5db;
+        }
     </style>
 </head>
 <body data-flash-message="<?php echo htmlspecialchars($flash_message); ?>" data-flash-status="<?php echo htmlspecialchars($flash_status); ?>">
@@ -114,3 +146,4 @@ if (isset($_SESSION['flash_message'])) {
                 </div>
             </div>
         </div>
+

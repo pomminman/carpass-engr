@@ -109,25 +109,25 @@ if (isset($conn) && $conn instanceof mysqli) {
     
     <footer class="fixed bottom-0 left-0 right-0 bg-base-200/80 backdrop-blur-sm text-base-content shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] p-1 text-center z-40"><p class="text-[10px] sm:text-xs whitespace-nowrap">Developed by ร.ท.พรหมินทร์ อินทมาตย์ (ผู้พัฒนาระบบ/กยข.กช.)</p></footer>
 
-    <!-- SCRIPTS -->
-    <script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.umd.js"></script>
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <!-- Scripts -->
     <script src="/lib/jquery.Thailand/dependencies/JQL.min.js"></script>
     <script src="/lib/jquery.Thailand/dependencies/typeahead.bundle.js"></script>
-    <script src="/lib/jquery.Thailand/jquery.Thailand.js"></script>
-
+    <script src="/lib/jquery.Thailand/dist/jquery.Thailand.min.js"></script>
+    
     <script src="/public/assets/js/admin/admin_core.js?v=<?php echo time(); ?>"></script>
     <?php
         $current_page = basename($_SERVER['PHP_SELF']);
         $page_script_path = '';
         switch ($current_page) {
-            case 'manage_requests.php': $page_script_path = '/public/assets/js/admin/admin_manage_requests.js'; break;
-            case 'manage_admins.php': $page_script_path = '/public/assets/js/admin/admin_manage_admins.js'; break;
+            case 'manage_admins.php': $page_script_path = '/public/assets/js/admin/page_scripts/admin_manage_admins.js'; break;
             case 'view_user.php': $page_script_path = '/public/assets/js/admin/admin_view_user.js'; break;
-            case 'add_user.php': $page_script_path = '/public/assets/js/admin/admin_add_user.js'; break;
-            case 'add_request.php': $page_script_path = '/public/assets/js/admin/admin_add_request.js'; break;
+            case 'add_user.php': $page_script_path = '/public/assets/js/admin/page_scripts/admin_add_user.js'; break;
+            case 'manage_users.php': $page_script_path = '/public/assets/js/admin/page_scripts/admin_manage_users.js'; break;
+            case 'manage_requests.php': $page_script_path = '/public/assets/js/admin/page_scripts/admin_manage_requests.js'; break;
         }
-        if (!empty($page_script_path)) { echo '<script src="' . $page_script_path . '?v=' . time() . '"></script>'; }
+        if (!empty($page_script_path)) {
+            echo '<script src="' . $page_script_path . '?v=' . time() . '"></script>';
+        }
     ?>
 </body>
 </html>

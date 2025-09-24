@@ -189,7 +189,7 @@ $conn_dept->close(); // ปิดการเชื่อมต่อหลั�
                                 <div class="border border-base-300 rounded-lg p-4 w-full h-full flex flex-col form-control">
                                     <label class="block font-medium mb-2 text-center">รูปถ่ายหน้าตรง</label>
                                     <div class="flex justify-center bg-base-200 p-2 rounded-lg border">
-                                        <img id="photo-preview" src="https://img2.pic.in.th/pic/c278d705-c4b2-4a6f-aa50-942b88e801d4.png" alt="ตัวอย่างรูปถ่ายหน้าตรง" class="w-full max-h-48 rounded-lg object-contain" onerror="this.onerror=null;this.src='https://placehold.co/400x248/CCCCCC/FFFFFF?text=Example';">
+                                        <img id="photo-preview" src="/public/assets/images/profile_example.png" alt="ตัวอย่างรูปถ่ายหน้าตรง" class="w-full max-h-48 rounded-lg object-contain" onerror="this.onerror=null;this.src='https://placehold.co/400x248/CCCCCC/FFFFFF?text=Example';">
                                     </div>
                                     <div class="mt-2 text-xs p-2 rounded-lg bg-blue-50 border border-blue-200 text-blue-800">
                                         <ul class="list-disc list-inside">

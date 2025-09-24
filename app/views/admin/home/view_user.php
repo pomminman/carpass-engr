@@ -167,9 +167,5 @@ function format_value($value, $default = '-') {
         </div>
     </div>
 </main>
-<?php
-// Re-include the edit modal logic from previous steps
-require_once __DIR__ . '/../components/edit_user_modal.php'; 
-?>
 <?php require_once __DIR__ . '/../layouts/footer.php'; ?>
 
