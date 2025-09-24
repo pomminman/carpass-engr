@@ -170,8 +170,9 @@ require_once __DIR__ . '/../layouts/header.php';
             $can_renew = false;
             $is_expired = !empty($request['card_expiry']) && (new DateTime() > new DateTime($request['card_expiry']));
             
+            // [REVISED] Only allow renewal for 'approved' and 'expired' cards, not 'rejected' ones.
             if ($active_period && !in_array($request['vehicle_id'], $renewed_vehicle_ids)) {
-                if (($request['status'] === 'approved' && $is_expired) || $request['status'] === 'rejected') {
+                if ($request['status'] === 'approved' && $is_expired) {
                     $can_renew = true;
                 }
             }
@@ -281,7 +282,7 @@ require_once __DIR__ . '/../layouts/header.php';
 </div>
 
 <!-- Request Details Modal -->
-<dialog id="request_details_modal" class="modal">
+<dialog id="request_details_modal" class="modal modal-fade">
     <div class="modal-box w-11/12 max-w-4xl p-0">
         
         <!-- VIEW DETAILS SECTION -->
@@ -376,10 +377,12 @@ require_once __DIR__ . '/../layouts/header.php';
              </form>
         </div>
     </div>
+    <!-- [ADD] This form enables the click-outside-to-close functionality -->
+    <form method="dialog" class="modal-backdrop"><button>close</button></form>
 </dialog>
 
 <!-- Delete Confirmation Modal -->
-<dialog id="delete_confirm_modal" class="modal">
+<dialog id="delete_confirm_modal" class="modal modal-fade">
     <div class="modal-box">
         <h3 class="font-bold text-lg text-error"><i class="fa-solid fa-triangle-exclamation mr-2"></i>ยืนยันการลบคำร้อง</h3>
         <p class="py-4">คุณแน่ใจหรือไม่ว่าต้องการลบคำร้องนี้? การกระทำนี้ไม่สามารถย้อนกลับได้</p>
@@ -395,7 +398,7 @@ require_once __DIR__ . '/../layouts/header.php';
 </dialog>
 
 <!-- Loading Modal -->
-<dialog id="loading_modal" class="modal modal-middle">
+<dialog id="loading_modal" class="modal modal-middle modal-fade">
     <div class="modal-box text-center">
         <span class="loading loading-spinner loading-lg text-primary"></span>
         <h3 class="font-bold text-lg mt-4">กรุณารอสักครู่...</h3>

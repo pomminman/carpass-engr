@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Sep 16, 2025 at 08:37 PM
+-- Generation Time: Sep 24, 2025 at 04:25 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -46,6 +46,7 @@ CREATE TABLE `activity_logs` (
 
 CREATE TABLE `admins` (
   `id` int(11) NOT NULL,
+  `photo_profile` varchar(255) NOT NULL COMMENT 'ชื่อไฟล์รูปโปรไฟล์ของแอดมิน',
   `username` varchar(50) NOT NULL,
   `password` varchar(255) NOT NULL COMMENT 'Should be a hashed password',
   `title` varchar(100) NOT NULL COMMENT 'คำนำหน้า',
@@ -64,8 +65,10 @@ CREATE TABLE `admins` (
 -- Dumping data for table `admins`
 --
 
-INSERT INTO `admins` (`id`, `username`, `password`, `title`, `firstname`, `lastname`, `phone_number`, `position`, `department`, `role`, `view_permission`, `created_by`, `created_at`) VALUES
-(1, 'pommin_in', '$2y$10$yJPG22jldUfy4wU/toj72e/wWnmrUOCR6/NW/Ea9uBnwCMywVfLAy', 'ร.ท.', 'พรหมินทร์', 'อินทมาตย์', '0875692155', 'น.ควบคุมข้อมูล', 'กยข.กช.', 'superadmin', 1, NULL, '2025-09-03 16:22:12');
+INSERT INTO `admins` (`id`, `photo_profile`, `username`, `password`, `title`, `firstname`, `lastname`, `phone_number`, `position`, `department`, `role`, `view_permission`, `created_by`, `created_at`) VALUES
+(1, '', 'pommin_in', '$2y$10$yJPG22jldUfy4wU/toj72e/wWnmrUOCR6/NW/Ea9uBnwCMywVfLAy', 'ร.ท.', 'พรหมินทร์', 'อินทมาตย์', '0875692155', 'น.ควบคุมข้อมูล', 'กยข.กช.', 'superadmin', 1, NULL, '2025-09-03 16:22:12'),
+(2, '', 'admin01', '$2y$10$abAcYaAf7nRlGwUl.26gA.tkR3VpzlRvRpNQW2U1J9USGUYr6tybu', 'ร.ต', 'สมชาติ', 'ดีใจ', NULL, NULL, 'กยข.กช.', 'admin', 0, 1, '2025-09-22 06:46:28'),
+(3, '', 'admin02', '$2y$10$yW.zNnkqzFHjCSuCLn3f7ekk/WRENgL/BB4oP.OXAm1sLKTaL1LmK', 'หกด', 'หกด', 'หกด', NULL, NULL, 'กยข.กช.', 'viewer', 0, 1, '2025-09-22 14:01:29');
 
 -- --------------------------------------------------------
 
@@ -113,6 +116,7 @@ CREATE TABLE `approved_user_data` (
   `district` varchar(255) NOT NULL COMMENT 'อำเภอ/เขต ณ เวลาที่อนุมัติ',
   `province` varchar(255) NOT NULL COMMENT 'จังหวัด ณ เวลาที่อนุมัติ',
   `zipcode` varchar(5) NOT NULL COMMENT 'รหัสไปรษณีย์ ณ เวลาที่อนุมัติ',
+  `photo_profile` varchar(255) DEFAULT NULL COMMENT 'ชื่อไฟล์รูปโปรไฟล์ ณ เวลาที่อนุมัติ',
   `work_department` varchar(255) DEFAULT NULL COMMENT 'หน่วยงาน/สังกัด ณ เวลาที่อนุมัติ (ถ้ามี)',
   `position` varchar(255) DEFAULT NULL COMMENT 'ตำแหน่ง ณ เวลาที่อนุมัติ (ถ้ามี)',
   `official_id` varchar(10) DEFAULT NULL COMMENT 'เลขบัตรข้าราชการ ณ เวลาที่อนุมัติ (ถ้ามี)',
@@ -319,8 +323,8 @@ CREATE TABLE `users` (
   `id` int(11) NOT NULL,
   `user_key` varchar(20) NOT NULL COMMENT 'รหัสอ้างอิงผู้ใช้',
   `user_type` varchar(50) DEFAULT NULL COMMENT 'ประเภทผู้สมัคร (army, external)',
-  `phone_number` varchar(15) NOT NULL COMMENT 'เบอร์โทรศัพท์',
-  `national_id` varchar(20) NOT NULL COMMENT 'เลขบัตรประชาชน',
+  `phone_number` varchar(15) DEFAULT NULL COMMENT 'เบอร์โทรศัพท์',
+  `national_id` varchar(20) DEFAULT NULL COMMENT 'เลขบัตรประชาชน',
   `title` varchar(100) NOT NULL COMMENT 'คำนำหน้า',
   `firstname` varchar(255) NOT NULL COMMENT 'ชื่อจริง',
   `lastname` varchar(255) NOT NULL COMMENT 'นามสกุล',
@@ -336,7 +340,8 @@ CREATE TABLE `users` (
   `work_department` varchar(255) DEFAULT NULL COMMENT 'หน่วยต้นสังกัด (สำหรับข้าราชการ)',
   `position` varchar(255) DEFAULT NULL COMMENT 'ตำแหน่ง (สำหรับข้าราชการ)',
   `official_id` varchar(10) DEFAULT NULL COMMENT 'เลขบัตรข้าราชการ (สำหรับข้าราชการ)',
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `created_by_admin_id` int(11) DEFAULT NULL COMMENT 'FK to admins.id if created by an admin'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
@@ -355,7 +360,8 @@ CREATE TABLE `vehicles` (
   `model` varchar(100) NOT NULL COMMENT 'รุ่นรถ',
   `color` varchar(50) NOT NULL COMMENT 'สีรถ',
   `created_at` timestamp NOT NULL DEFAULT current_timestamp() COMMENT 'วันและเวลาที่สร้างข้อมูล',
-  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp() COMMENT 'วันและเวลาที่มีการอัปเดตข้อมูลล่าสุด'
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp() COMMENT 'วันและเวลาที่มีการอัปเดตข้อมูลล่าสุด',
+  `created_by_admin_id` int(11) DEFAULT NULL COMMENT 'FK to admins.id if created by an admin'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci COMMENT='ตารางสำหรับเก็บข้อมูลหลักของยานพาหนะแต่ละคัน';
 
 -- --------------------------------------------------------
@@ -372,14 +378,15 @@ CREATE TABLE `vehicle_requests` (
   `request_key` varchar(20) NOT NULL COMMENT 'รหัสอ้างอิงคำร้องที่ไม่ซ้ำกัน',
   `search_id` varchar(20) DEFAULT NULL COMMENT 'รหัสสำหรับค้นหาและอ้างอิง (C/MYYMMDD-NNN)',
   `card_type` enum('internal','external') DEFAULT NULL COMMENT 'ประเภทบัตรผ่าน (internal = ภายใน, external = ภายนอก)',
-  `tax_expiry_date` date NOT NULL COMMENT 'วันสิ้นอายุภาษี',
+  `qr_code_path` varchar(255) DEFAULT NULL COMMENT 'ชื่อไฟล์ QR Code',
+  `tax_expiry_date` date DEFAULT NULL COMMENT 'วันสิ้นอายุภาษี',
   `owner_type` enum('self','other') NOT NULL COMMENT 'ความเป็นเจ้าของรถ (self = ตนเอง, other = ผู้อื่น)',
   `other_owner_name` varchar(255) DEFAULT NULL COMMENT 'ชื่อเจ้าของรถ (กรณีเป็นรถผู้อื่น)',
   `other_owner_relation` varchar(100) DEFAULT NULL COMMENT 'ความเกี่ยวข้อง (กรณีเป็นรถผู้อื่น)',
-  `photo_reg_copy` varchar(255) NOT NULL COMMENT 'ชื่อไฟล์รูปสำเนาทะเบียนรถ',
-  `photo_tax_sticker` varchar(255) NOT NULL COMMENT 'ชื่อไฟล์รูปป้ายภาษี',
-  `photo_front` varchar(255) NOT NULL COMMENT 'ชื่อไฟล์รูปถ่ายรถด้านหน้า',
-  `photo_rear` varchar(255) NOT NULL COMMENT 'ชื่อไฟล์รูปถ่ายรถด้านหลัง',
+  `photo_reg_copy` varchar(255) DEFAULT NULL COMMENT 'ชื่อไฟล์รูปสำเนาทะเบียนรถ',
+  `photo_tax_sticker` varchar(255) DEFAULT NULL COMMENT 'ชื่อไฟล์รูปป้ายภาษี',
+  `photo_front` varchar(255) DEFAULT NULL COMMENT 'ชื่อไฟล์รูปถ่ายรถด้านหน้า',
+  `photo_rear` varchar(255) DEFAULT NULL COMMENT 'ชื่อไฟล์รูปถ่ายรถด้านหลัง',
   `status` enum('pending','approved','rejected') NOT NULL DEFAULT 'pending' COMMENT 'สถานะคำร้อง',
   `rejection_reason` text DEFAULT NULL COMMENT 'เหตุผลที่ไม่ผ่านการอนุมัติ',
   `approved_by_id` int(11) DEFAULT NULL COMMENT 'FK อ้างอิง ID แอดมินที่อนุมัติ จากตาราง admins',
@@ -391,6 +398,7 @@ CREATE TABLE `vehicle_requests` (
   `card_pickup_by_admin_id` int(11) DEFAULT NULL COMMENT 'FK อ้างอิง ID แอดมินที่มอบบัตร',
   `card_pickup_at` datetime DEFAULT NULL COMMENT 'วันเวลาที่มอบบัตร',
   `edit_status` tinyint(1) NOT NULL DEFAULT 0 COMMENT 'สถานะการแก้ไข (0 = ยังไม่เคยแก้ไข, 1 = แก้ไขแล้ว)',
+  `created_by_admin_id` int(11) DEFAULT NULL COMMENT 'FK to admins.id if created by an admin',
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
@@ -450,7 +458,8 @@ ALTER TABLE `users`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `user_key` (`user_key`),
   ADD UNIQUE KEY `phone_number` (`phone_number`),
-  ADD UNIQUE KEY `national_id` (`national_id`);
+  ADD UNIQUE KEY `national_id` (`national_id`),
+  ADD KEY `fk_users_to_admins_creator` (`created_by_admin_id`);
 
 --
 -- Indexes for table `vehicles`
@@ -458,7 +467,8 @@ ALTER TABLE `users`
 ALTER TABLE `vehicles`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `idx_license_province` (`license_plate`,`province`) COMMENT 'ป้องกันการสร้างข้อมูลรถทะเบียนซ้ำในจังหวัดเดียวกัน',
-  ADD KEY `user_id` (`user_id`);
+  ADD KEY `user_id` (`user_id`),
+  ADD KEY `fk_vehicles_to_admins_creator` (`created_by_admin_id`);
 
 --
 -- Indexes for table `vehicle_requests`
@@ -471,7 +481,8 @@ ALTER TABLE `vehicle_requests`
   ADD KEY `vehicle_id` (`vehicle_id`),
   ADD KEY `approved_by_id` (`approved_by_id`),
   ADD KEY `card_pickup_by_admin_id` (`card_pickup_by_admin_id`),
-  ADD KEY `period_id` (`period_id`);
+  ADD KEY `period_id` (`period_id`),
+  ADD KEY `fk_requests_to_admins_creator` (`created_by_admin_id`);
 
 --
 -- AUTO_INCREMENT for dumped tables
@@ -487,7 +498,7 @@ ALTER TABLE `activity_logs`
 -- AUTO_INCREMENT for table `admins`
 --
 ALTER TABLE `admins`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- AUTO_INCREMENT for table `application_periods`
@@ -549,10 +560,23 @@ ALTER TABLE `approved_user_data`
   ADD CONSTRAINT `fk_snapshot_to_users` FOREIGN KEY (`original_user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
+-- Constraints for table `users`
+--
+ALTER TABLE `users`
+  ADD CONSTRAINT `fk_users_to_admins_creator` FOREIGN KEY (`created_by_admin_id`) REFERENCES `admins` (`id`) ON DELETE SET NULL ON UPDATE CASCADE;
+
+--
+-- Constraints for table `vehicles`
+--
+ALTER TABLE `vehicles`
+  ADD CONSTRAINT `fk_vehicles_to_admins_creator` FOREIGN KEY (`created_by_admin_id`) REFERENCES `admins` (`id`) ON DELETE SET NULL ON UPDATE CASCADE;
+
+--
 -- Constraints for table `vehicle_requests`
 --
 ALTER TABLE `vehicle_requests`
   ADD CONSTRAINT `fk_requests_to_admins_approved` FOREIGN KEY (`approved_by_id`) REFERENCES `admins` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
+  ADD CONSTRAINT `fk_requests_to_admins_creator` FOREIGN KEY (`created_by_admin_id`) REFERENCES `admins` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
   ADD CONSTRAINT `fk_requests_to_admins_pickup` FOREIGN KEY (`card_pickup_by_admin_id`) REFERENCES `admins` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
   ADD CONSTRAINT `fk_requests_to_periods` FOREIGN KEY (`period_id`) REFERENCES `application_periods` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
   ADD CONSTRAINT `fk_requests_to_users` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,

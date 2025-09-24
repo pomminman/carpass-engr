@@ -34,9 +34,24 @@ document.addEventListener('DOMContentLoaded', function () {
             if (flashMessage && flashStatus) {
                 this.showAlert(flashMessage, flashStatus);
             }
-            // Initialize Fancybox for non-modal images
+            // [REVISED] Initialize Fancybox for all non-modal images with a standardized toolbar.
             Fancybox.bind("[data-fancybox]", {
-                // Your custom options
+                Toolbar: {
+                    display: {
+                        left: ["infobar"],
+                        middle: [
+                            "zoomIn",
+                            "zoomOut",
+                            "toggle1to1",
+                            "rotateCCW",
+                            "rotateCW",
+                            "flipX",
+                            "flipY",
+                        ],
+                        // The "fullscreen" button is omitted from the default list here.
+                        right: ["slideshow", "thumbs", "close"],
+                    },
+                },
             });
         },
         
@@ -242,9 +257,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 try {
                     currentCardData = card.dataset;
                     const data = currentCardData;
-
-                    // [START] ***** EDITED CODE *****
-                    // Log the view action with proper response handling
+                    
                     fetch('../../../controllers/user/activity/log_user_process.php', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -257,7 +270,6 @@ document.addEventListener('DOMContentLoaded', function () {
                         }
                     })
                     .catch(error => console.error('Error logging view:', error));
-                    // [END] ***** EDITED CODE *****
 
                     const basePath = `/public/uploads/${data.userKey}/vehicle/${data.requestKey}/`;
 
@@ -357,26 +369,54 @@ document.addEventListener('DOMContentLoaded', function () {
                             
                             const startIndex = Array.from(detailsModalEl.querySelectorAll('.modal-gallery-item')).indexOf(item);
                             
-                            detailsModalEl.close();
+                            const modalBox = detailsModalEl.querySelector('.modal-box');
 
+                            if (modalBox) {
+                                modalBox.style.transition = 'opacity 0.2s ease';
+                                modalBox.style.opacity = '0';
+                            }
+                            
                             Fancybox.show(currentSlides, {
                                 startIndex: startIndex,
+                                parentEl: detailsModalEl,
+                                Toolbar: {
+                                    display: {
+                                        left: ["infobar"],
+                                        middle: [
+                                            "zoomIn",
+                                            "zoomOut",
+                                            "toggle1to1",
+                                            "rotateCCW",
+                                            "rotateCW",
+                                            "flipX",
+                                            "flipY",
+                                        ],
+                                        right: ["slideshow", "thumbs", "close"],
+                                    },
+                                },
                                 on: {
                                     close: () => {
-                                        setTimeout(() => {
-                                            detailsModalEl.showModal();
-                                        }, 150);
+                                        if (modalBox) {
+                                            modalBox.style.opacity = '1';
+                                        }
                                     },
                                 }
                             });
                         });
                     });
-
+                    
                     let buttonsHtml = '';
-                    if (data.canRenew === 'true') buttonsHtml += `<a href="add_vehicle.php?renew_id=${data.vehicleId}" class="btn btn-sm btn-success"><i class="fa-solid fa-calendar-check"></i>ต่ออายุบัตร</a>`;
-                    if (data.statusKey === 'pending' || data.statusKey === 'rejected') buttonsHtml += `<button id="modal-edit-btn" class="btn btn-sm btn-warning"><i class="fa-solid fa-pencil"></i>แก้ไข</button>`;
-                    if (data.statusKey !== 'approved') buttonsHtml += `<button id="modal-delete-btn" class="btn btn-sm btn-error"><i class="fa-solid fa-trash-can"></i>ลบ</button>`;
+                    if (data.canRenew === 'true') {
+                        buttonsHtml += `<a href="add_vehicle.php?renew_id=${data.vehicleId}" class="btn btn-sm btn-success"><i class="fa-solid fa-calendar-check"></i>ต่ออายุบัตร</a>`;
+                    }
+                    if (data.statusKey === 'pending' || data.statusKey === 'rejected') {
+                        buttonsHtml += `<button id="modal-edit-btn" class="btn btn-sm btn-warning"><i class="fa-solid fa-pencil"></i>แก้ไข</button>`;
+                    }
+                    if (data.statusKey !== 'approved') {
+                        buttonsHtml += `<button id="modal-delete-btn" class="btn btn-sm btn-error"><i class="fa-solid fa-trash-can"></i>ลบ</button>`;
+                    }
                     queryAndSet('#modal-action-buttons', `<div class="flex-grow"></div>${buttonsHtml}`, true);
+
 
                     detailsModalEl.querySelector('#modal-content-wrapper').classList.remove('hidden');
                     detailsModalEl.querySelector('#modal-edit-form-wrapper').classList.add('hidden');
@@ -534,6 +574,17 @@ document.addEventListener('DOMContentLoaded', function () {
                 const summaryContent = elements.reviewModal.querySelector('#summary-content');
                 const formData = new FormData(form);
             
+                const pickupDateRaw = form.dataset.pickupDate;
+
+                const formatFullThaiDate = (dateString) => {
+                    if (!dateString) return '-';
+                    const date = new Date(dateString);
+                    const thaiMonths = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"];
+                    return `${date.getDate()} ${thaiMonths[date.getMonth()]} ${date.getFullYear() + 543}`;
+                };
+
+                const pickupDateFormatted = formatFullThaiDate(pickupDateRaw);
+
                 const getSelectText = (name) => {
                     const select = form.querySelector(`select[name="${name}"]`);
                     return select ? select.options[select.selectedIndex].text : '-';
@@ -610,6 +661,15 @@ document.addEventListener('DOMContentLoaded', function () {
                                 </div>
                             </div>
                         </div>
+                        
+                        <div class="md:col-span-2 alert alert-info alert-soft mt-4">
+                            <i class="fa-solid fa-calendar-check"></i>
+                            <div>
+                                <h3 class="font-bold">วันที่คาดว่าจะได้รับบัตร</h3>
+                                <div class="text-sm">หากคำร้องได้รับการอนุมัติ ท่านจะสามารถรับบัตรได้ตั้งแต่วันที่ <strong>${pickupDateFormatted}</strong> เป็นต้นไป</div>
+                            </div>
+                        </div>
+
                     </div>
                 `;
             
@@ -906,7 +966,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 const isEditing = !this.disabled;
                 const otherInput = elements.titleOtherInput;
 
-                // [แก้ไข] แก้ไขตรรกะการซ่อน/แสดงผลของช่อง "คำนำหน้าอื่นๆ"
                 if (isEditing) {
                     otherInput.classList.toggle('hidden', !isOther);
                 } else {
@@ -947,3 +1006,4 @@ document.addEventListener('DOMContentLoaded', function () {
 
     App.init();
 });
+

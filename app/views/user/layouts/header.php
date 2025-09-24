@@ -62,6 +62,24 @@
             .drawer.lg\:drawer-open .drawer-side { position: sticky; top: 0; height: 100vh; }
         }
 
+        /* [CORRECTED] Custom Fade Animation for Modals */
+        .modal-fade {
+            transition: opacity 0.25s ease;
+        }
+        .modal-fade:not([open]) {
+            opacity: 0;
+            pointer-events: none;
+        }
+        .modal-fade .modal-box {
+            transition: transform 0.25s ease, opacity 0.25s ease;
+            transform: translateY(-20px);
+            opacity: 0;
+        }
+        .modal-fade[open] .modal-box {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
     </style>
 </head>
 <body class="bg-base-200" data-flash-message="<?php echo isset($_SESSION['request_message']) ? htmlspecialchars($_SESSION['request_message']) : ''; ?>" data-flash-status="<?php echo isset($_SESSION['request_status']) ? htmlspecialchars($_SESSION['request_status']) : ''; ?>">

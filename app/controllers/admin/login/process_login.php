@@ -1,5 +1,5 @@
 <?php
-// --- app/controllers/admin/login/process_login.php ---
+// --- app/controllers/admin/login/process_login.php (ฉบับปรับปรุง) ---
 
 session_start();
 require_once '../../../models/db_config.php';
@@ -23,26 +23,30 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         exit;
     }
 
-    $sql = "SELECT id, username, password, title, firstname, role FROM admins WHERE username = ?";
+    $sql = "SELECT id, password, title, firstname FROM admins WHERE username = ?";
     if ($stmt = $conn->prepare($sql)) {
-        $stmt->bind_param("s", $param_username);
-        $param_username = $input_username;
+        $stmt->bind_param("s", $input_username);
+        
         if ($stmt->execute()) {
-            $stmt->store_result();
-            if ($stmt->num_rows == 1) {                    
-                $stmt->bind_result($id, $username, $hashed_password, $title, $firstname, $role);
-                if ($stmt->fetch()) {
-                    if (password_verify($input_password, $hashed_password)) {
-                        $_SESSION["admin_loggedin"] = true;
-                        $_SESSION["admin_id"] = $id;
-                        log_activity($conn, 'admin_login_success');
-                        // [แก้ไข] Redirect to the new dashboard page
-                        header("location: ../../../views/admin/home/dashboard.php");
-                        exit;
-                    } else {
-                        $_SESSION['admin_login_error'] = 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง';
-                        log_activity($conn, 'admin_login_fail', ['username' => $input_username, 'reason' => 'Invalid password']);
-                    }
+            $result = $stmt->get_result();
+            if ($result->num_rows == 1) {                    
+                $admin = $result->fetch_assoc();
+                if (password_verify($input_password, $admin['password'])) {
+                    // --- Login สำเร็จ ---
+                    $_SESSION["admin_loggedin"] = true;
+                    $_SESSION["admin_id"] = $admin['id'];
+                    
+                    // ตั้งค่า Session สำหรับ Flash Message ที่จะไปแสดงผลที่หน้า Dashboard
+                    $_SESSION['flash_message'] = "เข้าสู่ระบบสำเร็จ! ยินดีต้อนรับ, " . htmlspecialchars($admin['title'] . $admin['firstname']);
+                    $_SESSION['flash_status'] = "success";
+
+                    log_activity($conn, 'admin_login_success');
+                    
+                    header("location: ../../../views/admin/home/dashboard.php");
+                    exit;
+                } else {
+                    $_SESSION['admin_login_error'] = 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง';
+                    log_activity($conn, 'admin_login_fail', ['username' => $input_username, 'reason' => 'Invalid password']);
                 }
             } else {
                 $_SESSION['admin_login_error'] = 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง';
@@ -55,6 +59,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     }
     $conn->close();
 }
+
 header("location: ../../../views/admin/login/login.php");
 exit;
 ?>
+

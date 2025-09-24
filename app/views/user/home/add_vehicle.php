@@ -10,6 +10,25 @@ if ($result_period->num_rows > 0) {
     $active_period = $result_period->fetch_assoc();
 }
 
+// [NEW] Logic to pre-calculate the estimated pickup date
+function calculate_pickup_date() {
+    // Note: In a real-world scenario, holidays should be managed in a database table.
+    $holidays = ['2025-10-13', '2025-10-23', '2025-12-05', '2025-12-10', '2025-12-31', '2026-01-01']; 
+    $working_days_to_add = 15;
+    $current_date = new DateTime();
+    while ($working_days_to_add > 0) {
+        $current_date->modify('+1 day');
+        $day_of_week = $current_date->format('N'); // 1 (Mon) - 7 (Sun)
+        $date_string = $current_date->format('Y-m-d');
+        if ($day_of_week < 6 && !in_array($date_string, $holidays)) {
+            $working_days_to_add--;
+        }
+    }
+    return $current_date->format('Y-m-d');
+}
+$estimated_pickup_date = calculate_pickup_date();
+
+
 // [ใหม่] ตรวจสอบว่าเป็นการต่ออายุหรือไม่
 $is_renewal = false;
 $renewal_data = null;
@@ -72,7 +91,7 @@ require_once __DIR__ . '/../layouts/header.php';
 
 
     <?php if ($active_period): ?>
-        <form action="../../../controllers/user/vehicle/add_vehicle_process.php" method="POST" enctype="multipart/form-data" id="addVehicleForm" data-renewal-tax-date="<?php echo htmlspecialchars($renewal_data['tax_expiry_date'] ?? ''); ?>" novalidate>
+        <form action="../../../controllers/user/vehicle/add_vehicle_process.php" method="POST" enctype="multipart/form-data" id="addVehicleForm" data-renewal-tax-date="<?php echo htmlspecialchars($renewal_data['tax_expiry_date'] ?? ''); ?>" data-pickup-date="<?php echo htmlspecialchars($estimated_pickup_date); ?>" novalidate>
             <div class="card bg-base-100 shadow-xl border">
                 <div class="card-body p-4 md:p-6">
                     <!-- STEP 1: CHECK VEHICLE -->

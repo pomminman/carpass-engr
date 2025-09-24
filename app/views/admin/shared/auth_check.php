@@ -28,7 +28,8 @@ $conn->set_charset("utf8");
 // 4. Fetch logged-in admin's information
 $admin_id = $_SESSION['admin_id'];
 $admin_info = [];
-$sql_admin = "SELECT title, firstname, lastname, department, role, view_permission FROM admins WHERE id = ?";
+// [EDIT] Removed photo_profile from the SELECT query
+$sql_admin = "SELECT id, username, title, firstname, lastname, department, role, view_permission FROM admins WHERE id = ?";
 if ($stmt_admin = $conn->prepare($sql_admin)) {
     $stmt_admin->bind_param("i", $admin_id);
     $stmt_admin->execute();
@@ -38,6 +39,12 @@ if ($stmt_admin = $conn->prepare($sql_admin)) {
         $admin_info['name'] = htmlspecialchars($admin_user['title'] . $admin_user['firstname']);
         $admin_info['lastname'] = htmlspecialchars($admin_user['lastname']);
         $admin_info['view_permission_text'] = $admin_user['view_permission'] == 1 ? 'ดูได้ทุกสังกัด' : 'เฉพาะสังกัดตนเอง';
+        
+        // [ADD] Create user initials from first and last name for placeholder
+        $first_initial = mb_substr($admin_user['firstname'], 0, 1, 'UTF-8');
+        $last_initial = mb_substr($admin_user['lastname'], 0, 1, 'UTF-8');
+        $admin_info['initials'] = htmlspecialchars($first_initial . $last_initial);
+
     } else {
         // If admin ID from session is not in DB, log out
         session_destroy();
