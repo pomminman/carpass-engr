@@ -21,6 +21,15 @@ $filters = [
     'search' => $_GET['search'] ?? ''
 ];
 
+$sort_by = $_GET['sort'] ?? 'created_at';
+$sort_dir = isset($_GET['dir']) && in_array(strtoupper($_GET['dir']), ['ASC', 'DESC']) ? strtoupper($_GET['dir']) : 'DESC';
+$valid_sort_columns = ['name', 'user_type', 'vehicle_count', 'phone_number', 'national_id', 'work_department', 'created_at'];
+if (!in_array($sort_by, $valid_sort_columns)) {
+    $sort_by = 'created_at';
+}
+$order_by_sql = "ORDER BY " . $sort_by . " " . $sort_dir;
+
+
 $where_clauses = [];
 $params = [];
 $types = '';
@@ -35,14 +44,10 @@ if ($filters['department'] !== 'all') {
     $params[] = $filters['department'];
     $types .= 's';
 }
-if ($filters['date'] !== 'all') {
-    $date_conditions = [
-        'today' => "DATE(u.created_at) = CURDATE()",
-        'this_month' => "YEAR(u.created_at) = YEAR(CURDATE()) AND MONTH(u.created_at) = MONTH(CURDATE())"
-    ];
-    if (isset($date_conditions[$filters['date']])) {
-        $where_clauses[] = $date_conditions[$filters['date']];
-    }
+if ($filters['date'] !== 'all' && !empty($filters['date'])) {
+    $where_clauses[] = 'DATE(u.created_at) = ?';
+    $params[] = $filters['date'];
+    $types .= 's';
 }
 $having_clauses = [];
 if ($filters['vehicles'] !== 'all') {
@@ -58,7 +63,7 @@ if (!empty($filters['search'])) {
 
 // --- 3. PAGINATION LOGIC ---
 $page = isset($_GET['page']) && is_numeric($_GET['page']) ? (int)$_GET['page'] : 1;
-$limit = 50;
+$limit = 10; 
 $offset = ($page - 1) * $limit;
 
 $count_sql_where = !empty($where_clauses) ? "WHERE " . implode(' AND ', $where_clauses) : "";
@@ -94,7 +99,7 @@ $sql_users = "SELECT
               " . (!empty($where_clauses) ? "WHERE " . implode(' AND ', $where_clauses) : "") . "
               GROUP BY u.id
               " . (!empty($having_clauses) ? "HAVING " . implode(' AND ', $having_clauses) : "") . "
-              ORDER BY u.created_at DESC
+              " . $order_by_sql . "
               LIMIT ? OFFSET ?";
 
 $data_params = $params;
@@ -112,11 +117,18 @@ if ($result_users->num_rows > 0) {
 }
 $stmt_users->close();
 
-// --- 5. HELPER FOR PAGINATION LINKS ---
-function get_pagination_link($page, $filters) {
-    $query = http_build_query(array_merge($filters, ['page' => $page]));
+// --- 5. HELPER FOR PAGINATION & SORTING LINKS ---
+function get_pagination_link($page, $filters, $sort, $dir) {
+    $query = http_build_query(array_merge($filters, ['page' => $page, 'sort' => $sort, 'dir' => $dir]));
     return '?' . $query;
 }
+
+function get_sort_link($column, $current_sort, $current_dir, $filters) {
+    $dir = ($current_sort === $column && $current_dir === 'ASC') ? 'desc' : 'asc';
+    $query_params = array_merge($filters, ['page' => 1, 'sort' => $column, 'dir' => $dir]);
+    return '?' . http_build_query($query_params);
+}
+
 ?>
 
 <!-- Page content -->
@@ -132,9 +144,11 @@ function get_pagination_link($page, $filters) {
     </div>
     
     <div class="card bg-base-100 shadow-lg">
-        <div class="card-body">
+        <div class="card-body p-4">
             <form method="GET" action="" id="filterForm">
             <input type="hidden" name="page" value="1">
+            <input type="hidden" name="sort" value="<?php echo htmlspecialchars($sort_by); ?>">
+            <input type="hidden" name="dir" value="<?php echo htmlspecialchars($sort_dir); ?>">
             <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 items-end">
                 <!-- Main Filters -->
                 <div class="form-control w-full">
@@ -156,11 +170,7 @@ function get_pagination_link($page, $filters) {
                 </div>
                 <div class="form-control w-full">
                     <label class="label py-1"><span class="label-text">วันที่สมัคร</span></label>
-                    <select name="date" class="select select-bordered select-sm filter-input">
-                        <option value="all" <?php echo ($filters['date'] == 'all' ? 'selected' : ''); ?>>ทั้งหมด</option>
-                        <option value="today" <?php echo ($filters['date'] == 'today' ? 'selected' : ''); ?>>วันนี้</option>
-                        <option value="this_month" <?php echo ($filters['date'] == 'this_month' ? 'selected' : ''); ?>>เดือนนี้</option>
-                    </select>
+                    <input type="date" name="date" class="input input-sm input-bordered w-full filter-input" value="<?php echo htmlspecialchars($filters['date'] !== 'all' ? $filters['date'] : ''); ?>">
                 </div>
                 <div class="form-control w-full">
                     <label class="label py-1"><span class="label-text">จำนวนยานพาหนะ</span></label>
@@ -175,8 +185,8 @@ function get_pagination_link($page, $filters) {
                     <label class="label py-1"><span class="label-text">ค้นหา</span></label>
                     <div class="flex gap-2">
                         <input type="text" name="search" placeholder="ชื่อ, เบอร์โทร, เลขบัตร..." class="input input-sm input-bordered w-full filter-input" value="<?php echo htmlspecialchars($filters['search']); ?>">
-                        <a href="manage_users.php" class="btn btn-sm btn-ghost" title="ล้างการกรอง"><i class="fa-solid fa-eraser"></i></a>
-                        <a href="../../../controllers/admin/users/export_users.php?<?php echo http_build_query($filters); ?>" class="btn btn-sm btn-success" title="ส่งออกเป็น Excel"><i class="fa-solid fa-file-excel"></i></a>
+                        <a href="manage_users.php" class="btn btn-sm btn-ghost"><i class="fa-solid fa-eraser mr-1"></i></a>
+                        <a href="../../../controllers/admin/users/export_users.php?<?php echo http_build_query($filters); ?>" class="btn btn-sm btn-success"><i class="fa-solid fa-file-excel mr-1"></i></a>
                     </div>
                 </div>
             </div>
@@ -186,22 +196,28 @@ function get_pagination_link($page, $filters) {
                 <table class="table table-sm" id="usersTable">
                      <thead class="bg-slate-50">
                         <tr>
-                            <th data-sort-by="name">ชื่อ-นามสกุล <i class="fa-solid fa-sort"></i></th>
-                            <th data-sort-by="type">ประเภท <i class="fa-solid fa-sort"></i></th>
-                            <th data-sort-by="vehicles" class="text-center">ยานพาหนะ <i class="fa-solid fa-sort"></i></th>
-                            <th data-sort-by="phone">เบอร์โทรศัพท์ <i class="fa-solid fa-sort"></i></th>
-                            <th data-sort-by="nid">เลขบัตรประชาชน <i class="fa-solid fa-sort"></i></th>
-                            <th data-sort-by="department">สังกัด <i class="fa-solid fa-sort"></i></th>
-                            <th data-sort-by="date" class="sort-desc">วันที่สมัคร <i class="fa-solid fa-sort-down"></i></th>
-                            <th>การกระทำ</th>
+                            <th class="md:hidden">การกระทำ</th>
+                            <th><a href="<?php echo get_sort_link('name', $sort_by, $sort_dir, $filters); ?>">ชื่อ-นามสกุล <i class="fa-solid <?php echo $sort_by === 'name' ? 'fa-sort-' . strtolower($sort_dir) : 'fa-sort'; ?>"></i></a></th>
+                            <th><a href="<?php echo get_sort_link('user_type', $sort_by, $sort_dir, $filters); ?>">ประเภท <i class="fa-solid <?php echo $sort_by === 'user_type' ? 'fa-sort-' . strtolower($sort_dir) : 'fa-sort'; ?>"></i></a></th>
+                            <th class="text-center"><a href="<?php echo get_sort_link('vehicle_count', $sort_by, $sort_dir, $filters); ?>">ยานพาหนะ <i class="fa-solid <?php echo $sort_by === 'vehicle_count' ? 'fa-sort-' . strtolower($sort_dir) : 'fa-sort'; ?>"></i></a></th>
+                            <th><a href="<?php echo get_sort_link('phone_number', $sort_by, $sort_dir, $filters); ?>">เบอร์โทรศัพท์ <i class="fa-solid <?php echo $sort_by === 'phone_number' ? 'fa-sort-' . strtolower($sort_dir) : 'fa-sort'; ?>"></i></a></th>
+                            <th><a href="<?php echo get_sort_link('national_id', $sort_by, $sort_dir, $filters); ?>">เลขบัตรประชาชน <i class="fa-solid <?php echo $sort_by === 'national_id' ? 'fa-sort-' . strtolower($sort_dir) : 'fa-sort'; ?>"></i></a></th>
+                            <th><a href="<?php echo get_sort_link('work_department', $sort_by, $sort_dir, $filters); ?>">สังกัด <i class="fa-solid <?php echo $sort_by === 'work_department' ? 'fa-sort-' . strtolower($sort_dir) : 'fa-sort'; ?>"></i></a></th>
+                            <th><a href="<?php echo get_sort_link('created_at', $sort_by, $sort_dir, $filters); ?>">วันที่สมัคร <i class="fa-solid <?php echo $sort_by === 'created_at' ? 'fa-sort-' . strtolower($sort_dir) : 'fa-sort'; ?>"></i></a></th>
+                            <th class="hidden md:table-cell">การกระทำ</th>
                         </tr>
                     </thead>
                     <tbody>
                         <?php if (empty($users)): ?>
-                            <tr id="no-results-row"><td colspan="8" class="text-center text-slate-500 py-4">ไม่พบข้อมูลผู้ใช้งานตามเงื่อนไขที่กำหนด</td></tr>
+                            <tr id="no-results-row"><td colspan="9" class="text-center text-slate-500 py-4">ไม่พบข้อมูลผู้ใช้งานตามเงื่อนไขที่กำหนด</td></tr>
                         <?php else: ?>
                             <?php foreach ($users as $user): ?>
                             <tr class="hover:bg-slate-50">
+                                <td class="whitespace-nowrap md:hidden">
+                                    <a href="view_user.php?id=<?php echo $user['id']; ?>" class="btn btn-xs btn-primary btn-square" title="ตรวจสอบ">
+                                        <i class="fa-solid fa-search"></i> 
+                                    </a>
+                                </td>
                                 <td data-cell="name" class="font-semibold whitespace-nowrap"><?php echo htmlspecialchars($user['title'] . ' ' . $user['firstname'] . ' ' . $user['lastname']); ?></td>
                                 <td data-cell="type" class="whitespace-nowrap">
                                     <?php if ($user['user_type'] === 'army'): ?>
@@ -218,9 +234,9 @@ function get_pagination_link($page, $filters) {
                                 <td data-cell="phone" class="whitespace-nowrap"><?php echo htmlspecialchars($user['phone_number'] ?: '-'); ?></td>
                                 <td data-cell="nid" class="whitespace-nowrap"><?php echo htmlspecialchars($user['national_id'] ?: '-'); ?></td>
                                 <td data-cell="department" class="whitespace-nowrap"><?php echo htmlspecialchars($user['work_department'] ?? '-'); ?></td>
-                                <td data-cell="date" class="whitespace-nowrap" data-sort-value="<?php echo strtotime($user['created_at']); ?>"><?php echo format_thai_datetime($user['created_at']); ?></td>
-                                <td class="whitespace-nowrap">
-                                    <a href="view_user.php?id=<?php echo $user['id']; ?>" class="btn btn-xs btn-info btn-square" title="ตรวจสอบ">
+                                <td data-cell="date" class="whitespace-nowrap" data-sort-value="<?php echo strtotime($user['created_at']); ?>"><?php echo format_thai_datetime_short($user['created_at']); ?></td>
+                                <td class="whitespace-nowrap hidden md:table-cell">
+                                    <a href="view_user.php?id=<?php echo $user['id']; ?>" class="btn btn-xs btn-primary btn-square" title="ตรวจสอบ">
                                         <i class="fa-solid fa-search"></i> 
                                     </a>
                                 </td>
@@ -235,13 +251,13 @@ function get_pagination_link($page, $filters) {
             <?php if($total_pages > 1): ?>
             <div class="mt-4 flex justify-center">
                 <div class="join">
-                    <a href="<?php echo get_pagination_link(1, $filters); ?>" class="join-item btn btn-sm <?php echo ($page <= 1 ? 'btn-disabled' : ''); ?>">«</a>
-                    <a href="<?php echo get_pagination_link($page - 1, $filters); ?>" class="join-item btn btn-sm <?php echo ($page <= 1 ? 'btn-disabled' : ''); ?>">‹</a>
+                    <a href="<?php echo get_pagination_link(1, $filters, $sort_by, $sort_dir); ?>" class="join-item btn btn-sm <?php echo ($page <= 1 ? 'btn-disabled' : ''); ?>">«</a>
+                    <a href="<?php echo get_pagination_link($page - 1, $filters, $sort_by, $sort_dir); ?>" class="join-item btn btn-sm <?php echo ($page <= 1 ? 'btn-disabled' : ''); ?>">‹</a>
                     
                     <button class="join-item btn btn-sm">หน้า <?php echo $page; ?> / <?php echo $total_pages; ?></button>
                     
-                    <a href="<?php echo get_pagination_link($page + 1, $filters); ?>" class="join-item btn btn-sm <?php echo ($page >= $total_pages ? 'btn-disabled' : ''); ?>">›</a>
-                    <a href="<?php echo get_pagination_link($total_pages, $filters); ?>" class="join-item btn btn-sm <?php echo ($page >= $total_pages ? 'btn-disabled' : ''); ?>">»</a>
+                    <a href="<?php echo get_pagination_link($page + 1, $filters, $sort_by, $sort_dir); ?>" class="join-item btn btn-sm <?php echo ($page >= $total_pages ? 'btn-disabled' : ''); ?>">›</a>
+                    <a href="<?php echo get_pagination_link($total_pages, $filters, $sort_by, $sort_dir); ?>" class="join-item btn btn-sm <?php echo ($page >= $total_pages ? 'btn-disabled' : ''); ?>">»</a>
                 </div>
             </div>
             <?php endif; ?>

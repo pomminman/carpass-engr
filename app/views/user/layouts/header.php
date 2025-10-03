@@ -1,6 +1,6 @@
 <?php
 // app/views/user/layouts/header.php
-// ส่วนหัวของเว็บไซต์ (Header) และ Navbar สำหรับผู้ใช้งาน (ดีไซน์ใหม่)
+$page_identifier = str_replace('.php', '', basename($_SERVER['SCRIPT_NAME']));
 ?>
 <!DOCTYPE html>
 <html lang="th" data-theme="light" class="scroll-smooth">
@@ -17,6 +17,11 @@
     <meta name="apple-mobile-web-app-title" content="carpass engrdept" />
     <link rel="manifest" href="/public/assets/favicon/site.webmanifest" />
 
+    <!-- [NEW] Preload critical fonts to prevent FOUT -->
+    <link rel="preload" href="/lib/google-fonts-prompt/Prompt-Regular.ttf" as="font" type="font/ttf" crossorigin>
+    <link rel="preload" href="/lib/google-fonts-prompt/Prompt-SemiBold.ttf" as="font" type="font/ttf" crossorigin>
+    <link rel="preload" href="/lib/google-fonts-prompt/Prompt-Bold.ttf" as="font" type="font/ttf" crossorigin>
+
     
     <!-- Local JS -->
     <script src="/lib/jquery/jquery-3.7.1.min.js"></script>
@@ -26,6 +31,10 @@
     <script src="/lib/fancybox/fancybox.umd.js"></script>
     <link rel="stylesheet" href="/lib/fancybox/fancybox.css" />
 
+    <!-- [NEW] Toastify.js -->
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+
     <!-- Local CSS -->
     <link rel="stylesheet" href="/lib/daisyui@4.12.10/dist/full.min.css" type="text/css" />
     <link rel="stylesheet" href="/lib/jquery.Thailand/dist/jquery.Thailand.min.css">
@@ -34,55 +43,27 @@
 
     <!-- Custom Styles -->
     <style>
-        body { 
-            font-family: 'Prompt', sans-serif; 
-            overflow-x: hidden;
-        }
-
-        :root {
-            --rounded-box: 1rem;      
-            --rounded-btn: 0.8rem;    
-            --rounded-badge: 1.9rem;  
-        }
-
+        body { font-family: 'Prompt', sans-serif; overflow-x: hidden; }
+        :root { --rounded-box: 1rem; --rounded-btn: 0.8rem; --rounded-badge: 1.9rem; }
         .alert-soft { border-width: 1px; color: black; }
         .alert-error.alert-soft { background-color: #fee2e2; border-color: #fca5a5; color: #b91c1c; }
         .alert-success.alert-soft { background-color: #dcfce7; border-color: #86efac; color: #166534; }
         .alert-info.alert-soft { background-color: #e0f2fe; border-color: #7dd3fc; color: #0369a1; }
         .alert-warning.alert-soft { background-color: #fef9c3; border-color: #fde047; color: #a16207; }
-
         .break-words { word-wrap: break-word; overflow-wrap: break-word; }
-        
-        /* [NEW] Fix for FOUC (Flash of Unstyled Content) on sidebar */
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         .drawer-content { animation: fadeIn 0.3s ease-in-out; }
-        
         @media (min-width: 1024px) {
             .drawer.lg\:drawer-open .drawer-content { height: 100vh; overflow-y: auto; }
             .drawer.lg\:drawer-open .drawer-side { position: sticky; top: 0; height: 100vh; }
         }
-
-        /* [CORRECTED] Custom Fade Animation for Modals */
-        .modal-fade {
-            transition: opacity 0.25s ease;
-        }
-        .modal-fade:not([open]) {
-            opacity: 0;
-            pointer-events: none;
-        }
-        .modal-fade .modal-box {
-            transition: transform 0.25s ease, opacity 0.25s ease;
-            transform: translateY(-20px);
-            opacity: 0;
-        }
-        .modal-fade[open] .modal-box {
-            transform: translateY(0);
-            opacity: 1;
-        }
-
+        .modal-fade { transition: opacity 0.25s ease; }
+        .modal-fade:not([open]) { opacity: 0; pointer-events: none; }
+        .modal-fade .modal-box { transition: transform 0.25s ease, opacity 0.25s ease; transform: translateY(-20px); opacity: 0; }
+        .modal-fade[open] .modal-box { transform: translateY(0); opacity: 1; }
     </style>
 </head>
-<body class="bg-base-200" data-flash-message="<?php echo isset($_SESSION['request_message']) ? htmlspecialchars($_SESSION['request_message']) : ''; ?>" data-flash-status="<?php echo isset($_SESSION['request_status']) ? htmlspecialchars($_SESSION['request_status']) : ''; ?>">
+<body class="bg-base-200" data-page="<?php echo htmlspecialchars($page_identifier); ?>" data-flash-message="<?php echo isset($_SESSION['request_message']) ? htmlspecialchars($_SESSION['request_message']) : ''; ?>" data-flash-status="<?php echo isset($_SESSION['request_status']) ? htmlspecialchars($_SESSION['request_status']) : ''; ?>">
     <?php unset($_SESSION['request_message'], $_SESSION['request_status']); ?>
     <div class="drawer lg:drawer-open">
         <input id="my-drawer-2" type="checkbox" class="drawer-toggle" />

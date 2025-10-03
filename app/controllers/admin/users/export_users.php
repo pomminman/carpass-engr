@@ -1,5 +1,5 @@
 <?php
-// app/controllers/admin/users/export_users.php (Upgraded to XLSX)
+// app/controllers/admin/users/export_users.php
 
 // 1. Load Composer's autoloader
 require_once __DIR__ . '/../../../../vendor/autoload.php';
@@ -7,13 +7,12 @@ require_once __DIR__ . '/../../../../vendor/autoload.php';
 // 2. Use PhpSpreadsheet classes
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
-use PhpOffice\PhpSpreadsheet\Style\Font;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 
 // 3. Start session and check for authentication
 session_start();
+date_default_timezone_set('Asia/Bangkok');
 if (!isset($_SESSION['admin_loggedin']) || $_SESSION['admin_loggedin'] !== true) {
-    // Prevent direct access if not logged in
     header("Location: ../../../views/admin/login/login.php");
     exit;
 }
@@ -50,7 +49,19 @@ if ($filters['department'] !== 'all') {
     $params[] = $filters['department'];
     $types .= 's';
 }
-// Add other filters as needed...
+if ($filters['date'] !== 'all') {
+    $date_conditions = [
+        'today' => "DATE(u.created_at) = CURDATE()",
+        'this_month' => "YEAR(u.created_at) = YEAR(CURDATE()) AND MONTH(u.created_at) = MONTH(CURDATE())"
+    ];
+    if (isset($date_conditions[$filters['date']])) {
+        $where_clauses[] = $date_conditions[$filters['date']];
+    }
+}
+$having_clauses = [];
+if ($filters['vehicles'] !== 'all') {
+    $having_clauses[] = ($filters['vehicles'] === 'yes') ? 'COUNT(vr.id) > 0' : 'COUNT(vr.id) = 0';
+}
 
 if (!empty($filters['search'])) {
     $where_clauses[] = "(u.firstname LIKE ? OR u.lastname LIKE ? OR u.phone_number LIKE ? OR u.national_id LIKE ?)";
@@ -61,10 +72,12 @@ if (!empty($filters['search'])) {
 
 // 6. Fetch data from the database (without pagination limits)
 $sql_users = "SELECT 
-                u.id, u.title, u.firstname, u.lastname, u.user_type,
-                u.phone_number, u.national_id, u.work_department, u.created_at
+                u.*, COUNT(vr.id) as vehicle_count
               FROM users u
+              LEFT JOIN vehicle_requests vr ON u.id = vr.user_id
               " . (!empty($where_clauses) ? "WHERE " . implode(' AND ', $where_clauses) : "") . "
+              GROUP BY u.id
+              " . (!empty($having_clauses) ? "HAVING " . implode(' AND ', $having_clauses) : "") . "
               ORDER BY u.created_at DESC";
 
 $stmt_users = $conn->prepare($sql_users);
@@ -77,14 +90,19 @@ $result_users = $stmt_users->get_result();
 // 7. Create a new Spreadsheet object
 $spreadsheet = new Spreadsheet();
 $sheet = $spreadsheet->getActiveSheet();
-$sheet->setTitle('ລາຍຊື່ຜູ້ໃຊ້');
+$sheet->setTitle('รายชื่อผู้ใช้งาน');
 
 // 8. Set Headers and apply styling
-$headers = ['ลำดับ', 'คำนำหน้า', 'ชื่อจริง', 'นามสกุล', 'ประเภท', 'เบอร์โทรศัพท์', 'เลขบัตรประชาชน', 'สังกัด', 'วันที่สมัคร'];
+$headers = [
+    'ลำดับ', 'ประเภท', 'เบอร์โทรศัพท์', 'เลขบัตรประชาชน', 
+    'คำนำหน้า', 'ชื่อจริง', 'นามสกุล', 'วันเกิด', 'เพศ', 
+    'ที่อยู่', 'ตำบล/แขวง', 'อำเภอ/เขต', 'จังหวัด', 'รหัสไปรษณีย์',
+    'รูปโปรไฟล์', 'สังกัด', 'ตำแหน่ง', 'เลขบัตร ขรก.',
+    'วันที่สร้าง'
+];
 $sheet->fromArray($headers, NULL, 'A1');
 
-// Style the header row
-$headerStyle = $sheet->getStyle('A1:I1');
+$headerStyle = $sheet->getStyle('A1:S1');
 $headerStyle->getFont()->setBold(true)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color(\PhpOffice\PhpSpreadsheet\Style\Color::COLOR_WHITE));
 $headerStyle->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)->getStartColor()->setARGB('4F81BD');
 $headerStyle->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
@@ -95,15 +113,27 @@ $count = 1;
 if ($result_users->num_rows > 0) {
     while($user = $result_users->fetch_assoc()) {
         $user_type_thai = ($user['user_type'] === 'army') ? 'กำลังพล ทบ.' : 'บุคคลภายนอก';
-        $sheet->setCellValue('A' . $rowIndex, $count);
-        $sheet->setCellValue('B' . $rowIndex, $user['title']);
-        $sheet->setCellValue('C' . $rowIndex, $user['firstname']);
-        $sheet->setCellValue('D' . $rowIndex, $user['lastname']);
-        $sheet->setCellValue('E' . $rowIndex, $user_type_thai);
-        $sheet->setCellValueExplicit('F' . $rowIndex, $user['phone_number'], \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
-        $sheet->setCellValueExplicit('G' . $rowIndex, $user['national_id'], \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
-        $sheet->setCellValue('H' . $rowIndex, $user['work_department'] ?? '-');
-        $sheet->setCellValue('I' . $rowIndex, $user['created_at']);
+        
+        $colIndex = 'A';
+        $sheet->setCellValue($colIndex++ . $rowIndex, $count);
+        $sheet->setCellValue($colIndex++ . $rowIndex, $user_type_thai);
+        $sheet->setCellValueExplicit($colIndex++ . $rowIndex, $user['phone_number'], \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
+        $sheet->setCellValueExplicit($colIndex++ . $rowIndex, $user['national_id'], \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
+        $sheet->setCellValue($colIndex++ . $rowIndex, $user['title']);
+        $sheet->setCellValue($colIndex++ . $rowIndex, $user['firstname']);
+        $sheet->setCellValue($colIndex++ . $rowIndex, $user['lastname']);
+        $sheet->setCellValue($colIndex++ . $rowIndex, $user['dob']);
+        $sheet->setCellValue($colIndex++ . $rowIndex, $user['gender']);
+        $sheet->setCellValue($colIndex++ . $rowIndex, $user['address']);
+        $sheet->setCellValue($colIndex++ . $rowIndex, $user['subdistrict']);
+        $sheet->setCellValue($colIndex++ . $rowIndex, $user['district']);
+        $sheet->setCellValue($colIndex++ . $rowIndex, $user['province']);
+        $sheet->setCellValue($colIndex++ . $rowIndex, $user['zipcode']);
+        $sheet->setCellValue($colIndex++ . $rowIndex, $user['photo_profile']);
+        $sheet->setCellValue($colIndex++ . $rowIndex, $user['work_department']);
+        $sheet->setCellValue($colIndex++ . $rowIndex, $user['position']);
+        $sheet->setCellValue($colIndex++ . $rowIndex, $user['official_id']);
+        $sheet->setCellValue($colIndex++ . $rowIndex, $user['created_at']);
         
         $rowIndex++;
         $count++;
@@ -111,12 +141,12 @@ if ($result_users->num_rows > 0) {
 }
 
 // 10. Auto-size columns for better readability
-foreach (range('A', 'I') as $columnID) {
+foreach (range('A', 'S') as $columnID) {
     $sheet->getColumnDimension($columnID)->setAutoSize(true);
 }
 
 // 11. Set Headers for download
-$filename = 'export_users_' . date('Y-m-d') . '.xlsx';
+$filename = 'ผู้ใช้งาน_' . date('Y-m-d_H-i-s') . '.xlsx';
 header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
 header('Content-Disposition: attachment;filename="' . $filename . '"');
 header('Cache-Control: max-age=0');

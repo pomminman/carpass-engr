@@ -90,7 +90,7 @@ require_once __DIR__ . '/../layouts/header.php';
 </style>
 
 <!-- Main Content for Profile -->
-<div id="profile-section" class="space-y-4">
+<div id="profile-section" class="space-y-4" data-page="profile">
     <!-- Header -->
     <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
         <div>
@@ -110,7 +110,7 @@ require_once __DIR__ . '/../layouts/header.php';
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
                     <!-- Profile Picture Column -->
                     <div class="lg:col-span-1 flex flex-col items-center">
-                        <div class="form-control w-full max-w-[300px]">
+                        <div class="form-control w-full max-w-[250px]">
                             <label class="block font-medium mb-1 text-center text-sm">รูปถ่ายหน้าตรง</label>
                             <div id="profile-photo-container" class="w-full aspect-square">
                                 <a href="<?php echo htmlspecialchars($user_photo_path); ?>" data-fancybox data-caption="รูปถ่ายหน้าตรง">
@@ -222,6 +222,15 @@ require_once __DIR__ . '/../layouts/header.php';
         </div>
     </form>
 </div>
+
+<!-- [ADDED] Loading Modal -->
+<dialog id="loading_modal" class="modal modal-middle">
+    <div class="modal-box text-center">
+        <span class="loading loading-spinner loading-lg text-primary"></span>
+        <h3 class="font-bold text-lg mt-4">กำลังบันทึกข้อมูล...</h3>
+        <p class="py-4">กรุณารอสักครู่</p>
+    </div>
+</dialog>
 
 <?php require_once __DIR__ . '/../layouts/footer.php'; ?>
 

@@ -1,5 +1,5 @@
 <?php
-// --- app/controllers/admin/login/logout.php ---
+// app/controllers/admin/logout/logout.php
 
 session_start();
 
@@ -17,14 +17,18 @@ if (isset($_SESSION['admin_loggedin']) && $_SESSION['admin_loggedin'] === true) 
     }
 }
 
-// --- ล้างข้อมูล Session ทั้งหมดของ Admin ---
+// [EDIT] ตั้งค่า Flash Message สำหรับแสดงที่หน้า Login
+$_SESSION['flash_message'] = "ออกจากระบบสำเร็จ";
+$_SESSION['flash_status'] = "success";
+
+
+// --- ล้างข้อมูล Session ที่เกี่ยวกับการล็อกอินของ Admin ---
 unset($_SESSION['admin_loggedin']);
 unset($_SESSION['admin_id']);
 
-// ทำลาย Session เพื่อความปลอดภัย
-session_destroy();
-
 // --- Redirect กลับไปยังหน้า login ของ admin ---
+// หน้า Login จะดึง flash message จาก session ไปแสดงผล
 header("Location: ../../../views/admin/login/login.php");
 exit;
 ?>
+

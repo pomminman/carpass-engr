@@ -1,0 +1,25 @@
+/* app/lib/google-fonts-Bai_Jamjuree/bai-jamjuree.css */
+
+/* Regular */
+@font-face {
+  font-family: 'Bai Jamjuree';
+  font-style: normal;
+  font-weight: 400;
+  src: url('BaiJamjuree-Regular.ttf') format('truetype');
+}
+
+/* Medium */
+@font-face {
+  font-family: 'Bai Jamjuree';
+  font-style: normal;
+  font-weight: 500;
+  src: url('BaiJamjuree-Medium.ttf') format('truetype');
+}
+
+/* Bold */
+@font-face {
+  font-family: 'Bai Jamjuree';
+  font-style: normal;
+  font-weight: 700;
+  src: url('BaiJamjuree-Bold.ttf') format('truetype');
+}

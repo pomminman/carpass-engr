@@ -31,18 +31,32 @@ if (isset($_SESSION['flash_message'])) {
     <meta name="apple-mobile-web-app-title" content="carpass engrdept" />
     <link rel="manifest" href="/public/assets/favicon/site.webmanifest" />
 
+    <!-- Preload critical fonts to prevent FOUT -->
+    <link rel="preload" href="/lib/google-fonts-prompt/Prompt-Regular.ttf" as="font" type="font/ttf" crossorigin>
+    <link rel="preload" href="/lib/google-fonts-prompt/Prompt-SemiBold.ttf" as="font" type="font/ttf" crossorigin>
+    <link rel="preload" href="/lib/google-fonts-prompt/Prompt-Bold.ttf" as="font" type="font/ttf" crossorigin>
+
     
     <!-- Local JS -->
     <script src="/lib/jquery/jquery-3.7.1.min.js"></script>
     <script src="/lib/tailwindcss/tailwindcss.js"></script>
 
-    <!-- Fancybox Library (New) -->
+    <!-- Fancybox Library -->
     <script src="/lib/fancybox/fancybox.umd.js"></script>
     <link rel="stylesheet" href="/lib/fancybox/fancybox.css" />
 
-    <!-- [NEW] Select2 Library -->
+    <!-- Select2 Library -->
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    
+    <!-- Toastify.js Library -->
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+
+    <!-- Litepicker Date Range Picker -->
+    <script src="https://cdn.jsdelivr.net/npm/litepicker/dist/litepicker.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/litepicker/dist/css/litepicker.css"/>
+
 
     <!-- Local CSS -->
     <link rel="stylesheet" href="/lib/daisyui@4.12.10/dist/full.min.css" type="text/css" />
@@ -56,10 +70,6 @@ if (isset($_SESSION['flash_message'])) {
         .alert-soft { border-width: 1px; }
         .alert-error.alert-soft { background-color: #fee2e2; border-color: #fca5a5; color: #b91c1c; }
         .alert-success.alert-soft { background-color: #dcfce7; border-color: #86efac; color: #166534; }
-        th[data-sort-by] { cursor: pointer; user-select: none; }
-        th[data-sort-by] .fa-sort, th[data-sort-by] .fa-sort-up, th[data-sort-by] .fa-sort-down { color: #9ca3af; margin-left: 0.5rem; transition: color 0.2s ease-in-out; }
-        th[data-sort-by]:hover .fa-sort { color: #1f2937; }
-        th[data-sort-by].sort-asc .fa-sort-up, th[data-sort-by].sort-desc .fa-sort-down { color: #2563eb; }
         .modal-fade { transition: opacity 0.25s ease; }
         .modal-fade:not([open]) { opacity: 0; pointer-events: none; }
         .modal-fade .modal-box { transition: transform 0.25s ease, opacity 0.25s ease; transform: translateY(-20px); opacity: 0; }
@@ -71,26 +81,30 @@ if (isset($_SESSION['flash_message'])) {
         .tt-suggestion { padding: 8px 12px; border-bottom: 1px solid #eee; }
         .tt-cursor { background-color: #f0f2f5; }
 
-        /* [NEW] Select2 Custom Styles */
-        .select2-container--default .select2-selection--single {
+        .select2-container--default .select2-selection--single,
+        .select2-container--default .select2-selection--multiple {
             background-color: #fff;
-            border: 1px solid #d1d5db; /* border-gray-300 */
-            border-radius: 0.5rem; /* rounded-lg */
-            height: 2.5rem; /* h-10 */
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+            min-height: 2.5rem;
             padding-top: 4px;
         }
-        .select2-container--default .select2-selection--single .select2-selection__arrow {
-            height: 2.375rem;
+        .select2-container--default .select2-selection--single .select2-selection__arrow { height: 2.375rem; }
+        .select2-dropdown { border-color: #d1d5db; }
+        .select2-container .select2-selection--single .select2-selection__rendered { padding-left: 0.75rem; }
+        .select2-container--open .select2-dropdown--below { border-top: 1px solid #d1d5db; }
+
+        thead th a {
+            color: inherit;
+            transition: color 0.2s ease-in-out;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
         }
-        .select2-dropdown {
-            border-color: #d1d5db;
-        }
-        .select2-container .select2-selection--single .select2-selection__rendered {
-            padding-left: 0.75rem;
-        }
-        .select2-container--open .select2-dropdown--below {
-            border-top: 1px solid #d1d5db;
-        }
+        thead th a:hover { color: #3b82f6; }
+        thead th a i.fa-sort-up,
+        thead th a i.fa-sort-down { color: #2563eb; }
+        thead th a i.fa-sort { color: #9ca3af; }
     </style>
 </head>
 <body data-flash-message="<?php echo htmlspecialchars($flash_message); ?>" data-flash-status="<?php echo htmlspecialchars($flash_status); ?>">
@@ -104,9 +118,9 @@ if (isset($_SESSION['flash_message'])) {
                     <label tabindex="0" class="btn btn-ghost lg:hidden"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h8m-8 6h16" /></svg></label>
                     <ul tabindex="0" id="mobile-menu" class="menu menu-sm dropdown-content mt-3 z-[1] p-2 shadow bg-base-100 rounded-box w-52">
                         <li><a href="dashboard.php" class="<?php echo ($current_page == 'dashboard.php') ? 'active' : ''; ?>"><i class="fa-solid fa-tachometer-alt w-4"></i> Dashboard</a></li>
-                        <li><a href="manage_requests.php" class="<?php echo ($current_page == 'manage_requests.php') ? 'active' : ''; ?>"><i class="fa-solid fa-file-signature w-4"></i> จัดการคำร้อง</a></li>
+                        <li><a href="manage_requests.php" class="<?php echo in_array($current_page, ['manage_requests.php', 'add_request.php']) ? 'active' : ''; ?>"><i class="fa-solid fa-file-signature w-4"></i> จัดการคำร้อง</a></li>
                         <li><a href="manage_users.php" class="<?php echo in_array($current_page, ['manage_users.php', 'view_user.php', 'add_user.php']) ? 'active' : ''; ?>"><i class="fa-solid fa-users-cog w-4"></i> จัดการผู้ใช้</a></li>
-                        <li><a href="manage_admins.php" class="<?php echo ($current_page == 'manage_admins.php') ? 'active' : ''; ?>"><i class="fa-solid fa-user-shield w-4"></i> จัดการเจ้าหน้าที่</a></li>
+                        <li><a href="manage_admins.php" class="<?php echo in_array($current_page, ['manage_admins.php', 'edit_profile.php']) ? 'active' : ''; ?>"><i class="fa-solid fa-user-shield w-4"></i> จัดการเจ้าหน้าที่</a></li>
                     </ul>
                 </div>
                  <div class="flex items-center gap-2 ml-2">
@@ -119,10 +133,10 @@ if (isset($_SESSION['flash_message'])) {
             </div>
             <div class="navbar-center hidden lg:flex">
                 <ul class="menu menu-horizontal px-1" id="desktop-menu">
-                    <li><a href="dashboard.php" class="<?php echo ($current_page == 'dashboard.php') ? 'active' : ''; ?>"><i class="fa-solid fa-tachometer-alt"></i> Dashboard</a></li>
-                    <li><a href="manage_requests.php" class="<?php echo ($current_page == 'manage_requests.php') ? 'active' : ''; ?>"><i class="fa-solid fa-file-signature"></i> จัดการคำร้อง</a></li>
-                    <li><a href="manage_users.php" class="<?php echo in_array($current_page, ['manage_users.php', 'view_user.php', 'add_user.php']) ? 'active' : ''; ?>"><i class="fa-solid fa-users-cog"></i> จัดการผู้ใช้</a></li>
-                    <li><a href="manage_admins.php" class="<?php echo ($current_page == 'manage_admins.php') ? 'active' : ''; ?>"><i class="fa-solid fa-user-shield"></i> จัดการเจ้าหน้าที่</a></li>
+                    <li class="mx-2"><a href="dashboard.php" class="<?php echo ($current_page == 'dashboard.php') ? 'active' : ''; ?>"><i class="fa-solid fa-tachometer-alt"></i> Dashboard</a></li>
+                    <li class="mx-2"><a href="manage_requests.php" class="<?php echo in_array($current_page, ['manage_requests.php', 'add_request.php']) ? 'active' : ''; ?>"><i class="fa-solid fa-file-signature"></i> จัดการคำร้อง</a></li>
+                    <li class="mx-2"><a href="manage_users.php" class="<?php echo in_array($current_page, ['manage_users.php', 'view_user.php', 'add_user.php']) ? 'active' : ''; ?>"><i class="fa-solid fa-users-cog"></i> จัดการผู้ใช้</a></li>
+                    <li class="mx-2"><a href="manage_admins.php" class="<?php echo in_array($current_page, ['manage_admins.php', 'edit_profile.php']) ? 'active' : ''; ?>"><i class="fa-solid fa-user-shield"></i> จัดการเจ้าหน้าที่</a></li>
                 </ul>
             </div>
             <div class="navbar-end">
@@ -140,7 +154,7 @@ if (isset($_SESSION['flash_message'])) {
                             <div class="text-xs text-slate-500">สิทธิ์เข้าถึง: <?php echo $admin_info['view_permission_text']; ?></div>
                          </li>
                          <div class="divider my-0"></div>
-                         <li><a href="manage_admins.php"><i class="fa-solid fa-user-pen"></i> แก้ไขข้อมูลส่วนตัว</a></li>
+                         <li><a href="edit_profile.php"><i class="fa-solid fa-user-pen"></i> แก้ไขข้อมูลส่วนตัว</a></li>
                          <li><a href="../../../controllers/admin/logout/logout.php" class="text-error"><i class="fa-solid fa-right-from-bracket"></i> ออกจากระบบ</a></li>
                     </ul>
                 </div>

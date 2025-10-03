@@ -58,7 +58,7 @@ if (isset($_GET['renew_id']) && is_numeric($_GET['renew_id'])) {
 require_once __DIR__ . '/../layouts/header.php';
 ?>
 <!-- Main Content for Add Vehicle -->
-<div id="add-vehicle-section" class="mx-auto space-y-4" data-is-renewal="<?php echo $is_renewal ? 'true' : 'false'; ?>">
+<div id="add-vehicle-section" class="mx-auto space-y-4" data-page="add_vehicle" data-is-renewal="<?php echo $is_renewal ? 'true' : 'false'; ?>">
      <!-- Header -->
     <div>
         <h1 class="text-2xl font-bold">
@@ -67,7 +67,7 @@ require_once __DIR__ . '/../layouts/header.php';
         <p class="text-base-content/70">กรุณากรอกข้อมูลตามขั้นตอนให้ครบถ้วน</p>
     </div>
 
-    <!-- Stepper Design V2 -->
+    <!-- [FIXED] Stepper Design V2 with initial state classes -->
     <div class="grid grid-cols-2 gap-2 sm:gap-4">
         <div id="step1-indicator" class="p-3 sm:p-4 rounded-lg flex items-center gap-3 transition-all duration-300">
             <div class="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center">
@@ -130,7 +130,7 @@ require_once __DIR__ . '/../layouts/header.php';
                         </div>
                     </div>
                     
-                    <!-- STEP 2: DETAILS (Reverted to old layout inside the card) -->
+                    <!-- STEP 2: DETAILS -->
                     <div id="vehicle-details-section" class="hidden">
                         <div class="stats stats-vertical sm:stats-horizontal shadow w-full mb-4" style="background-color: oklch(0.25 0.08 255.06); color: oklch(1 0 0);">
                             <div class="stat">
@@ -279,4 +279,5 @@ require_once __DIR__ . '/../layouts/header.php';
 </dialog>
 
 <?php require_once __DIR__ . '/../layouts/footer.php'; ?>
+
 

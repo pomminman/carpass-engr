@@ -1,3 +1,4 @@
+// public/assets/js/admin/page_scripts/admin_manage_users.js
 document.addEventListener('DOMContentLoaded', function() {
     const table = document.getElementById('usersTable');
     const filterForm = document.getElementById('filterForm');

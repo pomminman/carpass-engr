@@ -1,3 +1,4 @@
+<!-- 500.php -->
 <!DOCTYPE html>
 <html lang="th" data-theme="light">
 <head>

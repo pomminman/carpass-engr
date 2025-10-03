@@ -1,5 +1,5 @@
 <?php
-// --- controllers/user/logout/logout.php ---
+// app/controllers/user/logout/logout.php
 
 session_start();
 

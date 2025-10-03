@@ -1,3 +1,4 @@
+// public/assets/js/admin/admin_core.js
 /**
  * admin_core.js
  * Contains shared functionalities for the entire admin panel.
@@ -7,19 +8,20 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const App = {
         showAlert: function(message, type = 'success') {
-            const container = document.getElementById('alert-container');
-            if (!container) return;
-            const icons = { success: 'fa-circle-check', error: 'fa-circle-xmark', info: 'fa-circle-info', warning: 'fa-triangle-exclamation' };
-            const iconClass = icons[type] || 'fa-circle-info';
-            const alertEl = document.createElement('div');
-            alertEl.className = `alert alert-${type} alert-soft shadow-lg`;
-            alertEl.innerHTML = `<div class="flex items-center"><i class="fa-solid ${iconClass}"></i><span class="ml-2 text-xs sm:text-sm">${message}</span></div>`;
-            container.appendChild(alertEl);
-            setTimeout(() => {
-                alertEl.style.transition = 'opacity 0.3s ease';
-                alertEl.style.opacity = '0';
-                setTimeout(() => alertEl.remove(), 300);
-            }, 5000);
+            Toastify({
+                text: message,
+                duration: 3000,
+                close: true,
+                gravity: "top",
+                position: "right",
+                stopOnFocus: true,
+                style: {
+                    background: type === 'success' ? "linear-gradient(to right, #00b09b, #96c93d)" :
+                                type === 'error'   ? "linear-gradient(to right, #ff5f6d, #ffc371)" :
+                                type === 'info'    ? "linear-gradient(to right, #0072ff, #00c6ff)" :
+                                "linear-gradient(to right, #ff9a44, #fc6076)",
+                },
+            }).showToast();
         },
 
         initGlobalHelpers: function() {
@@ -117,7 +119,26 @@ document.addEventListener('DOMContentLoaded', function () {
                     link.dataset.caption = caption + " (ไม่มีรูปภาพ)";
                 }
             };
-            const formatThaiDate = (d) => !d || d.startsWith('0000') ? '-' : new Date(d).toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' });
+            
+            const formatThaiDateTimeShort = (d) => {
+                if (!d || d.startsWith('0000')) return '-';
+                const date = new Date(d);
+                const day = String(date.getDate()).padStart(2, '0');
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const year = (date.getFullYear() + 543).toString().slice(-2);
+                const hours = String(date.getHours()).padStart(2, '0');
+                const minutes = String(date.getMinutes()).padStart(2, '0');
+                return `${day}/${month}/${year} ${hours}:${minutes}`;
+            };
+
+            const formatThaiDateShort = (d) => {
+                if (!d || d.startsWith('0000')) return '-';
+                const date = new Date(d);
+                const day = String(date.getDate()).padStart(2, '0');
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const year = (date.getFullYear() + 543).toString().slice(-2);
+                return `${day}/${month}/${year}`;
+            };
             
             const licensePlateFull = `${orDash(data.license_plate)} ${orDash(data.vehicle_province)}`;
             setText('#modal-header-license', licensePlateFull);
@@ -147,10 +168,21 @@ document.addEventListener('DOMContentLoaded', function () {
             setText('#modal-vehicle-type', orDash(data.vehicle_type));
             setText('#modal-card-type', data.card_type ? (data.card_type === 'internal' ? 'ภายใน' : 'ภายนอก') : '-');
             setText('#modal-vehicle-color', orDash(data.color));
-            setText('#modal-tax-expiry', formatThaiDate(data.tax_expiry_date));
+            setText('#modal-tax-expiry', formatThaiDateShort(data.tax_expiry_date));
             let ownerDetails = '-';
             if (data.owner_type) { ownerDetails = data.owner_type === 'self' ? 'รถชื่อตนเอง' : `รถผู้อื่น (${orDash(data.other_owner_name)}, เกี่ยวข้องเป็น ${orDash(data.other_owner_relation)})`; }
             setText('#modal-owner-details', ownerDetails);
+
+            // New Request Info
+            setText('#modal-request-search-id', data.search_id);
+            setText('#modal-request-period', data.period_name);
+            setText('#modal-request-created-at', formatThaiDateTimeShort(data.created_at));
+            setText('#modal-request-approved-at', formatThaiDateTimeShort(data.approved_at));
+            setText('#modal-request-pickup-date', formatThaiDateShort(data.card_pickup_date));
+            setText('#modal-request-updated-at', formatThaiDateTimeShort(data.updated_at));
+            const approverName = (data.approver_firstname) ? `${data.approver_title}${data.approver_firstname} ${data.approver_lastname}` : null;
+            setText('#modal-request-approver-name', approverName);
+
             const evidenceBasePath = data.user_key && data.request_key ? `/public/uploads/${data.user_key}/vehicle/${data.request_key}/` : null;
             setImageSource('a[data-base-caption="สำเนาทะเบียนรถ"]', '#modal-evidence-reg', evidenceBasePath, data.photo_reg_copy, `สำเนาทะเบียนรถ: ${licensePlateFull}`);
             setImageSource('a[data-base-caption="ป้ายภาษี"]', '#modal-evidence-tax', evidenceBasePath, data.photo_tax_sticker, `ป้ายภาษี: ${licensePlateFull}`);
@@ -167,12 +199,22 @@ document.addEventListener('DOMContentLoaded', function () {
 
             if (data.status === 'approved' && data.card_expiry && (new Date() > new Date(data.card_expiry))) {
                 statusBadgeHtml = `<div class="badge badge-neutral">หมดอายุ</div>`;
+                let expiredButtonsHtml = `<button class="btn btn-sm ${data.payment_status !== 'paid' ? 'btn-success' : 'btn-ghost'} payment-btn" data-id="${data.id}"><i class="fa-solid fa-hand-holding-dollar"></i> ${data.payment_status !== 'paid' ? 'ชำระเงิน/รับบัตร' : 'ดูข้อมูล'}</button>`;
+                if (data.qr_code_path) {
+                    expiredButtonsHtml += `<a href="../../../controllers/admin/requests/download_qr.php?file=${encodeURIComponent(data.qr_code_path)}" class="btn btn-sm btn-accent"><i class="fa-solid fa-download"></i> ดาวน์โหลด QR</a>`;
+                }
+                actionButtonsContainer.innerHTML = expiredButtonsHtml;
                 const qrImg = detailsModal.querySelector('#modal-qrcode-img');
                 if (qrImg && data.qr_code_path) { qrImg.src = `/public/qr/${data.qr_code_path}`; qrContainer.classList.remove('hidden'); }
             } else {
                 switch (data.status) {
                     case 'approved':
                         statusBadgeHtml = `<div class="badge badge-success">อนุมัติแล้ว</div>`;
+                        let approvedButtonsHtml = `<button class="btn btn-sm ${data.payment_status !== 'paid' ? 'btn-success' : 'btn-ghost'} payment-btn" data-id="${data.id}"><i class="fa-solid fa-hand-holding-dollar"></i> ${data.payment_status !== 'paid' ? 'ชำระเงิน/รับบัตร' : 'ดูข้อมูล'}</button>`;
+                        if (data.qr_code_path) {
+                            approvedButtonsHtml += `<a href="../../../controllers/admin/requests/download_qr.php?file=${encodeURIComponent(data.qr_code_path)}" class="btn btn-sm btn-accent"><i class="fa-solid fa-download"></i> ดาวน์โหลด QR</a>`;
+                        }
+                        actionButtonsContainer.innerHTML = approvedButtonsHtml;
                         const qrImg = detailsModal.querySelector('#modal-qrcode-img');
                         if (qrImg && data.qr_code_path) { qrImg.src = `/public/qr/${data.qr_code_path}`; qrContainer.classList.remove('hidden'); }
                         break;
@@ -332,6 +374,117 @@ document.addEventListener('DOMContentLoaded', function () {
                 document.getElementById('result-modal-close-btn').addEventListener('click', () => { resultModal.close(); window.location.reload(); });
                 document.getElementById('result-modal-close-btn-x').addEventListener('click', () => { resultModal.close(); window.location.reload(); });
             }
+        },
+
+        initPaymentPickupManagement: function() {
+            const pickupPaymentModal = document.getElementById('pickup_payment_modal');
+            if (!pickupPaymentModal) return;
+
+            let currentRequestId = null;
+
+            const populatePickupModal = (data) => {
+                currentRequestId = data.id;
+                pickupPaymentModal.querySelector('#pickup-modal-search-id').textContent = data.search_id;
+
+                const paymentForm = pickupPaymentModal.querySelector('#payment-form-container');
+                const paymentInfo = pickupPaymentModal.querySelector('#payment-info-container');
+                const amountInput = pickupPaymentModal.querySelector('#payment-amount');
+                amountInput.value = data.card_fee || 30;
+
+                if (data.payment_status === 'paid') {
+                    paymentForm.classList.add('hidden');
+                    paymentInfo.classList.remove('hidden');
+                    
+                    const adminName = (data.payment_admin_firstname) ? `${data.payment_admin_title}${data.payment_admin_firstname} ${data.payment_admin_lastname}` : 'N/A';
+                    const dateTime = data.transaction_created_at ? new Date(data.transaction_created_at).toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'medium' }) : 'ไม่มีข้อมูล';
+                    
+                    const detailsEl = paymentInfo.querySelector('#payment-pickup-admin-details');
+                    detailsEl.textContent = `บันทึกการชำระเงินพร้อมยืนยันการรับบัตรโดย: ${adminName} เมื่อ ${dateTime}`;
+
+                    const orDash = (text) => text || '-';
+                    paymentInfo.querySelector('#payment-info-amount').textContent = data.transaction_amount || '-';
+                    paymentInfo.querySelector('#payment-info-method').textContent = data.transaction_method === 'cash' ? 'เงินสด' : (data.transaction_method === 'bank_transfer' ? 'โอนผ่านธนาคาร' : '-');
+                    paymentInfo.querySelector('#payment-info-ref').textContent = orDash(data.transaction_ref);
+
+                    const notesWrapper = paymentInfo.querySelector('#payment-info-notes-wrapper');
+                    const notesEl = paymentInfo.querySelector('#payment-info-notes');
+                    if (data.transaction_notes) {
+                        notesEl.textContent = data.transaction_notes;
+                        notesWrapper.classList.remove('hidden');
+                    } else {
+                        notesWrapper.classList.add('hidden');
+                    }
+
+                } else {
+                    paymentForm.classList.remove('hidden');
+                    paymentInfo.classList.add('hidden');
+                }
+            };
+            
+            const openPickupModal = async (requestId) => {
+                const loadingModal = document.getElementById('loading_modal');
+                loadingModal.showModal();
+                try {
+                    const response = await fetch(`/app/controllers/admin/requests/check_requests.php?action=get_details&id=${requestId}`);
+                    const result = await response.json();
+                    if (result.success) {
+                        populatePickupModal(result.data);
+                        pickupPaymentModal.showModal();
+                    } else {
+                        this.showAlert(result.message || 'ไม่สามารถโหลดข้อมูลได้', 'error');
+                    }
+                } catch (err) {
+                    this.showAlert('เกิดข้อผิดพลาดในการเชื่อมต่อ', 'error');
+                } finally {
+                    loadingModal.close();
+                }
+            };
+
+            document.body.addEventListener('click', (e) => {
+                const paymentButton = e.target.closest('.payment-btn');
+                if (paymentButton) {
+                    const detailsModal = document.getElementById('details_modal');
+                    if(detailsModal.hasAttribute('open')) detailsModal.close();
+                    openPickupModal(paymentButton.dataset.id);
+                }
+            });
+
+            const paymentFormEl = pickupPaymentModal.querySelector('#payment-form');
+            paymentFormEl.addEventListener('submit', async (e) => {
+                 e.preventDefault();
+                 const payload = {
+                     request_id: currentRequestId,
+                     sub_action: 'record_payment',
+                     amount: document.getElementById('payment-amount').value,
+                     method: document.getElementById('payment-method').value,
+                     ref: document.getElementById('payment-ref').value,
+                     notes: document.getElementById('payment-notes').value
+                 };
+                 processPaymentPickup(payload);
+            });
+
+            const processPaymentPickup = async (payload) => {
+                const loadingModal = document.getElementById('loading_modal');
+                loadingModal.showModal();
+                try {
+                    const response = await fetch('/app/controllers/admin/requests/check_requests.php?action=process_payment_pickup', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    const result = await response.json();
+
+                    if (result.success) {
+                        window.location.reload();
+                    } else {
+                        loadingModal.close();
+                        this.showAlert(result.message || 'การดำเนินการล้มเหลว', 'error');
+                    }
+                } catch (err) {
+                    loadingModal.close();
+                    this.showAlert(err.message || 'เกิดข้อผิดพลาดในการเชื่อมต่อ', 'error');
+                }
+            };
         }
     };
 
@@ -340,8 +493,9 @@ document.addEventListener('DOMContentLoaded', function () {
     App.initGlobalSearch();
     App.initGlobalTableSorting();
     
+    // Initialize request-related functionalities on relevant pages
     if (document.getElementById('dashboard-page') || document.getElementById('manage-requests-page') || document.getElementById('view-user-page')) {
         App.initRequestManagement();
+        App.initPaymentPickupManagement();
     }
 });
-

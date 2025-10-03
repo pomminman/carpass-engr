@@ -11,7 +11,6 @@ RewriteBase /
 ErrorDocument 404 /404.php
 ErrorDocument 500 /500.php
 
-
 # --- [ใหม่] โหมดปรับปรุงเว็บไซต์ (Maintenance Mode) ---
 #
 # วิธีเปิดใช้งาน:
@@ -24,19 +23,21 @@ ErrorDocument 500 /500.php
 # บรรทัดที่สอง: ส่งผู้ใช้ทุกคนไปแสดงเนื้อหาของหน้า maintenance.php (โดยไม่เปลี่ยน URL)
 # RewriteRule .* /maintenance.php [L]
 
-
-# --- [เพิ่ม] การตั้งค่าการ Caching เพื่อเพิ่มความเร็วในการโหลด ---
+## EXPIRES CACHING ##
 <IfModule mod_expires.c>
   ExpiresActive On
-  # กำหนดให้ไฟล์รูปภาพ, CSS, และ JS ถูกเก็บไว้ใน cache ของเบราว์เซอร์ 1 เดือน
-  ExpiresByType image/jpeg "access plus 1 month"
-  ExpiresByType image/gif "access plus 1 month"
-  ExpiresByType image/png "access plus 1 month"
-  ExpiresByType image/webp "access plus 1 month"
-  ExpiresByType image/svg+xml "access plus 1 month"
+  ExpiresByType image/jpg "access plus 1 year"
+  ExpiresByType image/jpeg "access plus 1 year"
+  ExpiresByType image/gif "access plus 1 year"
+  ExpiresByType image/png "access plus 1 year"
   ExpiresByType text/css "access plus 1 month"
-  ExpiresByType application/javascript "access plus 1 month"
+  ExpiresByType application/pdf "access plus 1 month"
+  ExpiresByType text/x-javascript "access plus 1 month"
+  ExpiresByType application/x-shockwave-flash "access plus 1 month"
+  ExpiresByType image/x-icon "access plus 1 year"
+  ExpiresDefault "access plus 2 days"
 </IfModule>
+## EXPIRES CACHING ##
 
 # --- [เพิ่ม] การเปิดใช้งานการบีบอัดไฟล์ (GZIP) ---
 <IfModule mod_deflate.c>

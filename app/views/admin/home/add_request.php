@@ -84,7 +84,7 @@ $user_type_thai = $user['user_type'] === 'army' ? 'กำลังพล ทบ.
                         <div class="divider divider-start font-semibold m-0">ข้อมูลยานพาหนะ</div>
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
                             <div class="form-control w-full">
-                                <label class="label py-1"><span class="label-text">ประเภทรถ</span></label>
+                                <label class="label py-1"><span class="label-text">ประเภทรถ <span class="text-error">*</span></span></label>
                                 <select name="vehicle_type" class="select select-sm select-bordered" required>
                                     <option disabled selected value="">เลือกประเภท</option>
                                     <option value="รถยนต์">รถยนต์</option>
@@ -93,7 +93,7 @@ $user_type_thai = $user['user_type'] === 'army' ? 'กำลังพล ทบ.
                                 <p class="error-message hidden text-error text-xs mt-1"></p>
                             </div>
                             <div class="form-control w-full">
-                                <label class="label py-1"><span class="label-text">ยี่ห้อรถ</span></label>
+                                <label class="label py-1"><span class="label-text">ยี่ห้อรถ <span class="text-error">*</span></span></label>
                                 <select name="vehicle_brand" class="select select-sm select-bordered" required>
                                     <option disabled selected value="">เลือกยี่ห้อ</option>
                                     <?php foreach ($car_brands as $brand): ?>
@@ -105,12 +105,12 @@ $user_type_thai = $user['user_type'] === 'army' ? 'กำลังพล ทบ.
                         </div>
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
                             <div class="form-control w-full">
-                                <label class="label py-1"><span class="label-text">เลขทะเบียนรถ</span></label>
+                                <label class="label py-1"><span class="label-text">เลขทะเบียนรถ <span class="text-error">*</span></span></label>
                                 <input type="text" name="license_plate" placeholder="เช่น 1กข1234" class="input input-sm input-bordered w-full" required>
                                 <p class="error-message hidden text-error text-xs mt-1"></p>
                             </div>
                             <div class="form-control w-full">
-                                <label class="label py-1"><span class="label-text">จังหวัดทะเบียนรถ</span></label>
+                                <label class="label py-1"><span class="label-text">จังหวัดทะเบียนรถ <span class="text-error">*</span></span></label>
                                 <select name="license_province" class="select select-sm select-bordered" required>
                                     <option disabled selected value="">เลือกจังหวัด</option>
                                     <?php foreach ($provinces as $province): ?>
@@ -122,12 +122,12 @@ $user_type_thai = $user['user_type'] === 'army' ? 'กำลังพล ทบ.
                         </div>
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
                             <div class="form-control w-full">
-                                <label class="label py-1"><span class="label-text">รุ่นรถ (ภาษาอังกฤษ)</span></label>
+                                <label class="label py-1"><span class="label-text">รุ่นรถ (ภาษาอังกฤษ) <span class="text-error">*</span></span></label>
                                 <input type="text" name="vehicle_model" placeholder="เช่น COROLLA" class="input input-sm input-bordered w-full" required>
                                 <p class="error-message hidden text-error text-xs mt-1"></p>
                             </div>
                             <div class="form-control w-full">
-                                <label class="label py-1"><span class="label-text">สีรถ</span></label>
+                                <label class="label py-1"><span class="label-text">สีรถ <span class="text-error">*</span></span></label>
                                 <input type="text" name="vehicle_color" placeholder="เช่น ดำ" class="input input-sm input-bordered w-full" required>
                                 <p class="error-message hidden text-error text-xs mt-1"></p>
                             </div>
@@ -136,15 +136,15 @@ $user_type_thai = $user['user_type'] === 'army' ? 'กำลังพล ทบ.
                         <div class="form-control w-full">
                             <label class="label py-1"><span class="label-text">วันสิ้นอายุภาษีรถ</span></label>
                             <div class="grid grid-cols-3 gap-2">
-                                <select name="tax_day" class="select select-sm select-bordered" required></select>
-                                <select name="tax_month" class="select select-sm select-bordered" required></select>
-                                <select name="tax_year" class="select select-sm select-bordered" required></select>
+                                <select name="tax_day" class="select select-sm select-bordered"><option value="" disabled selected>วัน</option></select>
+                                <select name="tax_month" class="select select-sm select-bordered"><option value="" disabled selected>เดือน</option></select>
+                                <select name="tax_year" class="select select-sm select-bordered"><option value="" disabled selected>ปี พ.ศ.</option></select>
                             </div>
                             <p class="error-message hidden text-error text-xs mt-1"></p>
                         </div>
                          <div class="form-control w-full">
                             <label class="label py-1"><span class="label-text">เป็นรถของใคร?</span></label>
-                            <select name="owner_type" class="select select-sm select-bordered" required>
+                            <select name="owner_type" class="select select-sm select-bordered">
                                 <option disabled selected value="">กรุณาเลือก</option>
                                 <option value="self">รถชื่อตนเอง</option>
                                 <option value="other">รถคนอื่น</option>
@@ -183,7 +183,7 @@ $user_type_thai = $user['user_type'] === 'army' ? 'กำลังพล ทบ.
                                         <img id="reg-copy-preview" src="/public/assets/images/registration.jpg" alt="สำเนาทะเบียนรถ" class="w-full h-full object-contain cursor-pointer">
                                     </div>
                                 </a>
-                                <input type="file" id="reg_copy_upload" name="reg_copy_upload" class="file-input file-input-sm file-input-bordered w-full mt-2" accept=".jpg, .jpeg, .png" required>
+                                <input type="file" id="reg_copy_upload" name="reg_copy_upload" class="file-input file-input-sm file-input-bordered w-full mt-2" accept=".jpg, .jpeg, .png">
                                 <p class="error-message hidden text-error text-xs mt-1"></p>
                             </div>
                              <div class="form-control w-full">
@@ -193,7 +193,7 @@ $user_type_thai = $user['user_type'] === 'army' ? 'กำลังพล ทบ.
                                         <img id="tax-sticker-preview" src="/public/assets/images/tax_sticker.jpg" alt="ป้ายภาษี" class="w-full h-full object-contain cursor-pointer">
                                     </div>
                                 </a>
-                                <input type="file" id="tax_sticker_upload" name="tax_sticker_upload" class="file-input file-input-sm file-input-bordered w-full mt-2" accept=".jpg, .jpeg, .png" required>
+                                <input type="file" id="tax_sticker_upload" name="tax_sticker_upload" class="file-input file-input-sm file-input-bordered w-full mt-2" accept=".jpg, .jpeg, .png">
                                 <p class="error-message hidden text-error text-xs mt-1"></p>
                             </div>
                              <div class="form-control w-full">
@@ -203,7 +203,7 @@ $user_type_thai = $user['user_type'] === 'army' ? 'กำลังพล ทบ.
                                         <img id="front-view-preview" src="/public/assets/images/front_view.png" alt="รูปถ่ายรถด้านหน้า" class="w-full h-full object-contain cursor-pointer">
                                     </div>
                                 </a>
-                                <input type="file" id="front_view_upload" name="front_view_upload" class="file-input file-input-sm file-input-bordered w-full mt-2" accept=".jpg, .jpeg, .png" required>
+                                <input type="file" id="front_view_upload" name="front_view_upload" class="file-input file-input-sm file-input-bordered w-full mt-2" accept=".jpg, .jpeg, .png">
                                 <p class="error-message hidden text-error text-xs mt-1"></p>
                             </div>
                              <div class="form-control w-full">
@@ -213,7 +213,7 @@ $user_type_thai = $user['user_type'] === 'army' ? 'กำลังพล ทบ.
                                         <img id="rear-view-preview" src="/public/assets/images/rear_view.png" alt="รูปถ่ายรถด้านหลัง" class="w-full h-full object-contain cursor-pointer">
                                     </div>
                                 </a>
-                                <input type="file" id="rear_view_upload" name="rear_view_upload" class="file-input file-input-sm file-input-bordered w-full mt-2" accept=".jpg, .jpeg, .png" required>
+                                <input type="file" id="rear_view_upload" name="rear_view_upload" class="file-input file-input-sm file-input-bordered w-full mt-2" accept=".jpg, .jpeg, .png">
                                 <p class="error-message hidden text-error text-xs mt-1"></p>
                             </div>
                         </div>

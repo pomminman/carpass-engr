@@ -1,4 +1,5 @@
 <?php
+// maintenance.php
 // ส่ง HTTP Status Code 503 Service Unavailable
 // ซึ่งจะบอก search engines ว่าเว็บไซต์กำลังปิดปรับปรุงชั่วคราว
 header('HTTP/1.1 503 Service Temporarily Unavailable');

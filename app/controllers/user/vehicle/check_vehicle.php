@@ -1,5 +1,6 @@
 <?php
 // app/controllers/user/vehicle/check_vehicle.php
+
 session_start();
 header('Content-Type: application/json');
 

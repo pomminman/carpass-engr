@@ -1,4 +1,6 @@
 <?php
+// app/models/log_helper.php
+
 // --- models/log_helper.php ---
 date_default_timezone_set('Asia/Bangkok');
 

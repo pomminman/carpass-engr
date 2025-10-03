@@ -1,5 +1,6 @@
 <?php
 // app/controllers/admin/requests/add_request_process.php
+
 session_start();
 date_default_timezone_set('Asia/Bangkok');
 
@@ -39,6 +40,7 @@ function handle_error($user_message, $log_message = '', $user_id = null) {
  * @return array An array with either a 'filename' on success or 'error' on failure.
  */
 function uploadAndCompressImage($file, $targetDir) {
+    // This check is now redundant but kept for safety within the function
     if ($file['error'] !== UPLOAD_ERR_OK) return ['error' => 'File upload error: ' . $file['error']];
     if ($file["size"] > 5 * 1024 * 1024) return ['error' => 'ไฟล์มีขนาดใหญ่เกิน 5 MB'];
     
@@ -83,13 +85,12 @@ function uploadAndCompressImage($file, $targetDir) {
  * @return string The calculated date in 'Y-m-d' format.
  */
 function calculate_pickup_date() {
-    // In a real app, holidays might be stored in the database.
     $holidays = ['2025-10-13', '2025-10-23', '2025-12-05', '2025-12-10', '2025-12-31', '2026-01-01']; 
     $working_days_to_add = 15;
     $current_date = new DateTime();
     while ($working_days_to_add > 0) {
         $current_date->modify('+1 day');
-        $day_of_week = $current_date->format('N'); // 1 (Mon) - 7 (Sun)
+        $day_of_week = $current_date->format('N');
         $date_string = $current_date->format('Y-m-d');
         if ($day_of_week < 6 && !in_array($date_string, $holidays)) {
             $working_days_to_add--;
@@ -116,7 +117,6 @@ if ($conn->connect_error) {
 }
 $conn->set_charset("utf8");
 
-// Get active application period
 $active_period = null;
 $sql_period = "SELECT id, card_expiry_date FROM application_periods WHERE is_active = 1 AND CURDATE() BETWEEN start_date AND end_date LIMIT 1";
 $result_period = $conn->query($sql_period);
@@ -131,15 +131,12 @@ $conn->begin_transaction();
 try {
     $admin_id = $_SESSION['admin_id'];
 
-    // Fetch user key for creating upload paths
     $stmt_user = $conn->prepare("SELECT user_key, user_type FROM users WHERE id = ?");
     $stmt_user->bind_param("i", $user_id);
     $stmt_user->execute();
     $user_data = $stmt_user->get_result()->fetch_assoc();
     $stmt_user->close();
-    if (!$user_data) {
-        throw new Exception("ไม่พบข้อมูลผู้ใช้");
-    }
+    if (!$user_data) throw new Exception("ไม่พบข้อมูลผู้ใช้");
 
     // --- 1. Find or Create Vehicle Record ---
     $license_plate = htmlspecialchars(strip_tags(trim($_POST['license_plate'])));
@@ -161,19 +158,35 @@ try {
     }
     $stmt_find_vehicle->close();
 
-    // --- 2. Handle File Uploads ---
+    // --- 2. Handle File Uploads (Conditionally) ---
     $request_key = bin2hex(random_bytes(10));
     $baseUploadDir = "../../../../public/uploads/" . $user_data['user_key'] . "/vehicle/" . $request_key . "/";
     
-    $photo_reg_copy = uploadAndCompressImage($_FILES["reg_copy_upload"], $baseUploadDir);
-    $photo_tax_sticker = uploadAndCompressImage($_FILES["tax_sticker_upload"], $baseUploadDir);
-    $photo_front = uploadAndCompressImage($_FILES["front_view_upload"], $baseUploadDir);
-    $photo_rear = uploadAndCompressImage($_FILES["rear_view_upload"], $baseUploadDir);
+    $photo_reg_copy_filename = null;
+    $photo_tax_sticker_filename = null;
+    $photo_front_filename = null;
+    $photo_rear_filename = null;
 
-    if (isset($photo_reg_copy['error'])) throw new Exception("อัปโหลดสำเนาทะเบียนรถไม่สำเร็จ: " . $photo_reg_copy['error']);
-    if (isset($photo_tax_sticker['error'])) throw new Exception("อัปโหลดป้ายภาษีไม่สำเร็จ: " . $photo_tax_sticker['error']);
-    if (isset($photo_front['error'])) throw new Exception("อัปโหลดรูปถ่ายด้านหน้าไม่สำเร็จ: " . $photo_front['error']);
-    if (isset($photo_rear['error'])) throw new Exception("อัปโหลดรูปถ่ายด้านหลังไม่สำเร็จ: " . $photo_rear['error']);
+    if (isset($_FILES["reg_copy_upload"]) && $_FILES["reg_copy_upload"]['error'] === UPLOAD_ERR_OK) {
+        $uploadResult = uploadAndCompressImage($_FILES["reg_copy_upload"], $baseUploadDir);
+        if (isset($uploadResult['error'])) throw new Exception("อัปโหลดสำเนาทะเบียนรถไม่สำเร็จ: " . $uploadResult['error']);
+        $photo_reg_copy_filename = $uploadResult['filename'];
+    }
+    if (isset($_FILES["tax_sticker_upload"]) && $_FILES["tax_sticker_upload"]['error'] === UPLOAD_ERR_OK) {
+        $uploadResult = uploadAndCompressImage($_FILES["tax_sticker_upload"], $baseUploadDir);
+        if (isset($uploadResult['error'])) throw new Exception("อัปโหลดป้ายภาษีไม่สำเร็จ: " . $uploadResult['error']);
+        $photo_tax_sticker_filename = $uploadResult['filename'];
+    }
+    if (isset($_FILES["front_view_upload"]) && $_FILES["front_view_upload"]['error'] === UPLOAD_ERR_OK) {
+        $uploadResult = uploadAndCompressImage($_FILES["front_view_upload"], $baseUploadDir);
+        if (isset($uploadResult['error'])) throw new Exception("อัปโหลดรูปถ่ายด้านหน้าไม่สำเร็จ: " . $uploadResult['error']);
+        $photo_front_filename = $uploadResult['filename'];
+    }
+    if (isset($_FILES["rear_view_upload"]) && $_FILES["rear_view_upload"]['error'] === UPLOAD_ERR_OK) {
+        $uploadResult = uploadAndCompressImage($_FILES["rear_view_upload"], $baseUploadDir);
+        if (isset($uploadResult['error'])) throw new Exception("อัปโหลดรูปถ่ายด้านหลังไม่สำเร็จ: " . $uploadResult['error']);
+        $photo_rear_filename = $uploadResult['filename'];
+    }
     
     // --- 3. Generate Search ID ---
     $prefix = ($_POST['vehicle_type'] === 'รถยนต์') ? 'C' : 'M';
@@ -185,11 +198,15 @@ try {
     $search_id = "{$prefix}{$buddhist_year_short}{$today_md}-{$next_seq}";
 
     // --- 4. Prepare data and Insert Request ---
-    $tax_day = str_pad($_POST['tax_day'], 2, '0', STR_PAD_LEFT);
-    $tax_month = str_pad($_POST['tax_month'], 2, '0', STR_PAD_LEFT);
-    $tax_year_ad = intval($_POST['tax_year']) - 543;
-    $tax_expiry_date = "$tax_year_ad-$tax_month-$tax_day";
-    $owner_type = $_POST['owner_type'];
+    $tax_expiry_date = null;
+    if (!empty($_POST['tax_day']) && !empty($_POST['tax_month']) && !empty($_POST['tax_year'])) {
+        $tax_day = str_pad($_POST['tax_day'], 2, '0', STR_PAD_LEFT);
+        $tax_month = str_pad($_POST['tax_month'], 2, '0', STR_PAD_LEFT);
+        $tax_year_ad = intval($_POST['tax_year']) - 543;
+        $tax_expiry_date = "$tax_year_ad-$tax_month-$tax_day";
+    }
+    
+    $owner_type = !empty($_POST['owner_type']) ? $_POST['owner_type'] : null;
     $other_owner_name = ($owner_type === 'other') ? htmlspecialchars(strip_tags(trim($_POST['other_owner_name']))) : null;
     $other_owner_relation = ($owner_type === 'other') ? htmlspecialchars(strip_tags(trim($_POST['other_owner_relation']))) : null;
     $card_pickup_date = calculate_pickup_date();
@@ -200,7 +217,7 @@ try {
     $stmt_insert_req->bind_param("iiisssssssssssssi", 
         $user_id, $vehicle_id, $active_period['id'], $request_key, $search_id, $tax_expiry_date, 
         $owner_type, $other_owner_name, $other_owner_relation, 
-        $photo_reg_copy['filename'], $photo_tax_sticker['filename'], $photo_front['filename'], $photo_rear['filename'], 
+        $photo_reg_copy_filename, $photo_tax_sticker_filename, $photo_front_filename, $photo_rear_filename, 
         $card_pickup_date, $active_period['card_expiry_date'], $card_type, $admin_id);
     
     if (!$stmt_insert_req->execute()) {
@@ -226,4 +243,3 @@ try {
 
 $conn->close();
 ?>
-

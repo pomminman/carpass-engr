@@ -30,10 +30,12 @@ if ($user_result->num_rows !== 1) {
 $user = $user_result->fetch_assoc();
 $stmt_user->close();
 
-// 3. Fetch all vehicle requests for this user
+// 3. Fetch all vehicle requests for this user with all necessary details
 $requests = [];
 $requests_sql = "SELECT 
-                    vr.id, vr.search_id, vr.status, vr.created_at,
+                    vr.id, vr.search_id, vr.status, vr.payment_status,
+                    vr.card_pickup_status, vr.card_type, vr.card_number,
+                    vr.qr_code_path, vr.created_at, vr.card_pickup_date,
                     v.license_plate, v.province, v.vehicle_type
                  FROM vehicle_requests vr
                  JOIN vehicles v ON vr.vehicle_id = v.id
@@ -57,6 +59,12 @@ $user_type_thai = $user['user_type'] === 'army' ? 'ข้าราชการ/�
 function format_value($value, $default = '-') {
     return (isset($value) && trim($value) !== '') ? htmlspecialchars($value) : $default;
 }
+
+// Helper for address formatting
+$full_address = trim("{$user['address']} ต.{$user['subdistrict']} อ.{$user['district']} จ.{$user['province']} {$user['zipcode']}");
+$display_address = !empty($user['address']) ? htmlspecialchars($full_address) : '-';
+
+$full_name = format_value($user['title'] . $user['firstname'] . '  ' . $user['lastname']);
 ?>
 
 <!-- Page content -->
@@ -80,23 +88,21 @@ function format_value($value, $default = '-') {
 
     <!-- User Profile Card -->
     <div class="card bg-base-100 shadow-lg mb-6">
-        <div class="card-body">
+        <div class="card-body p-4">
             <div class="flex items-start gap-6">
                 <div class="avatar flex-shrink-0">
                     <div class="w-28 rounded-lg">
-                        <?php if (!empty($user['photo_profile'])): ?>
-                            <img src="/public/uploads/<?php echo htmlspecialchars($user['user_key']); ?>/profile/<?php echo htmlspecialchars($user['photo_profile']); ?>" />
-                        <?php else: ?>
-                            <img src="https://placehold.co/300x300/e2e8f0/475569?text=No+Image" />
-                        <?php endif; ?>
+                        <a href="<?php echo !empty($user['photo_profile']) ? '/public/uploads/' . htmlspecialchars($user['user_key']) . '/profile/' . htmlspecialchars($user['photo_profile']) : 'https://placehold.co/400x400/e2e8f0/475569?text=No+Image'; ?>" data-fancybox="profile" data-caption="<?php echo $full_name; ?>">
+                            <img src="<?php echo !empty($user['photo_profile_thumb']) ? '/public/uploads/' . htmlspecialchars($user['user_key']) . '/profile/' . htmlspecialchars($user['photo_profile_thumb']) : 'https://placehold.co/300x300/e2e8f0/475569?text=No+Image'; ?>" />
+                        </a>
                     </div>
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-3 text-sm flex-grow">
-                    <div><strong>ชื่อ-สกุล:</strong> <span class="font-semibold"><?php echo format_value($user['title'] . $user['firstname'] . '  ' . $user['lastname']); ?></span></div>
+                    <div><strong>ชื่อ-สกุล:</strong> <span class="font-semibold"><?php echo $full_name; ?></span></div>
                     <div><strong>ประเภท:</strong> <span><?php echo $user_type_thai; ?></span></div>
                     <div><strong>เบอร์โทร:</strong> <span><?php echo format_value($user['phone_number']); ?></span></div>
                     <div><strong>เลขบัตรประชาชน:</strong> <span><?php echo format_value($user['national_id']); ?></span></div>
-                    <div class="col-span-full"><strong>ที่อยู่:</strong> <span><?php echo format_value("{$user['address']} ต.{$user['subdistrict']} อ.{$user['district']} จ.{$user['province']} {$user['zipcode']}"); ?></span></div>
+                    <div class="col-span-full"><strong>ที่อยู่:</strong> <span><?php echo $display_address; ?></span></div>
                     <?php if ($user['user_type'] === 'army'): ?>
                         <div><strong>สังกัด:</strong> <span><?php echo format_value($user['work_department']); ?></span></div>
                         <div><strong>ตำแหน่ง:</strong> <span><?php echo format_value($user['position']); ?></span></div>
@@ -116,47 +122,77 @@ function format_value($value, $default = '-') {
         </div>
     </div>
     
-    <!-- Vehicle Requests Table (omitted for brevity as it's unchanged) -->
+    <!-- Vehicle Requests Table -->
     <div class="card bg-base-100 shadow-lg">
-        <div class="card-body">
+        <div class="card-body p-4">
             <h2 class="card-title text-lg"><i class="fa-solid fa-car"></i> รายการยานพาหนะทั้งหมด</h2>
             <div class="overflow-x-auto mt-4">
                 <table class="table table-sm" id="requestsTable">
                     <thead class="bg-slate-50">
                         <tr>
                             <th>รหัสคำร้อง</th>
-                            <th>ทะเบียนรถ</th>
-                            <th>ประเภทรถ</th>
-                            <th>วันที่ยื่น</th>
                             <th>สถานะ</th>
-                            <th></th>
+                            <th>เลขที่บัตร</th>
+                            <th class="text-center">ชำระเงิน</th>
+                            <th>ทะเบียนรถ</th>
+                            <th class="text-center">รถ</th>
+                            <th>บัตร</th>
+                            <th>วันที่ยื่น</th>
+                            <th>วันที่นัดรับบัตร</th>
+                            <th>การกระทำ</th>
                         </tr>
                     </thead>
                     <tbody>
                         <?php if (empty($requests)): ?>
-                            <tr><td colspan="6" class="text-center text-slate-500 py-4">ไม่พบข้อมูลคำร้องสำหรับผู้ใช้งานนี้</td></tr>
+                            <tr><td colspan="10" class="text-center text-slate-500 py-4">ไม่พบข้อมูลคำร้องสำหรับผู้ใช้งานนี้</td></tr>
                         <?php else: ?>
                             <?php foreach ($requests as $req): ?>
-                            <tr class="hover:bg-slate-50">
+                            <tr class="hover:bg-slate-50" data-request-id="<?php echo $req['id']; ?>">
                                 <td class="font-semibold whitespace-nowrap"><?php echo htmlspecialchars($req['search_id']); ?></td>
-                                <td class="whitespace-nowrap"><?php echo htmlspecialchars($req['license_plate'] . ' ' . $req['province']); ?></td>
-                                <td class="whitespace-nowrap"><?php echo htmlspecialchars($req['vehicle_type']); ?></td>
-                                <td class="whitespace-nowrap"><?php echo format_thai_datetime($req['created_at']); ?></td>
-                                <td>
+                                <td class="whitespace-nowrap">
                                     <?php
                                         $status_badge = '';
                                         switch ($req['status']) {
-                                            case 'pending': $status_badge = '<div class="badge badge-warning">รออนุมัติ</div>'; break;
-                                            case 'approved': $status_badge = '<div class="badge badge-success">อนุมัติแล้ว</div>'; break;
-                                            case 'rejected': $status_badge = '<div class="badge badge-error">ไม่ผ่าน</div>'; break;
+                                            case 'pending': $status_badge = '<div class="badge badge-warning badge-sm">รออนุมัติ</div>'; break;
+                                            case 'approved': $status_badge = '<div class="badge badge-success badge-sm">อนุมัติ</div>'; break;
+                                            case 'rejected': $status_badge = '<div class="badge badge-error badge-sm">ไม่ผ่าน</div>'; break;
                                         }
                                         echo $status_badge;
                                     ?>
                                 </td>
-                                <td class="whitespace-nowrap">
-                                    <button class="btn btn-xs btn-primary inspect-btn" data-id="<?php echo $req['id']; ?>">
-                                        <span><i class="fa-solid fa-search mr-1"></i>ดูรายละเอียด</span>
+                                <td class="whitespace-nowrap"><?php echo htmlspecialchars($req['card_number'] ?? '-'); ?></td>
+                                <td class="text-center whitespace-nowrap">
+                                    <?php if ($req['payment_status'] === 'paid' && $req['card_pickup_status'] == 1): ?>
+                                        <i class="fa-solid fa-check-circle text-success"></i>
+                                    <?php else: ?>
+                                        <i class="fa-solid fa-times-circle text-error"></i>
+                                    <?php endif; ?>
+                                </td>
+                                <td class="whitespace-nowrap"><?php echo htmlspecialchars($req['license_plate'] . ' ' . $req['province']); ?></td>
+                                <td class="text-center whitespace-nowrap">
+                                    <?php if ($req['vehicle_type'] === 'รถยนต์'): ?>
+                                        <span class="text-blue-600"><i class="fa-solid fa-car-side" title="รถยนต์"></i></span>
+                                    <?php else: ?>
+                                        <span class="text-green-600"><i class="fa-solid fa-motorcycle" title="รถจักรยานยนต์"></i></span>
+                                    <?php endif; ?>
+                                </td>
+                                <td class="whitespace-nowrap"><?php echo $req['card_type'] === 'internal' ? 'ภายใน' : 'ภายนอก'; ?></td>
+                                <td class="whitespace-nowrap"><?php echo format_thai_datetime_short($req['created_at']); ?></td>
+                                <td class="whitespace-nowrap"><?php echo format_thai_date_short($req['card_pickup_date']); ?></td>
+                                <td class="whitespace-nowrap space-x-1">
+                                    <button class="btn btn-xs btn-square btn-primary inspect-btn" data-id="<?php echo $req['id']; ?>" title="ตรวจสอบรายละเอียด">
+                                        <i class="fa-solid fa-search"></i>
                                     </button>
+                                    <?php if ($req['status'] === 'approved'): ?>
+                                        <button class="btn btn-xs btn-square <?php echo ($req['payment_status'] !== 'paid') ? 'btn-success' : 'btn-ghost text-success'; ?> payment-btn" data-id="<?php echo $req['id']; ?>" title="<?php echo ($req['payment_status'] !== 'paid') ? 'ชำระเงิน/รับบัตร' : 'ดูข้อมูล'; ?>">
+                                            <i class="fa-solid <?php echo ($req['payment_status'] !== 'paid') ? 'fa-hand-holding-dollar' : 'fa-circle-check'; ?>"></i>
+                                        </button>
+                                        <?php if (!empty($req['qr_code_path'])): ?>
+                                            <a href="../../../controllers/admin/requests/download_qr.php?file=<?php echo urlencode($req['qr_code_path']); ?>" class="btn btn-xs btn-square btn-accent" title="ดาวน์โหลด QR Code">
+                                                <i class="fa-solid fa-download"></i>
+                                            </a>
+                                        <?php endif; ?>
+                                    <?php endif; ?>
                                 </td>
                             </tr>
                             <?php endforeach; ?>

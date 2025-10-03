@@ -1,5 +1,5 @@
 <?php
-// --- app/controllers/admin/login/process_login.php (ฉบับปรับปรุง) ---
+// app/controllers/admin/login/process_login.php
 
 session_start();
 require_once '../../../models/db_config.php';

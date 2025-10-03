@@ -1,5 +1,6 @@
 <?php
 // app/controllers/user/vehicle/add_vehicle_process.php
+
 session_start();
 date_default_timezone_set('Asia/Bangkok');
 
@@ -22,7 +23,7 @@ function handle_error($user_message, $log_message = '') {
     exit();
 }
 
-function uploadAndCompressImage($file, $targetDir) {
+function processAndSaveImageVersions($file, $targetDir) {
     if ($file['error'] !== UPLOAD_ERR_OK) return ['error' => 'File upload error: ' . $file['error']];
     if ($file["size"] > 5 * 1024 * 1024) return ['error' => 'ไฟล์มีขนาดใหญ่เกิน 5 MB'];
     
@@ -34,40 +35,73 @@ function uploadAndCompressImage($file, $targetDir) {
     if (!file_exists($targetDir)) mkdir($targetDir, 0777, true);
     
     $extension = strtolower(pathinfo($file["name"], PATHINFO_EXTENSION));
-    $newFileName = bin2hex(random_bytes(16)) . '.' . $extension;
-    $finalTargetPath = $targetDir . $newFileName;
-    $quality = 75;
+    $baseFileName = bin2hex(random_bytes(16));
 
-    $image = ($mime_type == "image/jpeg") ? @imagecreatefromjpeg($file["tmp_name"]) : @imagecreatefrompng($file["tmp_name"]);
-    if (!$image) return ['error' => 'ไม่สามารถประมวลผลไฟล์รูปภาพได้'];
+    $source_image = ($mime_type == "image/jpeg") ? @imagecreatefromjpeg($file["tmp_name"]) : @imagecreatefrompng($file["tmp_name"]);
+    if (!$source_image) return ['error' => 'ไม่สามารถประมวลผลไฟล์รูปภาพได้'];
 
     if ($mime_type == "image/jpeg" && function_exists('exif_read_data')) {
         $exif = @exif_read_data($file["tmp_name"]);
         if (!empty($exif['Orientation'])) {
             switch ($exif['Orientation']) {
-                case 3: $image = imagerotate($image, 180, 0); break;
-                case 6: $image = imagerotate($image, -90, 0); break;
-                case 8: $image = imagerotate($image, 90, 0); break;
+                case 3: $source_image = imagerotate($source_image, 180, 0); break;
+                case 6: $source_image = imagerotate($source_image, -90, 0); break;
+                case 8: $source_image = imagerotate($source_image, 90, 0); break;
             }
         }
     }
     
-    if ($mime_type == "image/jpeg") {
-        imagejpeg($image, $finalTargetPath, $quality);
-    } else {
-        imagepng($image, $finalTargetPath, 7); // Compression level for PNG
+    $versions = [
+        'normal' => ['width' => 1280, 'height' => 1280, 'suffix' => ''],
+        'thumb'  => ['width' => 400, 'height' => 400, 'suffix' => '_thumb'],
+    ];
+    $generated_files = [];
+    list($original_width, $original_height) = getimagesize($file["tmp_name"]);
+
+    foreach ($versions as $key => $version) {
+        $max_width = $version['width'];
+        $max_height = $version['height'];
+        $new_width = $original_width;
+        $new_height = $original_height;
+
+        if ($original_width > $max_width || $original_height > $max_height) {
+            $ratio = $original_width / $original_height;
+            if ($max_width / $max_height > $ratio) {
+                $new_width = $max_height * $ratio;
+                $new_height = $max_height;
+            } else {
+                $new_height = $max_width / $ratio;
+                $new_width = $max_width;
+            }
+        }
+        
+        $new_image = imagecreatetruecolor(floor($new_width), floor($new_height));
+        if ($mime_type == "image/png") {
+            imagealphablending($new_image, false);
+            imagesavealpha($new_image, true);
+        }
+        imagecopyresampled($new_image, $source_image, 0, 0, 0, 0, floor($new_width), floor($new_height), $original_width, $original_height);
+        
+        $newFileName = $baseFileName . $version['suffix'] . '.' . $extension;
+        $finalTargetPath = $targetDir . $newFileName;
+
+        if ($mime_type == "image/jpeg") imagejpeg($new_image, $finalTargetPath, 80);
+        else imagepng($new_image, $finalTargetPath, 7);
+        
+        imagedestroy($new_image);
+        $generated_files[$key] = $newFileName;
     }
-    imagedestroy($image);
-    return ['filename' => $newFileName];
+    imagedestroy($source_image);
+    return ['filenames' => $generated_files];
 }
 
 function calculate_pickup_date() {
-    $holidays = ['2025-10-13', '2025-10-23', '2025-12-05', '2025-12-10', '2025-12-31', '2026-01-01']; // Example holidays
+    $holidays = ['2025-10-13', '2025-10-23', '2025-12-05', '2025-12-10', '2025-12-31', '2026-01-01'];
     $working_days_to_add = 15;
     $current_date = new DateTime();
     while ($working_days_to_add > 0) {
         $current_date->modify('+1 day');
-        $day_of_week = $current_date->format('N'); // 1 (Mon) - 7 (Sun)
+        $day_of_week = $current_date->format('N');
         $date_string = $current_date->format('Y-m-d');
         if ($day_of_week < 6 && !in_array($date_string, $holidays)) {
             $working_days_to_add--;
@@ -86,7 +120,6 @@ $conn = new mysqli($servername, $username, $password, $dbname);
 if ($conn->connect_error) handle_error("เกิดข้อผิดพลาดในการเชื่อมต่อกับฐานข้อมูล");
 $conn->set_charset("utf8");
 
-// Get active application period
 $active_period = null;
 $sql_period = "SELECT id, card_expiry_date FROM application_periods WHERE is_active = 1 AND CURDATE() BETWEEN start_date AND end_date LIMIT 1";
 $result_period = $conn->query($sql_period);
@@ -131,10 +164,10 @@ try {
     $request_key = bin2hex(random_bytes(10));
     $baseUploadDir = "../../../../public/uploads/" . $user_data['user_key'] . "/vehicle/" . $request_key . "/";
     
-    $photo_reg_copy = uploadAndCompressImage($_FILES["reg_copy_upload"], $baseUploadDir);
-    $photo_tax_sticker = uploadAndCompressImage($_FILES["tax_sticker_upload"], $baseUploadDir);
-    $photo_front = uploadAndCompressImage($_FILES["front_view_upload"], $baseUploadDir);
-    $photo_rear = uploadAndCompressImage($_FILES["rear_view_upload"], $baseUploadDir);
+    $photo_reg_copy = processAndSaveImageVersions($_FILES["reg_copy_upload"], $baseUploadDir);
+    $photo_tax_sticker = processAndSaveImageVersions($_FILES["tax_sticker_upload"], $baseUploadDir);
+    $photo_front = processAndSaveImageVersions($_FILES["front_view_upload"], $baseUploadDir);
+    $photo_rear = processAndSaveImageVersions($_FILES["rear_view_upload"], $baseUploadDir);
 
     if (isset($photo_reg_copy['error'])) throw new Exception("อัปโหลดสำเนาทะเบียนรถไม่สำเร็จ: " . $photo_reg_copy['error']);
     if (isset($photo_tax_sticker['error'])) throw new Exception("อัปโหลดป้ายภาษีไม่สำเร็จ: " . $photo_tax_sticker['error']);
@@ -168,12 +201,15 @@ try {
     $card_pickup_date = calculate_pickup_date();
     $card_type = ($user_data['user_type'] === 'army') ? 'internal' : 'external';
 
-    $sql_insert_req = "INSERT INTO vehicle_requests (user_id, vehicle_id, period_id, request_key, search_id, tax_expiry_date, owner_type, other_owner_name, other_owner_relation, photo_reg_copy, photo_tax_sticker, photo_front, photo_rear, card_pickup_date, card_expiry, card_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+    $sql_insert_req = "INSERT INTO vehicle_requests (user_id, vehicle_id, period_id, request_key, search_id, tax_expiry_date, owner_type, other_owner_name, other_owner_relation, photo_reg_copy, photo_reg_copy_thumb, photo_tax_sticker, photo_tax_sticker_thumb, photo_front, photo_front_thumb, photo_rear, photo_rear_thumb, card_pickup_date, card_expiry, card_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
     $stmt_insert_req = $conn->prepare($sql_insert_req);
-    $stmt_insert_req->bind_param("iiisssssssssssss", 
+    $stmt_insert_req->bind_param("iiisssssssssssssssss", 
         $user_id, $vehicle_id, $active_period['id'], $request_key, $search_id, $tax_expiry_date, 
         $owner_type, $other_owner_name, $other_owner_relation, 
-        $photo_reg_copy['filename'], $photo_tax_sticker['filename'], $photo_front['filename'], $photo_rear['filename'], 
+        $photo_reg_copy['filenames']['normal'], $photo_reg_copy['filenames']['thumb'],
+        $photo_tax_sticker['filenames']['normal'], $photo_tax_sticker['filenames']['thumb'],
+        $photo_front['filenames']['normal'], $photo_front['filenames']['thumb'],
+        $photo_rear['filenames']['normal'], $photo_rear['filenames']['thumb'],
         $card_pickup_date, $active_period['card_expiry_date'], $card_type);
     
     if (!$stmt_insert_req->execute()) throw new Exception("ไม่สามารถบันทึกข้อมูลคำร้องได้: " . $stmt_insert_req->error);
@@ -190,10 +226,10 @@ try {
 
 } catch (Exception $e) {
     $conn->rollback();
-    // [เพิ่ม] บันทึก Log เมื่อเกิดข้อผิดพลาด
     log_activity($conn, 'create_vehicle_request_fail', ['error' => $e->getMessage()]);
     handle_error($e->getMessage());
 }
 
 $conn->close();
 ?>
+

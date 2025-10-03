@@ -1,4 +1,6 @@
 <?php
+// app/views/user/register/register.php
+
 // --- [Security] เริ่มต้น Session ---
 session_start();
 
@@ -37,6 +39,10 @@ $conn_dept->close(); // ปิดการเชื่อมต่อหลั�
     <link rel="apple-touch-icon" sizes="180x180" href="/public/assets/favicon/apple-touch-icon.png" />
     <meta name="apple-mobile-web-app-title" content="carpass engrdept" />
     <link rel="manifest" href="/public/assets/favicon/site.webmanifest" />
+
+    <!-- [NEW] Toastify.js Library -->
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
 
     <!-- Local CSS -->
     <link rel="stylesheet" href="/lib/daisyui@4.12.10/dist/full.min.css" type="text/css" />
@@ -90,7 +96,6 @@ $conn_dept->close(); // ปิดการเชื่อมต่อหลั�
     </style>
 </head>
 <body class="flex flex-col min-h-screen">
-    <div id="alert-container" class="toast toast-top toast-center sm:toast-end z-50"></div>
     
     <header class="w-full navbar bg-base-100 shadow-md z-30 sticky top-0">
         <div class="container mx-auto">
@@ -406,7 +411,7 @@ $conn_dept->close(); // ปิดการเชื่อมต่อหลั�
     </dialog>
     <!-- [แก้ไข] เปลี่ยนคลาสของ Modal เพื่อให้แสดงผลกึ่งกลางบนทุกอุปกรณ์ -->
     <dialog id="confirmModal" class="modal modal-middle">
-      <div class="modal-box w-11/12 max-w-3xl">
+      <div class="modal-box w-11/12 max-w-4xl">
         <h3 class="font-bold text-lg">โปรดตรวจสอบข้อมูลของท่าน</h3>
         <div id="summary-content" class="py-4 space-y-4 text-sm"></div>
         <div class="modal-action">
@@ -439,7 +444,6 @@ $conn_dept->close(); // ปิดการเชื่อมต่อหลั�
             const verifyPhoneInput = document.getElementById('verify-phone');
             const verifyNidInput = document.getElementById('verify-nid');
             const mainFormContent = document.getElementById('main-form-content');
-            const alertContainer = document.getElementById('alert-container');
             const workInfoSection = document.getElementById('work-info-section');
             const personalInfoForm = document.getElementById('personalInfoForm');
             const resetFormBtn = document.getElementById('reset-form-btn');
@@ -556,7 +560,6 @@ $conn_dept->close(); // ปิดการเชื่อมต่อหลั�
                     showError(inputElement, fieldToCheck === 'phoneExists' ? 'เบอร์โทรศัพท์นี้มีอยู่ในระบบแล้ว' : 'เลขบัตรประชาชนนี้มีอยู่ในระบบแล้ว');
                 } else {
                     statusObject.isAvailable = true;
-                    // [แก้ไข] เพิ่มการแสดง Alert และข้อความใต้ช่องกรอก
                     showSuccess(inputElement, successMessage);
                     showAlert(successMessage, 'success');
                 }
@@ -619,7 +622,6 @@ $conn_dept->close(); // ปิดการเชื่อมต่อหลั�
                 
                 const fieldsToValidate = personalInfoForm.querySelectorAll('input, select, textarea');
                 fieldsToValidate.forEach(field => {
-                    // ตรวจสอบเฉพาะ field ที่มองเห็น (ไม่ได้ถูกซ่อน)
                     if (field.offsetParent !== null) {
                         if (!validateField(field)) {
                             isFormValid = false;
@@ -632,7 +634,6 @@ $conn_dept->close(); // ปิดการเชื่อมต่อหลั�
                     confirmModal.showModal();
                 } else {
                     showAlert('กรุณากรอกข้อมูลให้ครบถ้วนและถูกต้อง', 'error');
-                    // [ปรับปรุง] เลื่อนไปยังช่องแรกที่กรอกผิด
                     const firstErrorField = personalInfoForm.querySelector('.input-error, .select-error, .file-input-error');
                      if (firstErrorField) {
                          firstErrorField.focus();
@@ -649,7 +650,7 @@ $conn_dept->close(); // ปิดการเชื่อมต่อหลั�
 
             // --- ฟังก์ชันสำหรับตรวจสอบความถูกต้องของแต่ละช่องข้อมูล ---
             function validateField(field) {
-                if (field.offsetParent === null) return true; // ไม่ต้อง validate field ที่ถูกซ่อน
+                if (field.offsetParent === null) return true; 
                 
                 let isValid = true;
                 const value = field.value.trim();
@@ -704,7 +705,7 @@ $conn_dept->close(); // ปิดการเชื่อมต่อหลั�
                 if (feedbackElement) {
                     feedbackElement.textContent = message;
                     feedbackElement.classList.remove('hidden', 'text-green-600');
-                    feedbackElement.classList.add('text-red-500'); // Ensure red color
+                    feedbackElement.classList.add('text-red-500'); 
                 }
                 
                 const target = element.closest('label.input') || element;
@@ -810,23 +811,26 @@ $conn_dept->close(); // ปิดการเชื่อมต่อหลั�
 
             // --- ฟังก์ชันสำหรับแสดง Alert (Toast) ---
             function showAlert(message, type = 'info') {
-                const alertId = `alert-${Date.now()}`;
-                const alertElement = document.createElement('div');
-                alertElement.id = alertId;
-                alertElement.className = `alert alert-${type} alert-soft shadow-lg`;
-                let icon = '';
-                if (type === 'success') icon = '<i class="fa-solid fa-circle-check"></i>';
-                else if (type === 'error') icon = '<i class="fa-solid fa-circle-xmark"></i>';
-                alertElement.innerHTML = `<div class="flex items-center">${icon}<span class="ml-2 text-xs sm:text-sm whitespace-nowrap">${message}</span></div>`;
-                alertContainer.appendChild(alertElement);
-                setTimeout(() => {
-                    const existingAlert = document.getElementById(alertId);
-                    if (existingAlert) {
-                        existingAlert.style.transition = 'opacity 0.3s ease';
-                        existingAlert.style.opacity = '0';
-                        setTimeout(() => existingAlert.remove(), 300);
-                    }
-                }, 5000);
+                const colors = {
+                    success: "linear-gradient(to right, #00b09b, #96c93d)",
+                    error: "linear-gradient(to right, #ff5f6d, #ffc371)",
+                    info: "linear-gradient(to right, #2193b0, #6dd5ed)",
+                    warning: "linear-gradient(to right, #f39c12, #f1c40f)"
+                };
+
+                Toastify({
+                    text: message,
+                    duration: 3000,
+                    newWindow: true,
+                    close: true,
+                    gravity: "top", // `top` or `bottom`
+                    position: "center", // `left`, `center` or `right`
+                    stopOnFocus: true, // Prevents dismissing of toast on hover
+                    style: {
+                        background: colors[type] || colors['info'],
+                    },
+                    onClick: function(){} // Callback after click
+                }).showToast();
             }
 
             // --- ฟังก์ชันสำหรับส่งข้อมูลไปตรวจสอบกับฐานข้อมูล ---
@@ -954,3 +958,4 @@ $conn_dept->close(); // ปิดการเชื่อมต่อหลั�
     </script>
 </body>
 </html>
+

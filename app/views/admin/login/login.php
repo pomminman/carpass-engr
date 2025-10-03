@@ -1,4 +1,6 @@
 <?php
+// app/views/admin/login/login.php
+
 session_start();
 
 // 1. ถ้าแอดมินล็อกอินอยู่แล้ว ให้ redirect ไปที่ dashboard
@@ -12,6 +14,16 @@ $login_error = '';
 if (isset($_SESSION['admin_login_error'])) {
     $login_error = $_SESSION['admin_login_error'];
     unset($_SESSION['admin_login_error']);
+}
+
+// [NEW] จัดการข้อความ Flash Message (เช่น จากการ Logout)
+$flash_message = '';
+$flash_status = '';
+if (isset($_SESSION['flash_message'])) {
+    $flash_message = $_SESSION['flash_message'];
+    $flash_status = $_SESSION['flash_status'];
+    unset($_SESSION['flash_message']);
+    unset($_SESSION['flash_status']);
 }
 ?>
 <!DOCTYPE html>
@@ -33,6 +45,10 @@ if (isset($_SESSION['admin_login_error'])) {
     <link rel="stylesheet" href="/lib/daisyui@4.12.10/dist/full.min.css" type="text/css" />
     <link rel="stylesheet" href="/lib/google-fonts-prompt/prompt.css">
     <link rel="stylesheet" href="/lib/fontawesome-free-7.0.1-web/css/all.min.css">
+    
+    <!-- [NEW] Toastify.js Library -->
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
 
     <!-- Local JS -->
     <script src="/lib/tailwindcss/tailwindcss.js"></script>
@@ -58,7 +74,7 @@ if (isset($_SESSION['admin_login_error'])) {
         }
     </style>
 </head>
-<body>
+<body data-flash-message="<?php echo htmlspecialchars($flash_message); ?>" data-flash-status="<?php echo htmlspecialchars($flash_status); ?>">
     <div class="min-h-screen flex flex-col items-center justify-center p-4">
         <div class="w-full max-w-sm">
             <!-- Logo and Title -->
@@ -130,6 +146,30 @@ if (isset($_SESSION['admin_login_error'])) {
         document.addEventListener('DOMContentLoaded', function() {
             const form = document.getElementById('adminLoginForm');
             
+            // [NEW] Trigger Toastify for flash messages (e.g., from logout)
+            const flashMessage = document.body.dataset.flashMessage;
+            const flashStatus = document.body.dataset.flashStatus;
+            if (flashMessage && flashStatus) {
+                const colors = {
+                    success: "linear-gradient(to right, #00b09b, #96c93d)",
+                    error: "linear-gradient(to right, #ff5f6d, #ffc371)",
+                    info: "linear-gradient(to right, #2193b0, #6dd5ed)",
+                    warning: "linear-gradient(to right, #f39c12, #f1c40f)"
+                };
+                Toastify({
+                    text: flashMessage,
+                    duration: 3000,
+                    newWindow: true,
+                    close: true,
+                    gravity: "top",
+                    position: "right",
+                    stopOnFocus: true,
+                    style: {
+                        background: colors[flashStatus] || colors['info'],
+                    },
+                }).showToast();
+            }
+
             const showError = (input, message) => {
                 const formControl = input.closest('.form-control');
                 const errorElement = formControl.querySelector('.error-message');

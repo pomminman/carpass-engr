@@ -1,5 +1,6 @@
 <?php
 // app/controllers/admin/activity/log_admin_process.php
+
 session_start();
 header('Content-Type: application/json');
 date_default_timezone_set('Asia/Bangkok');

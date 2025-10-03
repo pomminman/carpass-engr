@@ -1,4 +1,5 @@
 <?php
+// index.php
 // เริ่มต้น session เพื่อตรวจสอบสถานะการล็อกอิน
 session_start();
 

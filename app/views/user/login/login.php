@@ -1,25 +1,27 @@
 <?php
+// app/views/user/login/login.php
+
 session_start();
 
-// 1. [แก้ไข] ถ้าล็อกอินอยู่แล้ว ให้ redirect ไปที่ home
+// 1. ถ้าล็อกอินอยู่แล้ว ให้ redirect ไปที่ home
 if (isset($_SESSION['loggedin']) && $_SESSION['loggedin'] === true) {
-    header("Location: ../home/home.php");
+    header("Location: ../home/dashboard.php");
     exit;
 }
 
-// 2. [แก้ไข] จัดการข้อความ error และ success
-$login_error = '';
-$logout_message = '';
+// 2. จัดการข้อความ error และ success สำหรับ Toastify
+$flash_message = '';
+$flash_status = '';
 
-// ตรวจสอบข้อความ error จากการล็อกอินไม่สำเร็จ
 if (isset($_SESSION['login_error'])) {
-    $login_error = $_SESSION['login_error'];
+    $flash_message = $_SESSION['login_error'];
+    $flash_status = 'error';
     unset($_SESSION['login_error']);
 }
 
-// ตรวจสอบข้อความ success จากการออกจากระบบ
 if (isset($_SESSION['logout_message'])) {
-    $logout_message = $_SESSION['logout_message'];
+    $flash_message = $_SESSION['logout_message'];
+    $flash_status = 'success';
     unset($_SESSION['logout_message']);
 }
 ?>
@@ -42,6 +44,10 @@ if (isset($_SESSION['logout_message'])) {
     <link rel="stylesheet" href="/lib/google-fonts-prompt/prompt.css">
     <link rel="stylesheet" href="/lib/fontawesome-free-7.0.1-web/css/all.min.css">
 
+    <!-- [NEW] Toastify.js Library -->
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+
     <!-- Local JS -->
     <script src="/lib/tailwindcss/tailwindcss.js"></script>
 
@@ -50,23 +56,9 @@ if (isset($_SESSION['logout_message'])) {
             font-family: 'Prompt', sans-serif;
         }
         .error-message { color: #ef4444; font-size: 0.75rem; margin-top: 0.25rem; }
-        .alert-soft {
-            border-width: 1px;
-        }
-        .alert-error.alert-soft {
-            background-color: #fee2e2; /* red-100 */
-            border-color: #fca5a5; /* red-300 */
-            color: #b91c1c; /* red-700 */
-        }
-        .alert-success.alert-soft {
-            background-color: #dcfce7; /* green-100 */
-            border-color: #86efac; /* green-300 */
-            color: #166534; /* green-700 */
-        }
     </style>
 </head>
-<body>
-    <div id="alert-container" class="toast toast-top toast-center z-50"></div>
+<body data-flash-message="<?php echo htmlspecialchars($flash_message); ?>" data-flash-status="<?php echo htmlspecialchars($flash_status); ?>">
 
     <div class="min-h-screen flex flex-col md:flex-row">
         <!-- Left Side: Branding -->
@@ -98,8 +90,6 @@ if (isset($_SESSION['logout_message'])) {
                         </label>
                          <p class="error-message hidden"></p>
                     </div>
-
-                    <div id="login-error-container"></div>
 
                     <div class="mt-4">
                         <button type="submit" class="btn btn-sm btn-primary w-full">
@@ -151,8 +141,6 @@ if (isset($_SESSION['logout_message'])) {
             </form>
             <h3 class="font-bold text-lg mb-3"><i class="fa-solid fa-headset mr-2"></i>ติดต่อสอบถาม</h3>
             <div class="space-y-3 text-sm">
-                
-                <!-- Card for Location and Hours -->
                 <div class="card bg-base-200 border">
                     <div class="card-body p-3">
                         <div class="space-y-2">
@@ -173,20 +161,13 @@ if (isset($_SESSION['logout_message'])) {
                         </div>
                     </div>
                 </div>
-
-                <!-- Card for Contact Channels -->
                 <div class="card bg-base-200 border">
                     <div class="card-body p-3 space-y-2">
                         <div>
                             <p class="font-semibold">สอบถามเรื่องเอกสารและติดตามสถานะ:</p>
                             <div class="pl-2">
-                                <p>
-                                    <i class="fa-solid fa-phone w-4 text-base-content/60"></i>
-                                    <a href="tel:032337014" class="link link-hover">032-337-014</a> ต่อ 5-3132 (กยข.กช.)
-                                </p>
-                                <a href="https://lin.ee/NeGjmgs" target="_blank" class="btn btn-xs btn-success no-underline mt-1">
-                                    <span class="text-white"><i class="fab fa-line"></i> Line: บัตรผ่านยานพาหนะ กรมการทหารช่าง</span>
-                                </a>
+                                <p><i class="fa-solid fa-phone w-4 text-base-content/60"></i> <a href="tel:032337014" class="link link-hover">032-337-014</a> ต่อ 5-3132 (กยข.กช.)</p>
+                                <a href="https://lin.ee/NeGjmgs" target="_blank" class="btn btn-xs btn-success no-underline mt-1"><span class="text-white"><i class="fab fa-line"></i> Line: บัตรผ่านยานพาหนะ กรมการทหารช่าง</span></a>
                             </div>
                         </div>
                         <div>
@@ -198,146 +179,88 @@ if (isset($_SESSION['logout_message'])) {
                         </div>
                     </div>
                 </div>
-
             </div>
         </div>
         <form method="dialog" class="modal-backdrop"><button>close</button></form>
     </dialog>
 
-
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            function showAlert(message, type = 'info') {
-                const alertContainer = document.getElementById('alert-container');
-                const alertId = `alert-${Date.now()}`;
-                const alertElement = document.createElement('div');
-                alertElement.id = alertId;
-                
-                let icon = '';
-                let alertClass = '';
-
-                if (type === 'error') {
-                    icon = '<i class="fa-solid fa-circle-xmark"></i>';
-                    alertClass = 'alert-error';
-                } else if (type === 'success') {
-                    icon = '<i class="fa-solid fa-circle-check"></i>';
-                    alertClass = 'alert-success';
-                }
-                
-                alertElement.className = `alert ${alertClass} alert-soft shadow-lg`;
-                alertElement.innerHTML = `<div class="flex items-center">${icon}<span class="ml-2">${message}</span></div>`;
-                alertContainer.appendChild(alertElement);
-
-                setTimeout(() => {
-                    const existingAlert = document.getElementById(alertId);
-                    if (existingAlert) {
-                        existingAlert.style.transition = 'opacity 0.3s ease';
-                        existingAlert.style.opacity = '0';
-                        setTimeout(() => existingAlert.remove(), 300);
-                    }
-                }, 3000);
+            // --- Toastify Notification Function ---
+            function showToast(message, type = 'info') {
+                const colors = {
+                    success: "linear-gradient(to right, #00b09b, #96c93d)",
+                    error: "linear-gradient(to right, #ff5f6d, #ffc371)",
+                    info: "linear-gradient(to right, #2193b0, #6dd5ed)"
+                };
+                Toastify({
+                    text: message,
+                    duration: 3000,
+                    newWindow: true,
+                    close: true,
+                    gravity: "top",
+                    position: "right",
+                    stopOnFocus: true,
+                    style: { background: colors[type] || colors['info'] },
+                }).showToast();
             }
 
+            // --- Field Validation & Formatting ---
             function showError(element, message) {
                 const parent = element.closest('.form-control');
-                if (!parent) return;
                 const errorElement = parent.querySelector('.error-message');
-                if (errorElement) {
-                    errorElement.textContent = message;
-                    errorElement.classList.remove('hidden');
-                }
-                const target = element.closest('label.input') || element;
-                target.classList.add('input-error');
+                errorElement.textContent = message;
+                errorElement.classList.remove('hidden');
+                element.closest('label.input').classList.add('input-error');
             }
 
             function clearFeedback(element) {
                 const parent = element.closest('.form-control');
-                if (!parent) return;
                 const errorElement = parent.querySelector('.error-message');
-                if (errorElement) {
-                    errorElement.textContent = '';
-                    errorElement.classList.add('hidden');
-                }
-                const target = element.closest('label.input') || element;
-                target.classList.remove('input-error');
+                errorElement.classList.add('hidden');
+                element.closest('label.input').classList.remove('input-error');
             }
-
+            
             function formatInput(input, pattern) {
                 const numbers = input.value.replace(/\D/g, '');
                 let result = '';
                 let patternIndex = 0;
                 let numbersIndex = 0;
                 while(patternIndex < pattern.length && numbersIndex < numbers.length) {
-                    if (pattern[patternIndex] === '-') {
-                        result += '-';
-                        patternIndex++;
-                    } else {
-                        result += numbers[numbersIndex];
-                        patternIndex++;
-                        numbersIndex++;
-                    }
+                    result += pattern[patternIndex] === '-' ? '-' : numbers[numbersIndex++];
+                    patternIndex++;
                 }
                 input.value = result;
             }
-            
+
+            // --- Initial Page Load Actions ---
             const urlParams = new URLSearchParams(window.location.search);
-            
             if (urlParams.get('status') === 'success') {
-                const successModal = document.getElementById('successModal');
-                if (successModal) {
-                    successModal.showModal();
-                }
+                document.getElementById('successModal').showModal();
                 const newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
                 window.history.replaceState({path: newUrl}, '', newUrl);
             }
 
-            const loginError = "<?php echo $login_error; ?>";
-            if (loginError) {
-                showAlert(loginError, 'error');
-            }
-            
-            const logoutMessage = "<?php echo $logout_message; ?>";
-            if (logoutMessage) {
-                showAlert(logoutMessage, 'success');
+            const flashMessage = document.body.dataset.flashMessage;
+            const flashStatus = document.body.dataset.flashStatus;
+            if (flashMessage) {
+                showToast(flashMessage, flashStatus);
             }
 
+            // --- Form Handling ---
             const loginForm = document.getElementById('loginForm');
             const submitButton = loginForm.querySelector('button[type="submit"]');
-            
             const phoneInput = document.getElementById('phone');
             const nationalIdInput = document.getElementById('national-id');
-            const errorContainer = document.getElementById('login-error-container');
 
-            phoneInput.addEventListener('input', () => {
-                formatInput(phoneInput, 'xxx-xxx-xxxx');
-                clearFeedback(phoneInput);
-                errorContainer.innerHTML = '';
-            });
-
-            nationalIdInput.addEventListener('input', () => {
-                formatInput(nationalIdInput, 'x-xxxx-xxxxx-xx-x');
-                clearFeedback(nationalIdInput);
-                errorContainer.innerHTML = '';
-            });
-
+            phoneInput.addEventListener('input', () => formatInput(phoneInput, 'xxx-xxx-xxxx'));
+            nationalIdInput.addEventListener('input', () => formatInput(nationalIdInput, 'x-xxxx-xxxxx-xx-x'));
+            [phoneInput, nationalIdInput].forEach(input => input.addEventListener('input', () => clearFeedback(input)));
+            
             loginForm.addEventListener('submit', async function(event) {
                 event.preventDefault();
-
                 let isValid = true;
-                clearFeedback(phoneInput);
-                clearFeedback(nationalIdInput);
-
-                if (phoneInput.value.trim() === '') {
-                    showError(phoneInput, 'กรุณากรอกเบอร์โทรศัพท์');
-                    isValid = false;
-                }
-                if (nationalIdInput.value.trim() === '') {
-                    showError(nationalIdInput, 'กรุณากรอกเลขบัตรประชาชน');
-                    isValid = false;
-                }
                 
-                if (!isValid) return;
-
                 if (phoneInput.value.replace(/\D/g, '').length !== 10) {
                     showError(phoneInput, 'กรุณากรอกเบอร์โทรศัพท์ 10 หลัก');
                     isValid = false;
@@ -346,7 +269,6 @@ if (isset($_SESSION['logout_message'])) {
                     showError(nationalIdInput, 'กรุณากรอกเลขบัตรประชาชน 13 หลัก');
                     isValid = false;
                 }
-                
                 if (!isValid) return;
 
                 const originalButtonContent = submitButton.innerHTML;
@@ -355,39 +277,23 @@ if (isset($_SESSION['logout_message'])) {
 
                 try {
                     const formData = new FormData(loginForm);
-                    const response = await fetch(loginForm.action, {
-                        method: 'POST',
-                        body: formData
-                    });
-
+                    const response = await fetch(loginForm.action, { method: 'POST', body: formData });
                     const result = await response.json();
 
                     if (result.success) {
                         window.location.href = result.redirect_url;
                     } else {
-                        const errorHTML = `
-                            <div role="alert" class="alert alert-error alert-soft text-xs p-2 mt-2">
-                                <div class="flex items-center">
-                                    <i class="fa-solid fa-circle-xmark mr-2"></i>
-                                    <span>${result.message}</span>
-                                </div>
-                            </div>`;
-                        errorContainer.innerHTML = errorHTML;
-                        submitButton.innerHTML = originalButtonContent;
-                        submitButton.disabled = false;
+                        showToast(result.message, 'error');
                     }
                 } catch (error) {
-                    console.error('Login error:', error);
-                    showAlert('เกิดข้อผิดพลาดในการเชื่อมต่อ กรุณาลองใหม่อีกครั้ง', 'error');
-                    submitButton.innerHTML = originalButtonContent;
-                    submitButton.disabled = false;
+                    showToast('เกิดข้อผิดพลาดในการเชื่อมต่อ กรุณาลองใหม่อีกครั้ง', 'error');
+                } finally {
+                     submitButton.innerHTML = originalButtonContent;
+                     submitButton.disabled = false;
                 }
             });
         });
     </script>
 </body>
 </html>
-
-
-
 

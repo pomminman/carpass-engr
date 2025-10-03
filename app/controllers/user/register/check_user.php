@@ -1,4 +1,6 @@
 <?php
+// app/c1ontrollers/user/register/check_user.php
+
 // --- check_user.php (Secure Version - Updated) ---
 // ไฟล์นี้ทำหน้าที่เป็น API สำหรับตรวจสอบว่าเบอร์โทรศัพท์หรือเลขบัตรประชาชน
 // มีอยู่แล้วในฐานข้อมูลหรือไม่ และจะส่งผลลัพธ์กลับไปในรูปแบบ JSON

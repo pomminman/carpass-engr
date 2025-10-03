@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Sep 24, 2025 at 03:45 PM
+-- Generation Time: Sep 29, 2025 at 06:42 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -317,6 +317,24 @@ INSERT INTO `departments` (`id`, `name`, `display_order`) VALUES
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `transactions`
+--
+
+CREATE TABLE `transactions` (
+  `id` int(11) NOT NULL,
+  `request_id` int(11) NOT NULL COMMENT 'FK to vehicle_requests.id',
+  `admin_id` int(11) NOT NULL COMMENT 'FK to admins.id - ผู้บันทึกรายการ',
+  `amount` decimal(10,2) NOT NULL COMMENT 'จำนวนเงิน',
+  `transaction_type` enum('payment','refund','waiver') NOT NULL DEFAULT 'payment' COMMENT 'ประเภทรายการ',
+  `payment_method` varchar(50) NOT NULL COMMENT 'ช่องทางการชำระเงิน (cash, bank_transfer)',
+  `reference_code` varchar(255) DEFAULT NULL COMMENT 'เลขที่ใบเสร็จ, รหัสอ้างอิง',
+  `notes` text DEFAULT NULL COMMENT 'หมายเหตุเพิ่มเติม',
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci COMMENT='ตารางสำหรับเก็บข้อมูลธุรกรรมการเงินทั้งหมด';
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `users`
 --
 
@@ -342,7 +360,8 @@ CREATE TABLE `users` (
   `position` varchar(255) DEFAULT NULL COMMENT 'ตำแหน่ง (สำหรับข้าราชการ)',
   `official_id` varchar(10) DEFAULT NULL COMMENT 'เลขบัตรข้าราชการ (สำหรับข้าราชการ)',
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `created_by_admin_id` int(11) DEFAULT NULL COMMENT 'FK to admins.id if created by an admin'
+  `created_by_admin_id` int(11) DEFAULT NULL COMMENT 'FK to admins.id if created by an admin',
+  `status` enum('active','inactive','banned') NOT NULL DEFAULT 'active' COMMENT 'สถานะบัญชีผู้ใช้'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
@@ -385,9 +404,13 @@ CREATE TABLE `vehicle_requests` (
   `other_owner_name` varchar(255) DEFAULT NULL COMMENT 'ชื่อเจ้าของรถ (กรณีเป็นรถผู้อื่น)',
   `other_owner_relation` varchar(100) DEFAULT NULL COMMENT 'ความเกี่ยวข้อง (กรณีเป็นรถผู้อื่น)',
   `photo_reg_copy` varchar(255) DEFAULT NULL COMMENT 'ชื่อไฟล์รูปสำเนาทะเบียนรถ',
+  `photo_reg_copy_thumb` varchar(255) DEFAULT NULL COMMENT 'ชื่อไฟล์รูปสำเนาทะเบียนรถ (ย่อส่วน)',
   `photo_tax_sticker` varchar(255) DEFAULT NULL COMMENT 'ชื่อไฟล์รูปป้ายภาษี',
+  `photo_tax_sticker_thumb` varchar(255) DEFAULT NULL COMMENT 'ชื่อไฟล์รูปป้ายภาษี (ย่อส่วน)',
   `photo_front` varchar(255) DEFAULT NULL COMMENT 'ชื่อไฟล์รูปถ่ายรถด้านหน้า',
+  `photo_front_thumb` varchar(255) DEFAULT NULL COMMENT 'ชื่อไฟล์รูปถ่ายรถด้านหน้า (ย่อส่วน)',
   `photo_rear` varchar(255) DEFAULT NULL COMMENT 'ชื่อไฟล์รูปถ่ายรถด้านหลัง',
+  `photo_rear_thumb` varchar(255) DEFAULT NULL COMMENT 'ชื่อไฟล์รูปถ่ายรถด้านหลัง (ย่อส่วน)',
   `status` enum('pending','approved','rejected') NOT NULL DEFAULT 'pending' COMMENT 'สถานะคำร้อง',
   `rejection_reason` text DEFAULT NULL COMMENT 'เหตุผลที่ไม่ผ่านการอนุมัติ',
   `approved_by_id` int(11) DEFAULT NULL COMMENT 'FK อ้างอิง ID แอดมินที่อนุมัติ จากตาราง admins',
@@ -398,6 +421,7 @@ CREATE TABLE `vehicle_requests` (
   `card_pickup_status` tinyint(1) NOT NULL DEFAULT 0 COMMENT 'สถานะการรับบัตร (0 = ยังไม่ได้รับ, 1 = รับแล้ว)',
   `card_pickup_by_admin_id` int(11) DEFAULT NULL COMMENT 'FK อ้างอิง ID แอดมินที่มอบบัตร',
   `card_pickup_at` datetime DEFAULT NULL COMMENT 'วันเวลาที่มอบบัตร',
+  `payment_status` enum('unpaid','paid','waived') NOT NULL DEFAULT 'unpaid' COMMENT 'สถานะการชำระเงิน',
   `edit_status` tinyint(1) NOT NULL DEFAULT 0 COMMENT 'สถานะการแก้ไข (0 = ยังไม่เคยแก้ไข, 1 = แก้ไขแล้ว)',
   `created_by_admin_id` int(11) DEFAULT NULL COMMENT 'FK to admins.id if created by an admin',
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
@@ -451,6 +475,14 @@ ALTER TABLE `car_brands`
 ALTER TABLE `departments`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `name` (`name`);
+
+--
+-- Indexes for table `transactions`
+--
+ALTER TABLE `transactions`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `request_id` (`request_id`),
+  ADD KEY `admin_id` (`admin_id`);
 
 --
 -- Indexes for table `users`
@@ -526,6 +558,12 @@ ALTER TABLE `departments`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=51;
 
 --
+-- AUTO_INCREMENT for table `transactions`
+--
+ALTER TABLE `transactions`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
@@ -559,6 +597,13 @@ ALTER TABLE `admins`
 ALTER TABLE `approved_user_data`
   ADD CONSTRAINT `fk_snapshot_to_requests` FOREIGN KEY (`request_id`) REFERENCES `vehicle_requests` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   ADD CONSTRAINT `fk_snapshot_to_users` FOREIGN KEY (`original_user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Constraints for table `transactions`
+--
+ALTER TABLE `transactions`
+  ADD CONSTRAINT `fk_transactions_to_admins` FOREIGN KEY (`admin_id`) REFERENCES `admins` (`id`) ON UPDATE CASCADE,
+  ADD CONSTRAINT `fk_transactions_to_requests` FOREIGN KEY (`request_id`) REFERENCES `vehicle_requests` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
 -- Constraints for table `users`

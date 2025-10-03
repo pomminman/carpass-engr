@@ -1,3 +1,4 @@
+// public/assets/js/admin/page_scripts/admin_view_user.js
 /**
  * admin_view_user.js
  * Contains page-specific JavaScript for the View User page.
@@ -9,6 +10,11 @@ document.addEventListener('DOMContentLoaded', function () {
     const editBtn = document.getElementById('edit-user-btn');
     const editModal = document.getElementById('edit_user_modal');
     const form = document.getElementById('editUserFormInModal');
+
+    // Initialize Fancybox for the profile picture
+    Fancybox.bind('[data-fancybox="profile"]', {
+        // Optional: Add any custom options here
+    });
 
     if (!editBtn || !editModal || !form) return;
 

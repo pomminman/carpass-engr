@@ -10,7 +10,25 @@ document.addEventListener('DOMContentLoaded', function () {
     const viewAdminModal = document.getElementById('view_admin_modal');
     const loadingModal = document.getElementById('loading_modal');
     const adminsTable = document.getElementById('adminsTable');
+    const filterForm = document.getElementById('filterForm');
     
+    // --- Auto-submit Filter Form Logic ---
+    if (filterForm) {
+        const inputs = filterForm.querySelectorAll('.filter-input');
+        let debounceTimer;
+
+        inputs.forEach(input => {
+            const eventType = input.tagName.toLowerCase() === 'select' ? 'change' : 'input';
+            
+            input.addEventListener(eventType, () => {
+                clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(() => {
+                    filterForm.submit();
+                }, input.type === 'text' ? 400 : 0);
+            });
+        });
+    }
+
     if (!addAdminModal || !viewAdminModal || !adminsTable) return;
 
     const showError = (input, message) => {
@@ -77,3 +95,4 @@ document.addEventListener('DOMContentLoaded', function () {
         } finally { loadingModal.close(); }
     });
 });
+

@@ -1,0 +1,25 @@
+/* app/lib/google-fonts-Sarabun/sarabun.css */
+
+/* Regular */
+@font-face {
+  font-family: 'Sarabun';
+  font-style: normal;
+  font-weight: 400;
+  src: url('Sarabun-Regular.ttf') format('truetype');
+}
+
+/* Medium */
+@font-face {
+  font-family: 'Sarabun';
+  font-style: normal;
+  font-weight: 500;
+  src: url('Sarabun-Medium.ttf') format('truetype');
+}
+
+/* Bold */
+@font-face {
+  font-family: 'Sarabun';
+  font-style: normal;
+  font-weight: 700;
+  src: url('Sarabun-Bold.ttf') format('truetype');
+}

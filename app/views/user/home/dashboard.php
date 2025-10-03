@@ -1,4 +1,5 @@
 <?php
+// app/views/user/home/dashboard.php
 require_once __DIR__ . '/../shared/auth_check.php';
 
 // Fetch active application period
@@ -7,20 +8,6 @@ $sql_period = "SELECT * FROM application_periods WHERE is_active = 1 AND CURDATE
 $result_period = $conn->query($sql_period);
 if ($result_period->num_rows > 0) {
     $active_period = $result_period->fetch_assoc();
-}
-
-// Fetch vehicle requests that have already been renewed in the current period
-$renewed_vehicle_ids = [];
-if ($active_period) {
-    $sql_renewed = "SELECT vehicle_id FROM vehicle_requests WHERE user_id = ? AND period_id = ? AND status IN ('pending', 'approved')";
-    $stmt_renewed = $conn->prepare($sql_renewed);
-    $stmt_renewed->bind_param("ii", $user_id, $active_period['id']);
-    $stmt_renewed->execute();
-    $result_renewed = $stmt_renewed->get_result();
-    while ($row = $result_renewed->fetch_assoc()) {
-        $renewed_vehicle_ids[] = $row['vehicle_id'];
-    }
-    $stmt_renewed->close();
 }
 
 // Fetch stats
@@ -40,27 +27,6 @@ while ($row = $result_stats->fetch_assoc()) {
     }
 }
 $stmt_stats->close();
-
-// Fetch all vehicle requests for the user
-$vehicle_requests = [];
-$sql_vehicles = "
-    SELECT 
-        vr.*, 
-        v.vehicle_type, v.brand, v.model, v.color, v.license_plate, v.province as vehicle_province, 
-        a.firstname as admin_firstname, a.title as admin_title
-    FROM vehicle_requests vr 
-    JOIN vehicles v ON vr.vehicle_id = v.id 
-    LEFT JOIN admins a ON vr.approved_by_id = a.id 
-    WHERE vr.user_id = ? 
-    ORDER BY vr.created_at DESC";
-$stmt_vehicles = $conn->prepare($sql_vehicles);
-$stmt_vehicles->bind_param("i", $user_id);
-$stmt_vehicles->execute();
-$result_vehicles = $stmt_vehicles->get_result();
-while ($row = $result_vehicles->fetch_assoc()) {
-    $vehicle_requests[] = $row;
-}
-$stmt_vehicles->close();
 
 require_once __DIR__ . '/../layouts/header.php';
 ?>
@@ -103,7 +69,7 @@ require_once __DIR__ . '/../layouts/header.php';
 <div class="flex flex-col md:flex-row gap-2 mb-4">
     <!-- Stats Cards -->
     <div class="grid grid-cols-2 sm:grid-cols-5 gap-2 flex-grow">
-        <div class="card bg-base-100 shadow-sm cursor-pointer hover:shadow-lg transition-shadow stat-filter" data-filter="all">
+        <div class="card bg-base-100 shadow-sm cursor-pointer hover:shadow-lg transition-shadow stat-filter active ring-2 ring-primary" data-filter="all">
             <div class="card-body p-3 flex-row items-center gap-4">
                 <i class="fa-solid fa-layer-group text-2xl text-info opacity-80"></i>
                 <div>
@@ -159,149 +125,47 @@ require_once __DIR__ . '/../layouts/header.php';
 </div>
 
 <!-- Vehicle Grid -->
-<div id="vehicle-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-    <?php if (empty($vehicle_requests)): ?>
-        <div class="col-span-full text-center p-8 text-base-content/60">
-            <i class="fa-solid fa-folder-open fa-3x mb-4"></i>
-            <p>ยังไม่พบข้อมูลคำร้อง</p>
-        </div>
-    <?php else: ?>
-        <?php foreach ($vehicle_requests as $request): 
-            $can_renew = false;
-            $is_expired = !empty($request['card_expiry']) && (new DateTime() > new DateTime($request['card_expiry']));
-            
-            // [REVISED] Only allow renewal for 'approved' and 'expired' cards, not 'rejected' ones.
-            if ($active_period && !in_array($request['vehicle_id'], $renewed_vehicle_ids)) {
-                if ($request['status'] === 'approved' && $is_expired) {
-                    $can_renew = true;
-                }
-            }
-            
-            $status_key = $request['status'];
-            $status_text = ''; 
-            $status_class = '';
-            $status_icon = '';
-            $border_class = 'border-transparent';
-            $status_badge_bg = '';
-
-            if ($request['status'] === 'approved' && $is_expired) {
-                $status_key = 'expired';
-                $status_text = 'หมดอายุ'; 
-                $status_class = 'badge-neutral';
-                $status_icon = 'fa-solid fa-calendar-times';
-                $border_class = 'border-base-300';
-                $status_badge_bg = 'bg-base-300';
-            } else {
-                switch ($request['status']) {
-                    case 'approved': 
-                        $status_text = 'อนุมัติแล้ว'; 
-                        $status_class = 'badge-success'; 
-                        $status_icon = 'fa-solid fa-check-circle'; 
-                        $border_class = 'border-success/50';
-                        $status_badge_bg = 'bg-success text-success-content';
-                        break;
-                    case 'pending': 
-                        $status_text = 'รออนุมัติ'; 
-                        $status_class = 'badge-warning'; 
-                        $status_icon = 'fa-solid fa-clock'; 
-                        $border_class = 'border-warning/50'; 
-                        $status_badge_bg = 'bg-warning text-warning-content';
-                        break;
-                    case 'rejected': 
-                        $status_text = 'ไม่ผ่าน'; 
-                        $status_class = 'badge-error'; 
-                        $status_icon = 'fa-solid fa-circle-xmark'; 
-                        $border_class = 'border-error/50'; 
-                        $status_badge_bg = 'bg-error text-error-content';
-                        break;
-                }
-            }
-
-            $approved_by = ($request['admin_title'] && $request['admin_firstname']) ? $request['admin_title'] . $request['admin_firstname'] : '-';
-            $front_image_path = "/public/uploads/" . htmlspecialchars($user['user_key']) . "/vehicle/" . htmlspecialchars($request['request_key']) . "/" . htmlspecialchars($request['photo_front']);
-        ?>
-            <div class="card bg-base-100 shadow-md hover:shadow-xl transition-shadow duration-300 vehicle-card cursor-pointer border-2 <?= $border_class ?>"
-                data-status-key="<?= $status_key ?>"
-                data-request-id="<?= htmlspecialchars($request['id']) ?>"
-                data-vehicle-id="<?= htmlspecialchars($request['vehicle_id']) ?>"
-                data-user-key="<?= htmlspecialchars($user['user_key']) ?>"
-                data-request-key="<?= htmlspecialchars($request['request_key']) ?>"
-                data-vehicle-type="<?= htmlspecialchars($request['vehicle_type']) ?>"
-                data-brand="<?= htmlspecialchars($request['brand']) ?>"
-                data-model="<?= htmlspecialchars($request['model']) ?>"
-                data-color="<?= htmlspecialchars($request['color']) ?>"
-                data-license-plate="<?= htmlspecialchars($request['license_plate']) ?>"
-                data-province="<?= htmlspecialchars($request['vehicle_province']) ?>"
-                data-tax-expiry="<?= htmlspecialchars($request['tax_expiry_date']) ?>"
-                data-owner-type="<?= htmlspecialchars($request['owner_type']) ?>"
-                data-other-owner-name="<?= htmlspecialchars($request['other_owner_name'] ?? '-') ?>"
-                data-other-owner-relation="<?= htmlspecialchars($request['other_owner_relation'] ?? '-') ?>"
-                data-status-text="<?= $status_text ?>"
-                data-status-icon="<?= $status_icon ?>"
-                data-status-badge-bg="<?= htmlspecialchars($status_badge_bg) ?>"
-                data-card-number="<?= htmlspecialchars($request['card_number'] ?? '-') ?>"
-                data-approved-by="<?= htmlspecialchars($approved_by) ?>"
-                data-photo-reg="<?= htmlspecialchars($request['photo_reg_copy']) ?>"
-                data-photo-tax="<?= htmlspecialchars($request['photo_tax_sticker']) ?>"
-                data-photo-front="<?= htmlspecialchars($request['photo_front']) ?>"
-                data-photo-rear="<?= htmlspecialchars($request['photo_rear']) ?>"
-                data-card-type="<?= htmlspecialchars($request['card_type'] ?? '') ?>"
-                data-card-expiry="<?= htmlspecialchars($request['card_expiry'] ?? '') ?>"
-                data-rejection-reason="<?= htmlspecialchars($request['rejection_reason'] ?? '') ?>"
-                data-search-id="<?= htmlspecialchars($request['search_id'] ?? '') ?>"
-                data-created-at="<?= htmlspecialchars($request['created_at']) ?>"
-                data-updated-at="<?= htmlspecialchars($request['updated_at']) ?>"
-                data-approved-at="<?= htmlspecialchars($request['approved_at'] ?? '') ?>"
-                data-can-renew="<?= $can_renew ? 'true' : 'false' ?>">
-                
-                <figure class="bg-base-200">
-                    <img src="<?= $front_image_path ?>" alt="รูปถ่ายหน้ารถ" class="h-32 w-full object-cover" onerror="this.onerror=null;this.src='https://placehold.co/300x200/e2e8f0/475569?text=No+Image';">
-                </figure>
-                
-                <div class="card-body p-3">
-                    <div class="flex justify-between items-start">
-                        <div>
-                            <p class="font-bold text-base leading-tight truncate"><?= htmlspecialchars($request['license_plate']) ?></p>
-                            <p class="text-sm text-base-content/60"><?= htmlspecialchars($request['vehicle_province']) ?></p>
-                        </div>
-                        <div class="badge <?= $status_class ?> text-dark font-semibold text-sm"><?= $status_text ?></div>
-                    </div>
-                    <p class="text-sm mt-1 truncate"><?= htmlspecialchars($request['brand']) ?> / <?= htmlspecialchars($request['model']) ?></p>
-                    <div class="text-sm text-base-content/60 mt-2 space-y-0.5">
-                        <p>รหัสคำร้อง: <span class="font-medium"><?= htmlspecialchars($request['search_id'] ?? '-') ?></span></p>
-                        <p>เลขที่บัตร: <span class="font-medium"><?= htmlspecialchars($request['card_number'] ?? '-') ?></span></p>
-                    </div>
-                </div>
-            </div>
-        <?php endforeach; ?>
-        <div id="no-results-message" class="col-span-full text-center p-8 text-base-content/60 hidden">
-            <i class="fa-solid fa-magnifying-glass fa-3x mb-4"></i>
-            <p>ไม่พบข้อมูลที่ตรงกับการค้นหา</p>
-        </div>
-    <?php endif; ?>
+<div id="vehicle-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+    <!-- Loading Spinner Placeholder -->
+    <div id="grid-loader" class="col-span-full text-center p-8 text-base-content/60">
+        <span class="loading loading-spinner loading-lg text-primary"></span>
+        <p class="mt-4">กำลังโหลดข้อมูลยานพาหนะ...</p>
+    </div>
+    <!-- This message is shown if no requests exist at all -->
+    <div id="no-requests-message" class="col-span-full text-center p-8 text-base-content/60 hidden">
+        <i class="fa-solid fa-folder-open fa-3x mb-4"></i>
+        <p>ยังไม่พบข้อมูลคำร้อง</p>
+    </div>
+    <!-- This message is shown if filters result in no matches -->
+    <div id="no-results-message" class="col-span-full text-center p-8 text-base-content/60 hidden">
+        <i class="fa-solid fa-magnifying-glass fa-3x mb-4"></i>
+        <p>ไม่พบข้อมูลที่ตรงกับการค้นหา</p>
+    </div>
 </div>
 
 <!-- Request Details Modal -->
 <dialog id="request_details_modal" class="modal modal-fade">
-    <div class="modal-box w-11/12 max-w-4xl p-0">
+    <div class="modal-box w-11/12 max-w-5xl p-0">
         
+        <!-- Loader State -->
+        <div id="modal-loader" class="min-h-[400px] flex flex-col items-center justify-center text-center">
+            <span class="loading loading-spinner loading-lg text-primary"></span>
+            <p class="mt-4">กำลังโหลดรายละเอียด...</p>
+        </div>
+
         <!-- VIEW DETAILS SECTION -->
-        <div id="modal-content-wrapper">
+        <div id="modal-content-wrapper" class="hidden">
             <div class="p-4 sm:p-5">
                 <div class="flex justify-between items-start gap-4">
                     <div class="flex-grow">
                          <h3 id="modal-license-plate" class="font-bold text-lg sm:text-xl"></h3>
                          <p id="modal-brand-model" class="text-sm text-base-content/70"></p>
-                         <div id="modal-card-status" class="mt-2">
-                             <!-- Status Badge will be inserted here by JS -->
-                         </div>
+                         <div id="modal-card-status" class="mt-2"></div>
                     </div>
                     <form method="dialog">
                         <button class="btn btn-sm btn-circle btn-ghost">✕</button>
                     </form>
                 </div>
-
-                <!-- Rejection Reason Box -->
                 <div id="modal-rejection-reason-box" class="alert alert-error alert-soft hidden my-4 text-sm">
                     <i class="fa-solid fa-circle-exclamation"></i>
                     <div>
@@ -312,7 +176,6 @@ require_once __DIR__ . '/../layouts/header.php';
             </div>
             
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 bg-base-200 p-4 sm:p-5">
-                 <!-- Left Column: Details -->
                  <div class="space-y-3">
                      <div id="modal-card-number-box" class="card text-center hidden p-2">
                          <div class="text-sm opacity-80">เลขที่บัตร</div>
@@ -322,53 +185,70 @@ require_once __DIR__ . '/../layouts/header.php';
                      <div class="card bg-base-100 shadow-sm"><div class="card-body p-3 space-y-1 text-sm" id="modal-vehicle-info-list"></div></div>
                      <div class="card bg-base-100 shadow-sm"><div class="card-body p-3 space-y-1 text-sm" id="modal-owner-info-list"></div></div>
                  </div>
-                 <!-- Right Column: Evidence -->
                  <div class="space-y-3">
                      <div class="card bg-base-100 shadow-sm"><div class="card-body p-3">
                          <h4 class="font-semibold text-sm mb-2 text-center">หลักฐานประกอบ</h4>
-                         <div id="modal-evidence-gallery" class="grid grid-cols-2 gap-2">
-                             <!-- Images will be inserted here by JS -->
-                         </div>
+                         <div id="modal-evidence-gallery" class="grid grid-cols-2 gap-2"></div>
                      </div></div>
                  </div>
             </div>
             
-             <!-- Action Buttons Footer -->
-             <div class="p-4 flex flex-wrap justify-end items-center gap-2" id="modal-action-buttons">
-                 <!-- Buttons will be dynamically inserted here by JS -->
-            </div>
+             <div class="p-4 flex flex-wrap justify-end items-center gap-2" id="modal-action-buttons"></div>
         </div>
 
-        <!-- EDIT FORM SECTION -->
+        <!-- [MODIFIED] EDIT FORM SECTION -->
         <div id="modal-edit-form-wrapper" class="hidden">
              <form action="../../../controllers/user/vehicle/edit_vehicle_process.php" method="POST" enctype="multipart/form-data" id="editVehicleForm" novalidate>
                  <input type="hidden" name="request_id" id="edit-request-id">
-                 <h3 class="font-bold text-lg mb-4 text-center p-4 bg-base-200">แก้ไขข้อมูลคำร้อง</h3>
+                 <input type="hidden" name="can_edit_license" id="edit-can-edit-license" value="false">
+                 <h3 class="font-bold text-lg text-center p-4 bg-base-200">แก้ไขข้อมูลคำร้อง</h3>
 
                  <div class="p-4 space-y-4">
-                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                         <!-- Vehicle Details -->
-                         <div class="space-y-2">
-                             <h4 class="font-semibold text-sm">ข้อมูลยานพาหนะ</h4>
-                             <div class="form-control w-full"><div class="label py-1"><span class="label-text text-sm">ยี่ห้อรถ</span></div><select name="vehicle_brand" id="edit-vehicle-brand" class="select select-sm select-bordered" required><?php if(isset($car_brands)) foreach ($car_brands as $brand): ?><option value="<?= htmlspecialchars($brand); ?>"><?= htmlspecialchars($brand); ?></option><?php endforeach; ?></select><p class="error-message hidden text-error text-xs mt-1"></p></div>
-                             <div class="form-control w-full"><div class="label py-1"><span class="label-text text-sm">รุ่นรถ (อังกฤษ)</span></div><input type="text" name="vehicle_model" id="edit-vehicle-model" class="input input-sm input-bordered w-full" required oninput="this.value = this.value.replace(/[^a-zA-Z0-9\s!@#$%^&*()_+\-=\[\]{};':&quot;\\|,.<>\/?~`]/g, '')" /><p class="error-message hidden text-error text-xs mt-1"></p></div>
-                             <div class="form-control w-full"><div class="label py-1"><span class="label-text text-sm">สีรถ</span></div><input type="text" name="vehicle_color" id="edit-vehicle-color" class="input input-sm input-bordered w-full" required oninput="this.value = this.value.replace(/[^ก-๙\s!@#$%^&*()_+\-=\[\]{};':&quot;\\|,.<>\/?~`]/g, '')"/><p class="error-message hidden text-error text-xs mt-1"></p></div>
-                         </div>
-                         <!-- Request Details -->
-                         <div class="space-y-2">
-                              <h4 class="font-semibold text-sm">ข้อมูลคำร้อง</h4>
-                             <div class="form-control w-full"><div class="label py-1"><span class="label-text text-sm">วันสิ้นอายุภาษี</span></div><div class="grid grid-cols-3 gap-2"><select name="tax_day" id="edit-tax-day" class="select select-sm select-bordered" required></select><select name="tax_month" id="edit-tax-month" class="select select-sm select-bordered" required></select><select name="tax_year" id="edit-tax-year" class="select select-sm select-bordered" required></select></div><p class="error-message hidden text-error text-xs mt-1"></p></div>
-                             <div class="form-control w-full"><div class="label py-1"><span class="label-text text-sm">ความเป็นเจ้าของ</span></div><select name="owner_type" id="edit-owner-type" class="select select-sm select-bordered" required><option value="self">รถชื่อตนเอง</option><option value="other">รถคนอื่น</option></select><p class="error-message hidden text-error text-xs mt-1"></p></div>
-                             <div id="edit-other-owner-details" class="hidden space-y-2 pt-2"><div class="form-control w-full"><div class="label py-1"><span class="label-text text-sm">ชื่อ-สกุล เจ้าของ</span></div><input type="text" name="other_owner_name" id="edit-other-owner-name" class="input input-sm input-bordered w-full" oninput="this.value = this.value.replace(/[^ก-๙\s!@#$%^&*()_+\-=\[\]{};':&quot;\\|,.<>\/?~`]/g, '')" /><p class="error-message hidden text-error text-xs mt-1"></p></div><div class="form-control w-full"><div class="label py-1"><span class="label-text text-sm">เกี่ยวข้องเป็น</span></div><input type="text" name="other_owner_relation" id="edit-other-owner-relation" class="input input-sm input-bordered w-full" oninput="this.value = this.value.replace(/[^ก-๙\s!@#$%^&*()_+\-=\[\]{};':&quot;\\|,.<>\/?~`]/g, '')" /><p class="error-message hidden text-error text-xs mt-1"></p></div></div>
-                         </div>
-                     </div>
-                      <div class="divider text-sm font-semibold">หลักฐาน (อัปโหลดใหม่เฉพาะที่ต้องการเปลี่ยน)</div>
-                      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                          <div class="form-control w-full"><label class="label pb-1"><span class="label-text text-sm">สำเนาทะเบียนรถ</span></label><div class="flex justify-center items-center bg-base-200 p-1 rounded-box border h-24"><img id="edit-reg-copy-preview" src="" class="max-w-full max-h-full object-contain"></div><input type="file" name="reg_copy_upload" id="edit-reg-copy-upload" class="file-input file-input-sm file-input-bordered w-full mt-2" accept=".jpg, .jpeg, .png"><p class="error-message hidden text-error text-xs mt-1"></p></div>
-                          <div class="form-control w-full"><label class="label pb-1"><span class="label-text text-sm">ป้ายภาษี</span></label><div class="flex justify-center items-center bg-base-200 p-1 rounded-box border h-24"><img id="edit-tax-sticker-preview" src="" class="max-w-full max-h-full object-contain"></div><input type="file" name="tax_sticker_upload" id="edit-tax-sticker-upload" class="file-input file-input-sm file-input-bordered w-full mt-2" accept=".jpg, .jpeg, .png"><p class="error-message hidden text-error text-xs mt-1"></p></div>
-                          <div class="form-control w-full"><label class="label pb-1"><span class="label-text text-sm">รูปถ่ายด้านหน้า</span></label><div class="flex justify-center items-center bg-base-200 p-1 rounded-box border h-24"><img id="edit-front-view-preview" src="" class="max-w-full max-h-full object-contain"></div><input type="file" name="front_view_upload" id="edit-front-view-upload" class="file-input file-input-sm file-input-bordered w-full mt-2" accept=".jpg, .jpeg, .png"><p class="error-message hidden text-error text-xs mt-1"></p></div>
-                          <div class="form-control w-full"><label class="label pb-1"><span class="label-text text-sm">รูปถ่ายด้านหลัง</span></label><div class="flex justify-center items-center bg-base-200 p-1 rounded-box border h-24"><img id="edit-rear-view-preview" src="" class="max-w-full max-h-full object-contain"></div><input type="file" name="rear_view_upload" id="edit-rear-view-upload" class="file-input file-input-sm file-input-bordered w-full mt-2" accept=".jpg, .jpeg, .png"><p class="error-message hidden text-error text-xs mt-1"></p></div>
-                      </div>
+                    
+                    <fieldset class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 rounded-lg border p-4 pt-2">
+                        <legend class="px-2 text-sm font-semibold text-base-content/80">ข้อมูลหลัก</legend>
+                        
+                        <!-- License Plate Edit Section -->
+                        <div id="edit-license-section" class="hidden md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+                            <div class="form-control">
+                                <div class="label py-1"><span class="label-text text-xs">เลขทะเบียนรถ</span></div>
+                                <input type="text" name="license_plate" id="edit-license-plate" placeholder="เช่น 1กข1234" class="input input-sm input-bordered w-full" oninput="this.value = this.value.replace(/[^ก-๙0-9]/g, '')" />
+                                <p class="error-message hidden text-error text-xs mt-1"></p>
+                            </div>
+                            <div class="form-control">
+                                <div class="label py-1"><span class="label-text text-xs">จังหวัดทะเบียนรถ</span></div>
+                                <select name="license_province" id="edit-license-province" class="select select-sm select-bordered">
+                                    <option disabled selected value="">เลือกจังหวัด</option>
+                                    <?php if(isset($provinces)) foreach ($provinces as $province): ?>
+                                    <option value="<?= htmlspecialchars($province); ?>"><?= htmlspecialchars($province); ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                                <p class="error-message hidden text-error text-xs mt-1"></p>
+                            </div>
+                        </div>
+
+                        <div class="space-y-2">
+                            <div class="form-control"><div class="label py-1"><span class="label-text text-xs">ยี่ห้อรถ</span></div><select name="vehicle_brand" id="edit-vehicle-brand" class="select select-sm select-bordered" required><option disabled selected value="">เลือกยี่ห้อ</option><?php if(isset($car_brands)) foreach ($car_brands as $brand): ?><option value="<?= htmlspecialchars($brand); ?>"><?= htmlspecialchars($brand); ?></option><?php endforeach; ?></select><p class="error-message hidden text-error text-xs mt-1"></p></div>
+                            <div class="form-control"><div class="label py-1"><span class="label-text text-xs">รุ่นรถ (อังกฤษ)</span></div><input type="text" name="vehicle_model" id="edit-vehicle-model" placeholder="เช่น COROLLA, CIVIC" class="input input-sm input-bordered w-full" required oninput="this.value = this.value.replace(/[^a-zA-Z0-9\s!@#$%^&*()_+\-=\[\]{};':&quot;\\|,.<>\/?~`]/g, '')" /><p class="error-message hidden text-error text-xs mt-1"></p></div>
+                            <div class="form-control"><div class="label py-1"><span class="label-text text-xs">สีรถ</span></div><input type="text" name="vehicle_color" id="edit-vehicle-color" placeholder="เช่น ดำ, ขาว, บรอนซ์เงิน" class="input input-sm input-bordered w-full" required oninput="this.value = this.value.replace(/[^ก-๙\s!@#$%^&*()_+\-=\[\]{};':&quot;\\|,.<>\/?~`]/g, '')"/><p class="error-message hidden text-error text-xs mt-1"></p></div>
+                        </div>
+
+                        <div class="space-y-2">
+                            <div class="form-control"><div class="label py-1"><span class="label-text text-xs">วันสิ้นอายุภาษี</span></div><div class="grid grid-cols-3 gap-2"><select name="tax_day" id="edit-tax-day" class="select select-sm select-bordered" required><option disabled selected value="">วัน</option></select><select name="tax_month" id="edit-tax-month" class="select select-sm select-bordered" required><option disabled selected value="">เดือน</option></select><select name="tax_year" id="edit-tax-year" class="select select-sm select-bordered" required><option disabled selected value="">ปี</option></select></div><p class="error-message hidden text-error text-xs mt-1"></p></div>
+                            <div class="form-control"><div class="label py-1"><span class="label-text text-xs">ความเป็นเจ้าของ</span></div><select name="owner_type" id="edit-owner-type" class="select select-sm select-bordered" required><option disabled selected value="">เลือกความเป็นเจ้าของ</option><option value="self">รถชื่อตนเอง</option><option value="other">รถคนอื่น</option></select><p class="error-message hidden text-error text-xs mt-1"></p></div>
+                            <div id="edit-other-owner-details" class="hidden space-y-2 pt-1"><div class="form-control"><div class="label py-1"><span class="label-text text-xs">ชื่อ-สกุล เจ้าของ</span></div><input type="text" name="other_owner_name" id="edit-other-owner-name" placeholder="เช่น นายสมชาย ใจดี" class="input input-sm input-bordered w-full" oninput="this.value = this.value.replace(/[^ก-๙\s!@#$%^&*()_+\-=\[\]{};':&quot;\\|,.<>\/?~`]/g, '')" /><p class="error-message hidden text-error text-xs mt-1"></p></div><div class="form-control"><div class="label py-1"><span class="label-text text-xs">เกี่ยวข้องเป็น</span></div><input type="text" name="other_owner_relation" id="edit-other-owner-relation" placeholder="เช่น บิดา, มารดา, เพื่อน" class="input input-sm input-bordered w-full" oninput="this.value = this.value.replace(/[^ก-๙\s!@#$%^&*()_+\-=\[\]{};':&quot;\\|,.<>\/?~`]/g, '')" /><p class="error-message hidden text-error text-xs mt-1"></p></div></div>
+                        </div>
+                    </fieldset>
+                    
+                    <fieldset class="rounded-lg border p-4 pt-2">
+                        <legend class="px-2 text-sm font-semibold text-base-content/80">หลักฐาน (อัปโหลดใหม่เฉพาะที่ต้องการเปลี่ยน)</legend>
+                         <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-2">
+                            <div class="form-control w-full"><label class="label pb-1"><span class="label-text text-xs">สำเนาทะเบียนรถ</span></label><div class="flex justify-center items-center bg-base-200 p-1 rounded-box border h-24"><img id="edit-reg-copy-preview" src="" class="max-w-full max-h-full object-contain"></div><input type="file" name="reg_copy_upload" id="edit-reg-copy-upload" class="file-input file-input-sm file-input-bordered w-full mt-2" accept=".jpg, .jpeg, .png"><p class="error-message hidden text-error text-xs mt-1"></p></div>
+                            <div class="form-control w-full"><label class="label pb-1"><span class="label-text text-xs">ป้ายภาษี</span></label><div class="flex justify-center items-center bg-base-200 p-1 rounded-box border h-24"><img id="edit-tax-sticker-preview" src="" class="max-w-full max-h-full object-contain"></div><input type="file" name="tax_sticker_upload" id="edit-tax-sticker-upload" class="file-input file-input-sm file-input-bordered w-full mt-2" accept=".jpg, .jpeg, .png"><p class="error-message hidden text-error text-xs mt-1"></p></div>
+                            <div class="form-control w-full"><label class="label pb-1"><span class="label-text text-xs">รูปถ่ายด้านหน้า</span></label><div class="flex justify-center items-center bg-base-200 p-1 rounded-box border h-24"><img id="edit-front-view-preview" src="" class="max-w-full max-h-full object-contain"></div><input type="file" name="front_view_upload" id="edit-front-view-upload" class="file-input file-input-sm file-input-bordered w-full mt-2" accept=".jpg, .jpeg, .png"><p class="error-message hidden text-error text-xs mt-1"></p></div>
+                            <div class="form-control w-full"><label class="label pb-1"><span class="label-text text-xs">รูปถ่ายด้านหลัง</span></label><div class="flex justify-center items-center bg-base-200 p-1 rounded-box border h-24"><img id="edit-rear-view-preview" src="" class="max-w-full max-h-full object-contain"></div><input type="file" name="rear_view_upload" id="edit-rear-view-upload" class="file-input file-input-sm file-input-bordered w-full mt-2" accept=".jpg, .jpeg, .png"><p class="error-message hidden text-error text-xs mt-1"></p></div>
+                        </div>
+                    </fieldset>
                  </div>
                  <div class="p-4 bg-base-200 flex justify-end items-center gap-2">
                      <button type="button" id="cancel-edit-btn" class="btn btn-sm btn-ghost">ยกเลิก</button>
@@ -377,7 +257,6 @@ require_once __DIR__ . '/../layouts/header.php';
              </form>
         </div>
     </div>
-    <!-- [ADD] This form enables the click-outside-to-close functionality -->
     <form method="dialog" class="modal-backdrop"><button>close</button></form>
 </dialog>
 

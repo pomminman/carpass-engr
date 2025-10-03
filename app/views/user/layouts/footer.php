@@ -1,6 +1,5 @@
 <?php
 // app/views/user/layouts/footer.php
-// Close DB connection if it exists
 if (isset($conn) && $conn instanceof mysqli) {
     $conn->close();
 }
@@ -46,15 +45,28 @@ if (isset($conn) && $conn instanceof mysqli) {
         </aside>
     </div> <!-- End of Drawer -->
 
-    <!-- Global Alert/Toast Container -->
-    <div id="alert-container" class="toast toast-top toast-center z-50"></div>
-    
     <!-- Scripts -->
     <script src="/lib/jquery.Thailand/dependencies/JQL.min.js"></script>
     <script src="/lib/jquery.Thailand/dependencies/typeahead.bundle.js"></script>
     <script src="/lib/jquery.Thailand/dist/jquery.Thailand.min.js"></script>
-    <script src="/public/assets/js/user_script.js"></script>
 
+    <!-- Refactored Scripts -->
+    <script src="/public/assets/js/user/user_core.js"></script>
+    <?php
+        $page_name = str_replace('.php', '', basename($_SERVER['SCRIPT_NAME']));
+        // Map the page name to the new script file name
+        $script_map = [
+            'dashboard' => 'user_dashboard',
+            'add_vehicle' => 'user_add_vehicle',
+            'profile' => 'user_profile'
+        ];
+        $script_file_name = $script_map[$page_name] ?? $page_name;
+        $script_path = "/public/assets/js/user/page_scripts/{$script_file_name}.js";
+        
+        if (file_exists($_SERVER['DOCUMENT_ROOT'] . $script_path)) {
+            echo "<script src='{$script_path}'></script>";
+        }
+    ?>
 </body>
 </html>
 
