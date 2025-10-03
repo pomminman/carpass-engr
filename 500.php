@@ -30,7 +30,7 @@
 <body class="bg-gray-100">
     <div class="min-h-screen flex flex-col items-center justify-center text-center p-4">
         <div class="max-w-md">
-            <img src="https://img2.pic.in.th/pic/CARPASS-logo11af8574a9cc9906.png" alt="Logo" class="h-40 w-auto mx-auto mb-8" onerror="this.onerror=null;this.src='https://placehold.co/200x200/CCCCCC/FFFFFF?text=Logo';">
+            <img src="/public/assets/images/CARPASS_logo.png" alt="Logo" class="h-40 w-auto mx-auto mb-8" onerror="this.onerror=null;this.src='https://placehold.co/200x200/CCCCCC/FFFFFF?text=Logo';">
             <h1 class="text-9xl font-bold text-error">500</h1>
             <h2 class="mt-4 text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">เกิดข้อผิดพลาดภายในเซิร์ฟเวอร์</h2>
             <p class="mt-4 text-base text-gray-500">ขออภัย, เกิดปัญหาบางอย่างกับระบบของเรา<br>ทีมงานได้รับทราบปัญหาแล้ว และกำลังเร่งดำเนินการแก้ไข</p>

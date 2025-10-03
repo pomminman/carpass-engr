@@ -21,11 +21,14 @@ header('Retry-After: 3600');
     <meta name="apple-mobile-web-app-title" content="carpass engrdept" />
     <link rel="manifest" href="/public/assets/favicon/site.webmanifest" />
 
-    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css" rel="stylesheet" type="text/css" />
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" xintegrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-    
+    <!-- Local CSS -->
+    <link rel="stylesheet" href="/lib/daisyui@4.12.10/dist/full.min.css" type="text/css" />
+    <link rel="stylesheet" href="/lib/google-fonts-prompt/prompt.css">
+    <link rel="stylesheet" href="/lib/fontawesome-free-7.0.1-web/css/all.min.css">
+
+    <!-- Local JS -->
+    <script src="/lib/tailwindcss/tailwindcss.js"></script>
+
     <style>
         body {
             font-family: 'Prompt', sans-serif;
@@ -36,7 +39,7 @@ header('Retry-After: 3600');
     <div class="min-h-screen flex flex-col items-center justify-center text-center p-4">
         <div class="card w-full max-w-lg bg-base-100 shadow-xl border border-base-300/50">
             <div class="card-body items-center text-center">
-                <img src="https://img2.pic.in.th/pic/CARPASS-logo11af8574a9cc9906.png" alt="Logo" class="h-32 w-auto mx-auto mb-4" onerror="this.onerror=null;this.src='https://placehold.co/200x200/CCCCCC/FFFFFF?text=Logo';">
+                <img src="/public/assets/images/CARPASS_logo.png" alt="Logo" class="h-32 w-auto mx-auto mb-4" onerror="this.onerror=null;this.src='https://placehold.co/200x200/CCCCCC/FFFFFF?text=Logo';">
                 
                 <h1 class="card-title text-2xl sm:text-3xl font-bold text-warning-content whitespace-nowrap">
                     <i class="fas fa-tools mr-2"></i>

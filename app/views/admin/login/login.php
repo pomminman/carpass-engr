@@ -47,8 +47,8 @@ if (isset($_SESSION['flash_message'])) {
     <link rel="stylesheet" href="/lib/fontawesome-free-7.0.1-web/css/all.min.css">
     
     <!-- [NEW] Toastify.js Library -->
-    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
-    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+    <link rel="stylesheet" type="text/css" href="/lib/toastify-js/toastify.min.css">
+    <script type="text/javascript" src="/lib/toastify-js/toastify-js.js"></script>
 
     <!-- Local JS -->
     <script src="/lib/tailwindcss/tailwindcss.js"></script>
@@ -79,7 +79,7 @@ if (isset($_SESSION['flash_message'])) {
         <div class="w-full max-w-sm">
             <!-- Logo and Title -->
             <div class="flex flex-col items-center justify-center mb-4">
-                <img src="https://img2.pic.in.th/pic/CARPASS-logo11af8574a9cc9906.png" alt="Logo" class="h-32 w-auto" onerror="this.onerror=null;this.src='https://placehold.co/128x128/CCCCCC/FFFFFF?text=Logo';">
+                <img src="/public/assets/images/CARPASS_logo.png" alt="Logo" class="h-32 w-auto" onerror="this.onerror=null;this.src='https://placehold.co/128x128/CCCCCC/FFFFFF?text=Logo';">
                 <h1 class="text-xl font-bold text-slate-700 mt-2">ระบบจัดการคำร้อง (สำหรับเจ้าหน้าที่)</h1>
                 <p class="text-sm text-slate-500">กรุณาลงชื่อเข้าใช้เพื่อดำเนินการต่อ</p>
             </div>

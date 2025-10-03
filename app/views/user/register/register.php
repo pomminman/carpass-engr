@@ -41,8 +41,8 @@ $conn_dept->close(); // ปิดการเชื่อมต่อหลั�
     <link rel="manifest" href="/public/assets/favicon/site.webmanifest" />
 
     <!-- [NEW] Toastify.js Library -->
-    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
-    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+    <link rel="stylesheet" type="text/css" href="/lib/toastify-js/toastify.min.css">
+    <script type="text/javascript" src="/lib/toastify-js/toastify-js.js"></script>
 
     <!-- Local CSS -->
     <link rel="stylesheet" href="/lib/daisyui@4.12.10/dist/full.min.css" type="text/css" />
@@ -101,7 +101,7 @@ $conn_dept->close(); // ปิดการเชื่อมต่อหลั�
         <div class="container mx-auto">
             <div class="flex-1 px-2 mx-2">
                 <a class="text-base font-bold flex items-center gap-2">
-                    <img src="https://img2.pic.in.th/pic/CARPASS-logo11af8574a9cc9906.png" alt="Logo" class="h-16 w-16">
+                    <img src="/public/assets/images/CARPASS_logo.png" alt="Logo" class="h-16 w-16">
                     <div>
                         <span class="whitespace-nowrap text-sm sm:text-base">ระบบยื่นคำร้องขอบัตรผ่านยานพาหนะ</span>
                         <span class="text-xs font-normal text-gray-500 block">เข้า-ออก ค่ายภาณุรังษี</span>

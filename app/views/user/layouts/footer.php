@@ -14,7 +14,7 @@ if (isset($conn) && $conn instanceof mysqli) {
                 <!-- Sidebar Header -->
                 <div class="mb-4">
                     <a href="dashboard.php" class="text-xl font-bold flex items-center gap-2 pl-4">
-                        <img src="/public/assets/images/CARPASS%20logo.png" alt="Logo" class="h-12 w-12">
+                        <img src="/public/assets/images/CARPASS_logo.png" alt="Logo" class="h-12 w-12">
                         <div>
                             <div class="font-bold text-sm">บัตรผ่านยานพาหนะ</div>
                             <div class="text-xs text-base-content/70">ค่ายภาณุรังษี</div>

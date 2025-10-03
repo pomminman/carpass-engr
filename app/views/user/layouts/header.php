@@ -32,8 +32,8 @@ $page_identifier = str_replace('.php', '', basename($_SERVER['SCRIPT_NAME']));
     <link rel="stylesheet" href="/lib/fancybox/fancybox.css" />
 
     <!-- [NEW] Toastify.js -->
-    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
-    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+    <script type="text/javascript" src="/lib/toastify-js/toastify-js.js"></script>
+    <link rel="stylesheet" type="text/css" href="/lib/toastify-js/toastify.min.css">
 
     <!-- Local CSS -->
     <link rel="stylesheet" href="/lib/daisyui@4.12.10/dist/full.min.css" type="text/css" />
@@ -72,7 +72,7 @@ $page_identifier = str_replace('.php', '', basename($_SERVER['SCRIPT_NAME']));
             <div class="w-full navbar bg-base-100 lg:hidden sticky top-0 z-30 shadow">
                 <div class="flex-1">
                      <a href="dashboard.php" class="text-base font-bold flex items-center gap-2">
-                         <img src="/public/assets/images/CARPASS%20logo.png" alt="Logo" class="h-12 w-12">
+                         <img src="/public/assets/images/CARPASS_logo.png" alt="Logo" class="h-12 w-12">
                          <div>
                              <span class="whitespace-nowrap text-sm">บัตรผ่านยานพาหนะ</span>
                              <span class="text-xs font-normal text-base-content/60 block">ค่ายภาณุรังษี</span>

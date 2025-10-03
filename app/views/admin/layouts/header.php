@@ -46,17 +46,16 @@ if (isset($_SESSION['flash_message'])) {
     <link rel="stylesheet" href="/lib/fancybox/fancybox.css" />
 
     <!-- Select2 Library -->
-    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <link href="/lib/select2/select2.min.css" rel="stylesheet" />
+    <script src="/lib/select2/select2.min.js"></script>
     
     <!-- Toastify.js Library -->
-    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
-    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+    <link rel="stylesheet" type="text/css" href="/lib/toastify-js/toastify.min.css">
+    <script type="text/javascript" src="/lib/toastify-js/toastify-js.js"></script>
 
     <!-- Litepicker Date Range Picker -->
-    <script src="https://cdn.jsdelivr.net/npm/litepicker/dist/litepicker.js"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/litepicker/dist/css/litepicker.css"/>
-
+    <script src="/lib/litepicker/litepicker.js"></script>
+    <link rel="stylesheet" href="/lib/litepicker/litepicker.css"/>
 
     <!-- Local CSS -->
     <link rel="stylesheet" href="/lib/daisyui@4.12.10/dist/full.min.css" type="text/css" />

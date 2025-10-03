@@ -45,8 +45,8 @@ if (isset($_SESSION['logout_message'])) {
     <link rel="stylesheet" href="/lib/fontawesome-free-7.0.1-web/css/all.min.css">
 
     <!-- [NEW] Toastify.js Library -->
-    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
-    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+    <script type="text/javascript" src="/lib/toastify-js/toastify-js.js"></script>
+    <link rel="stylesheet" type="text/css" href="/lib/toastify-js/toastify.min.css">
 
     <!-- Local JS -->
     <script src="/lib/tailwindcss/tailwindcss.js"></script>
@@ -64,7 +64,7 @@ if (isset($_SESSION['logout_message'])) {
         <!-- Left Side: Branding -->
         <div class="w-full md:w-1/2 bg-slate-50 flex flex-col justify-center items-center p-8 sm:p-12 text-center order-1 md:order-1">
             <div class="w-full max-w-md">
-                <img src="https://img2.pic.in.th/pic/CARPASS-logo11af8574a9cc9906.png" alt="Logo" class="h-28 sm:h-32 md:h-64 lg:h-80 w-auto mx-auto" onerror="this.onerror=null;this.src='https://placehold.co/400x400/CCCCCC/FFFFFF?text=Logo';">
+                <img src="/public/assets/images/CARPASS_logo.png" alt="Logo" class="h-28 sm:h-32 md:h-64 lg:h-80 w-auto mx-auto" onerror="this.onerror=null;this.src='https://placehold.co/400x400/CCCCCC/FFFFFF?text=Logo';">
                 <h1 class="font-bold text-lg sm:text-xl md:text-lg lg:text-2xl text-slate-800">ระบบยื่นคำร้องขอบัตรผ่านยานพาหนะ</h1>
                 <p class="text-lg sm:text-xl md:text-lg lg:text-2xl text-slate-600 mt-1">เข้า-ออก ค่ายภาณุรังษี</p>
             </div>
